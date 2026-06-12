@@ -392,9 +392,9 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
 
     return (
       <div
-        className={`relative overflow-hidden ${fullscreen ? 'h-full flex flex-col' : 'rounded-3xl'}`}
+        className={`relative overflow-hidden ${(fullscreen || isMobile) ? 'h-full flex flex-col' : 'rounded-3xl'}`}
         style={{
-          boxShadow: !bareMode && !fullscreen
+          boxShadow: !bareMode && !fullscreen && !isMobile
             ? `0 0 0 1.5px ${accent}25, 0 24px 64px rgba(0,0,0,0.16), 0 8px 24px rgba(0,0,0,0.09)`
             : undefined,
           transition: 'box-shadow 0.5s ease',
@@ -660,10 +660,10 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
           <>
             <div
               ref={containerRef}
-              className={`meal-carousel-scroll relative flex items-start overflow-x-auto snap-x snap-mandatory ${isMobile ? 'gap-0' : 'gap-4'} ${fullscreen ? 'flex-1 py-4' : 'py-6'}`}
+              className={`meal-carousel-scroll relative flex ${isMobile ? 'items-stretch' : 'items-start'} overflow-x-auto snap-x snap-mandatory ${isMobile ? 'gap-0' : 'gap-4'} ${(fullscreen || isMobile) ? 'flex-1 py-0' : 'py-6'}`}
               style={{
-                paddingLeft: bareMode ? '1.5rem' : (isMobile ? '5vw' : 'calc(50% - min(41vw, 200px))'),
-                paddingRight: bareMode ? '1.5rem' : (isMobile ? '5vw' : 'calc(50% - min(41vw, 200px))'),
+                paddingLeft: bareMode ? '1.5rem' : (isMobile ? '0' : 'calc(50% - min(41vw, 200px))'),
+                paddingRight: bareMode ? '1.5rem' : (isMobile ? '0' : 'calc(50% - min(41vw, 200px))'),
                 scrollbarWidth: 'none',
                 zIndex: 2,
               }}
@@ -674,7 +674,7 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                   <div
                     key={cfg.type}
                     ref={el => { cardRefs.current[i] = el; }}
-                    className={`${bareMode ? 'snap-start' : 'snap-center'} flex-shrink-0 ${fullscreen ? 'h-full' : ''}`}
+                    className={`${(bareMode || isMobile) ? 'snap-start' : 'snap-center'} flex-shrink-0 ${(fullscreen || isMobile) ? 'h-full' : ''}`}
                   >
                     <MealCardSlot
                       config={cfg}
@@ -682,7 +682,7 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                       isActive={activeIndex === i}
                       isHighlighted={highlightedType === cfg.type}
                       macroTarget={macroTarget}
-                      fullscreen={fullscreen}
+                      fullscreen={fullscreen || isMobile}
                       bareMode={bareMode}
                       onAdd={mealHandlers[cfg.type].onAdd}
                       onRemove={mealHandlers[cfg.type].onRemove}
@@ -693,14 +693,14 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
               })}
               <div
                 ref={el => { cardRefs.current[4] = el; }}
-                className={`${bareMode ? 'snap-start' : 'snap-center'} flex-shrink-0 ${fullscreen ? 'h-full' : ''}`}
+                className={`${(bareMode || isMobile) ? 'snap-start' : 'snap-center'} flex-shrink-0 ${(fullscreen || isMobile) ? 'h-full' : ''}`}
               >
                 <ExerciseCardSlot
                   config={exerciseConfig}
                   items={record.exercises}
                   isActive={activeIndex === 4}
                   isHighlighted={highlightedType === 'exercise'}
-                  fullscreen={fullscreen}
+                  fullscreen={fullscreen || isMobile}
                   bareMode={bareMode}
                   journalDate={journalDate}
                   onAdd={handleExerciseAdd}
@@ -710,7 +710,7 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
               </div>
               <div
                 ref={el => { cardRefs.current[5] = el; }}
-                className={`${bareMode ? 'snap-start' : 'snap-center'} flex-shrink-0 ${fullscreen ? 'h-full' : ''}`}
+                className={`${(bareMode || isMobile) ? 'snap-start' : 'snap-center'} flex-shrink-0 ${(fullscreen || isMobile) ? 'h-full' : ''}`}
               >
                 <WaterCardSlot
                   config={waterConfig}
@@ -718,7 +718,7 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                   apiKey={apiKey}
                   isActive={activeIndex === 5}
                   isHighlighted={highlightedType === 'water'}
-                  fullscreen={fullscreen}
+                  fullscreen={fullscreen || isMobile}
                   bareMode={bareMode}
                   isViewingToday={isViewingToday}
                   profile={profile}
@@ -729,7 +729,7 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                 />
               </div>
             </div>
-            {!bareMode && (
+            {!bareMode && !isMobile && (
               <div className={`relative flex items-center justify-center gap-1.5 flex-shrink-0 ${fullscreen ? 'pb-3 pt-1' : 'pb-5'}`} style={{ zIndex: 2 }}>
                 {CARD_ORDER.map((type, i) => {
                   const isActive = activeIndex === i;

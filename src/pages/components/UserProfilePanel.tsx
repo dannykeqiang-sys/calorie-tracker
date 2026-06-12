@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/shadcn/badge';
 import { calcBMI, calcBMR, calcTDEE, calcTargetCalories } from '../../utils/calculations';
 import { saveProfile } from '../../utils/storage';
-import { syncProfileToCloud } from '../../utils/supabaseDB';
+import { syncProfileToCloud } from '../../utils/githubDB';
 import type { UserProfile, Gender, GoalType, ActivityLevel } from '../../types';
 import { Activity, Target, Zap } from 'lucide-react';
 

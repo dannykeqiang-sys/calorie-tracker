@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Activity, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { setSession } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
-import { syncProfileToCloud } from '../utils/supabaseDB';
+import { syncProfileToCloud } from '../utils/githubDB';
 import type { UserProfile, Gender, GoalType, ActivityLevel } from '../types';
 
 const GOAL_OPTIONS: { value: GoalType; label: string; desc: string; icon: string }[] = [
@@ -122,6 +122,7 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       const workid = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem('calorie_workid', workid);
       const profile: UserProfile = {
         name: name.trim(), gender,
         age: Number(age), height: Number(height), weight: Number(weight),

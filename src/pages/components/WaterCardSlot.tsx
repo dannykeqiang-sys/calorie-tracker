@@ -210,7 +210,7 @@ export default function WaterCardSlot({
 
   return (
     <div
-      className={`relative ${bareMode ? 'w-[260px]' : 'w-[90vw] sm:w-[400px]'} rounded-[2rem] overflow-hidden flex flex-col select-none ${fullscreen ? 'h-full' : ''}`}
+      className={`relative ${bareMode ? 'w-[260px]' : 'w-screen sm:w-[400px]'} rounded-[2rem] overflow-hidden flex flex-col select-none ${fullscreen ? 'h-full' : ''}`}
       style={{
         maxHeight: fullscreen || bareMode ? undefined : noImage ? '280px' : (isActive ? '900px' : '216px'),
         opacity: isActive ? 1 : bareMode ? 0.75 : 0.62,

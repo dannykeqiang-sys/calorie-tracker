@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Copy } from 'lucide-react';
+import { Copy, Upload } from 'lucide-react';
 import Navbar from './components/Navbar';
 import UserProfilePanel from './components/UserProfilePanel';
 import SettingsPanel from './components/SettingsPanel';
@@ -23,7 +23,7 @@ import type { ImportMode } from './components/BatchImportModal';
 import type { MultiDateEntry } from '../utils/deepseek';
 import { loadProfile, saveProfile, loadTodayRecord, saveTodayRecord, loadRecordByDate, saveRecordByDate } from '../utils/storage';
 import { idbSaveRecord, idbGetRecord } from '../utils/indexedDB';
-import { syncRecordToCloud, syncProfileToCloud, loadProfileFromCloud } from '../utils/supabaseDB';
+import { syncRecordToCloud, syncProfileToCloud, loadProfileFromCloud } from '../utils/githubDB';
 import { getSession } from '../utils/auth';
 import AIRecordCelebration from './components/AIRecordCelebration';
 import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
@@ -610,7 +610,7 @@ export default function Home() {
       </div>
 
       {/* 移动端布局 */}
-      <div className="lg:hidden min-h-screen pb-20" style={{ background: 'transparent' }}>
+      <div className="lg:hidden flex flex-col overflow-hidden" style={{ height: '100dvh', background: 'transparent' }}>
         {/* 移动端全屏视差背景 */}
         <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
           {CARD_ORDER.map((type, i) => (
@@ -636,7 +636,7 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
         />
 
-        <div className="sticky top-16 z-40 border-b border-white/40" style={{ background: 'rgba(250,248,245,0.72)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <div className="flex-shrink-0 z-10 border-b border-white/40" style={{ background: 'rgba(250,248,245,0.72)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
           <div className="px-4 sm:px-6 py-1.5 flex items-center gap-2">
             <div className="flex-1 min-w-0">
               <DateSwitcher
@@ -648,8 +648,8 @@ export default function Home() {
           </div>
         </div>
 
-        <main className="pt-3 pb-4" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="flex items-center gap-2 mb-3 px-4 sm:px-6">
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="flex-shrink-0 flex items-center gap-2 pt-3 pb-2 px-4 sm:px-6">
             <div className="flex-1 min-w-0">
               {activeTab === 'today' && (
                 <div className="flex items-center gap-2.5">
@@ -677,12 +677,22 @@ export default function Home() {
                 </div>
               )}
             </div>
+            {activeTab === 'today' && (
+              <button
+                onClick={() => setShowBatchImport(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
+                style={{ background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}
+              >
+                <Upload className="w-3 h-3" />
+                导入
+              </button>
+            )}
           </div>
 
           {activeTab === 'today' && (
-            <div className="space-y-4">
+            <div className="flex-1 flex flex-col min-h-0">
               {!isViewingToday && historyRecord && (
-                <div className="px-4 sm:px-6">
+                <div className="flex-shrink-0 px-4 sm:px-6 pb-2">
                   <button
                     onClick={() => { handleReuseHistoryRecord(); setJournalDate(getTodayKey()); }}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-sm font-medium hover:bg-primary/10 transition-all cursor-pointer"
@@ -693,7 +703,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div data-tutorial="cards">
+              <div data-tutorial="cards" className="flex-1 min-h-0 pb-16">
                 <MealCarousel
                   ref={carouselRef}
                   record={activeRecord}
@@ -710,13 +720,13 @@ export default function Home() {
           )}
 
           {activeTab === 'analytics' && (
-            <div className="px-4 sm:px-6">
+            <div className="flex-1 overflow-y-auto pb-20 px-4 sm:px-6">
               <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} />
             </div>
           )}
 
           {activeTab === 'ai' && (
-            <div className="px-4 sm:px-6">
+            <div className="flex-1 overflow-y-auto pb-20 px-4 sm:px-6">
               <SmartAdvicePanel profile={profile} record={activeRecord} apiKey={apiKey} isViewingToday={isViewingToday} />
             </div>
           )}
