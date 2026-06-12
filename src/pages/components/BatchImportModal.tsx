@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/shadcn/dialog';
-import { Loader2, Upload, CheckCircle, ChevronLeft, CalendarDays, Plus, RefreshCw } from 'lucide-react';
+import { Loader2, Upload, CheckCircle, ChevronLeft, CalendarDays, Plus, RefreshCw, Key, FileText } from 'lucide-react';
 import { parseMultiDateMeals } from '../../utils/deepseek';
 import type { MultiDateEntry } from '../../utils/deepseek';
+import { decryptData } from '../../utils/crypto';
 import { idbGetRecord } from '../../utils/indexedDB';
 import { loadRecordByDate } from '../../utils/storage';
+import type { DailyRecord } from '../../types';
 
 export type ImportMode = 'append' | 'overwrite';
 
@@ -13,14 +15,17 @@ interface BatchImportModalProps {
   onClose: () => void;
   apiKey: string;
   onImport: (entries: MultiDateEntry[], mode: ImportMode) => Promise<void>;
+  onImportBackup: (records: DailyRecord[]) => Promise<void>;
 }
 
 type Phase = 'input' | 'parsing' | 'preview' | 'importing' | 'done' | 'error';
+type ImportType = 'ai' | 'passcode';
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
-export default function BatchImportModal({ open, onClose, apiKey, onImport }: BatchImportModalProps) {
+export default function BatchImportModal({ open, onClose, apiKey, onImport, onImportBackup }: BatchImportModalProps) {
+  const [importType, setImportType] = useState<ImportType>('ai');
   const [phase, setPhase] = useState<Phase>('input');
   const [text, setText] = useState('');
   const [entries, setEntries] = useState<MultiDateEntry[]>([]);
@@ -29,7 +34,13 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport }: Ba
   const [importMode, setImportMode] = useState<ImportMode>('append');
   const [existingDates, setExistingDates] = useState<Set<string>>(new Set());
 
+  // 口令恢复相关
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [backupContent, setBackupContent] = useState('');
+  const [backupRecords, setBackupRecords] = useState<DailyRecord[]>([]);
+
   const handleClose = () => {
+    setImportType('ai');
     setPhase('input');
     setText('');
     setEntries([]);
@@ -37,6 +48,9 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport }: Ba
     setError('');
     setImportMode('append');
     setExistingDates(new Set());
+    setPasscodeInput('');
+    setBackupContent('');
+    setBackupRecords([]);
     onClose();
   };
 
@@ -97,6 +111,45 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport }: Ba
     }
   };
 
+  // 口令恢复：解密备份内容
+  const handlePasscodeDecrypt = () => {
+    if (!passcodeInput.trim() || !backupContent.trim()) return;
+    setPhase('parsing');
+    setError('');
+    try {
+      const json = decryptData(backupContent.trim(), passcodeInput.trim());
+      if (!json) {
+        setError('口令错误或备份数据无效，请检查后重试');
+        setPhase('error');
+        return;
+      }
+      const records: DailyRecord[] = JSON.parse(json);
+      if (!Array.isArray(records) || records.length === 0) {
+        setError('备份数据格式无效，未找到有效记录');
+        setPhase('error');
+        return;
+      }
+      setBackupRecords(records);
+      setPhase('preview');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '解密失败，请检查口令和数据是否正确');
+      setPhase('error');
+    }
+  };
+
+  // 口令恢复：确认导入
+  const handlePasscodeImport = async () => {
+    setPhase('importing');
+    try {
+      await onImportBackup(backupRecords);
+      setPhase('done');
+      setTimeout(handleClose, 1600);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '导入失败，请重试');
+      setPhase('error');
+    }
+  };
+
   const PLACEHOLDER = '例如：\n昨天早餐吃了两个鸡蛋和一杯牛奶，午餐吃了红烧肉饭，下午跑步40分钟消耗300kcal。\n今天早上喝了拿铁，中午吃了沙拉和鸡胸肉200kcal，晚上吃了寿司。';
 
   const hasConflict = entries.some(e => existingDates.has(e.date));
@@ -107,15 +160,41 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport }: Ba
         <DialogHeader>
           <DialogTitle className="text-foreground flex items-center gap-2">
             <Upload className="w-4 h-4 text-primary" />
-            批量导入历史数据
+            {importType === 'ai' ? '批量导入历史数据' : '口令恢复数据'}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            用自然语言描述多天的饮食和运动，AI 自动识别日期并回填
+            {importType === 'ai'
+              ? '用自然语言描述多天的饮食和运动，AI 自动识别日期并回填'
+              : '输入导出时生成的口令和备份文件内容，恢复全部历史数据'}
           </DialogDescription>
         </DialogHeader>
 
+        {/* 导入类型切换 */}
+        <div className="rounded-xl bg-muted/40 p-1 flex gap-1">
+          <button
+            onClick={() => { setImportType('ai'); setPhase('input'); setError(''); }}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+            style={importType === 'ai'
+              ? { background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)', color: 'white' }
+              : { color: 'var(--muted-foreground)' }}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            AI 智能识别
+          </button>
+          <button
+            onClick={() => { setImportType('passcode'); setPhase('input'); setError(''); }}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+            style={importType === 'passcode'
+              ? { background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)', color: 'white' }
+              : { color: 'var(--muted-foreground)' }}
+          >
+            <Key className="w-3.5 h-3.5" />
+            口令恢复
+          </button>
+        </div>
+
         <div className="space-y-4 mt-2">
-          {(phase === 'input' || phase === 'parsing' || phase === 'error') && (
+          {importType === 'ai' && (phase === 'input' || phase === 'parsing' || phase === 'error') && (
             <>
               <textarea
                 value={text}
@@ -152,7 +231,66 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport }: Ba
             </>
           )}
 
-          {phase === 'preview' && (
+          {/* 口令恢复输入 */}
+          {importType === 'passcode' && (phase === 'input' || phase === 'parsing' || phase === 'error') && (
+            <>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+                    恢复口令
+                  </label>
+                  <input
+                    type="text"
+                    value={passcodeInput}
+                    onChange={e => setPasscodeInput(e.target.value)}
+                    placeholder="输入6位口令"
+                    disabled={phase === 'parsing'}
+                    maxLength={6}
+                    className="w-full p-3 text-sm rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-purple-500/50 transition-colors tracking-[0.3em] text-center font-mono text-lg disabled:opacity-60"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+                    备份文件内容
+                  </label>
+                  <textarea
+                    value={backupContent}
+                    onChange={e => setBackupContent(e.target.value)}
+                    placeholder="粘贴 .backup 文件的全部内容"
+                    disabled={phase === 'parsing'}
+                    className="w-full h-28 p-3 text-xs rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/40 resize-none outline-none focus:border-purple-500/50 transition-colors font-mono leading-relaxed disabled:opacity-60"
+                  />
+                </div>
+              </div>
+              {phase === 'error' && (
+                <p className="text-sm text-destructive bg-destructive/5 rounded-xl px-3 py-2.5 leading-relaxed">
+                  {error}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleClose}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handlePasscodeDecrypt}
+                  disabled={!passcodeInput.trim() || !backupContent.trim() || phase === 'parsing'}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)' }}
+                >
+                  {phase === 'parsing' ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" />解密中...</>
+                  ) : (
+                    <><Key className="w-4 h-4" />解密恢复</>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {phase === 'preview' && importType === 'ai' && (
             <>
               <div className="rounded-xl bg-primary/5 border border-primary/20 px-3 py-2.5">
                 <p className="text-xs text-primary/80 leading-relaxed">{summary}</p>
@@ -269,6 +407,91 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport }: Ba
                     : { background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}
                 >
                   {importMode === 'overwrite' && hasConflict ? '覆盖导入' : '确认导入'} {entries.length} 天数据
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* 口令恢复预览 */}
+          {phase === 'preview' && importType === 'passcode' && (
+            <>
+              <div
+                className="rounded-xl p-3 text-center"
+                style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', border: '1px solid #c4b5fd' }}
+              >
+                <p className="text-sm font-bold" style={{ color: '#7c3aed' }}>
+                  解密成功 · {backupRecords.length} 天记录
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  以下数据将完整恢复到你的账户中
+                </p>
+              </div>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                {backupRecords.map(r => {
+                  const d = new Date(r.date + 'T00:00:00');
+                  const wd = WEEKDAYS[d.getDay()];
+                  const totalKcal = MEAL_ORDER.reduce((s, mt) =>
+                    s + (r.meals[mt] ?? []).reduce((ms, f) => ms + f.calories, 0), 0);
+                  const exCount = r.exercises?.length ?? 0;
+                  const waterCount = r.water?.length ?? 0;
+                  const totalItems = MEAL_ORDER.reduce((s, mt) => s + (r.meals[mt]?.length ?? 0), 0);
+
+                  return (
+                    <div
+                      key={r.date}
+                      className="flex items-start gap-3 p-3 rounded-2xl border bg-white/60"
+                      style={{ borderColor: 'rgba(139,92,246,0.15)' }}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)' }}
+                      >
+                        <CalendarDays className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-foreground">
+                            {r.date}
+                            <span className="text-muted-foreground font-normal text-xs ml-1.5">{wd}</span>
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {totalItems > 0 && (
+                            <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                              饮食 {totalItems} 项 · {totalKcal} kcal
+                            </span>
+                          )}
+                          {exCount > 0 && (
+                            <span className="text-[11px] text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                              运动 {exCount} 项
+                            </span>
+                          )}
+                          {waterCount > 0 && (
+                            <span className="text-[11px] text-sky-600 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">
+                              饮水 {waterCount} 项
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setPhase('input'); setBackupRecords([]); }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer flex-shrink-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  返回
+                </button>
+                <button
+                  onClick={handlePasscodeImport}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)' }}
+                >
+                  确认恢复 {backupRecords.length} 天数据
                 </button>
               </div>
             </>

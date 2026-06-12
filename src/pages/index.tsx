@@ -461,6 +461,19 @@ export default function Home() {
     }
   }, [handleMealsUpdate, handleExercisesUpdate, handleWaterUpdate, handleMealsReplace, handleExercisesReplace, handleWaterReplace]);
 
+  // 口令恢复：直接将完整记录写入
+  const handleBackupImport = useCallback(async (records: DailyRecord[]) => {
+    for (const r of records) {
+      saveRecordByDate(r);
+      await idbSaveRecord(r).catch(() => {});
+    }
+    // 如果恢复的记录包含今天，刷新当前记录
+    const todayKey = getTodayKey();
+    if (records.some(r => r.date === todayKey)) {
+      setRecord(loadTodayRecord());
+    }
+  }, []);
+
   const closeDrawerAndGoToday = useCallback(() => {
     setAiOpen(false);
     setActiveTab('today');
@@ -778,6 +791,7 @@ export default function Home() {
         onClose={() => setShowBatchImport(false)}
         apiKey={apiKey}
         onImport={handleBatchImport}
+        onImportBackup={handleBackupImport}
       />
 
       {showOnboarding && (

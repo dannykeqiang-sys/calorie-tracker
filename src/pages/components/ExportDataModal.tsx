@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/shadcn/dialog';
-import { Download, Loader2, FileText, LayoutDashboard, Sheet } from 'lucide-react';
+import { Download, Loader2, FileText, LayoutDashboard, Sheet, Shield, Key, Copy, Check } from 'lucide-react';
 import { idbGetAllRecords } from '../../utils/indexedDB';
+import { generatePasscode, encryptData } from '../../utils/crypto';
 import type { DailyRecord } from '../../types';
 
 interface ExportDataModalProps {
@@ -9,7 +10,7 @@ interface ExportDataModalProps {
   onClose: () => void;
 }
 
-type ExportFormat = 'html' | 'text' | 'csv';
+type ExportFormat = 'html' | 'text' | 'csv' | 'backup';
 type FormatStatus = 'idle' | 'loading' | 'done' | 'empty' | 'error';
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -379,11 +380,22 @@ const FORMAT_CONFIGS = [
     ext: '.csv',
     mime: 'text/csv;charset=utf-8',
   },
+  {
+    key: 'backup' as ExportFormat,
+    icon: Shield,
+    title: '口令加密备份',
+    desc: '加密打包所有数据，生成6位口令，下次通过口令即可恢复全部历史',
+    color: '#8b5cf6',
+    ext: '.backup',
+    mime: 'text/plain;charset=utf-8',
+  },
 ];
 
 export default function ExportDataModal({ open, onClose }: ExportDataModalProps) {
   const [statuses, setStatuses] = useState<Partial<Record<ExportFormat, FormatStatus>>>({});
   const [globalEmpty, setGlobalEmpty] = useState(false);
+  const [backupPasscode, setBackupPasscode] = useState('');
+  const [passcodeCopied, setPasscodeCopied] = useState(false);
 
   const setStatus = (fmt: ExportFormat, s: FormatStatus) =>
     setStatuses(prev => ({ ...prev, [fmt]: s }));
@@ -403,7 +415,14 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
       let content = '';
       if (fmt === 'html') content = buildHtmlDashboard(records);
       else if (fmt === 'text') content = buildTextExport(records);
-      else content = buildCsvExport(records);
+      else if (fmt === 'csv') content = buildCsvExport(records);
+      else if (fmt === 'backup') {
+        const json = JSON.stringify(records, null, 2);
+        const passcode = generatePasscode();
+        content = encryptData(json, passcode);
+        setBackupPasscode(passcode);
+        setPasscodeCopied(false);
+      }
       downloadFile(content, '健康记录_' + today + cfg.ext, cfg.mime);
       setStatus(fmt, 'done');
     } catch {
@@ -415,6 +434,8 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
   const handleClose = () => {
     setStatuses({});
     setGlobalEmpty(false);
+    setBackupPasscode('');
+    setPasscodeCopied(false);
     onClose();
   };
 
@@ -487,6 +508,45 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
               </div>
             );
           })}
+
+          {backupPasscode && (
+            <div
+              className="rounded-2xl p-4 text-center border-2"
+              style={{
+                borderColor: '#8b5cf6',
+                background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+              }}
+            >
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Key className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                <p className="text-xs font-semibold" style={{ color: '#7c3aed' }}>请妥善保管此口令</p>
+              </div>
+              <p
+                className="text-3xl font-black tracking-[0.3em] mb-2 select-all"
+                style={{ color: '#6d28d9', fontFamily: 'monospace' }}
+              >
+                {backupPasscode}
+              </p>
+              <p className="text-[11px] text-muted-foreground mb-3">
+                下次导入数据时，输入此口令即可恢复全部历史记录
+              </p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(backupPasscode);
+                  setPasscodeCopied(true);
+                  setTimeout(() => setPasscodeCopied(false), 2000);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                style={{
+                  background: passcodeCopied ? '#dcfce7' : '#7c3aed',
+                  color: passcodeCopied ? '#16a34a' : '#fff',
+                }}
+              >
+                {passcodeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {passcodeCopied ? '已复制' : '复制口令'}
+              </button>
+            </div>
+          )}
 
           <button
             onClick={handleClose}
