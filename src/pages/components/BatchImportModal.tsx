@@ -4,6 +4,7 @@ import { Loader2, Upload, CheckCircle, ChevronLeft, CalendarDays, Plus, RefreshC
 import { parseMultiDateMeals } from '../../utils/deepseek';
 import type { MultiDateEntry } from '../../utils/deepseek';
 import { decryptData } from '../../utils/crypto';
+import { parseTextExport } from '../../utils/parseTextExport';
 import { idbGetRecord } from '../../utils/indexedDB';
 import { loadRecordByDate } from '../../utils/storage';
 import type { DailyRecord } from '../../types';
@@ -111,7 +112,7 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
     }
   };
 
-  // 口令恢复：解密备份内容（同时支持加密备份和纯 JSON）
+  // 口令恢复：解密备份内容（同时支持加密备份、纯JSON、文字摘要txt）
   const handlePasscodeDecrypt = () => {
     const content = backupContent.trim();
     if (!content) return;
@@ -119,7 +120,7 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
     setError('');
 
     try {
-      // 先尝试直接当作 JSON 解析（不经加密的纯数据导入）
+      // 1. 先尝试直接当作 JSON 解析（不经加密的纯数据导入）
       try {
         const directRecords: DailyRecord[] = JSON.parse(content);
         if (Array.isArray(directRecords) && directRecords.length > 0 && directRecords[0]?.date) {
@@ -128,12 +129,20 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
           return;
         }
       } catch {
-        // 不是有效 JSON，继续尝试解密
+        // 不是有效 JSON，继续
       }
 
-      // 尝试用口令解密
+      // 2. 尝试解析文字摘要(.txt)格式
+      const txtRecords = parseTextExport(content);
+      if (txtRecords && txtRecords.length > 0) {
+        setBackupRecords(txtRecords);
+        setPhase('preview');
+        return;
+      }
+
+      // 3. 尝试用口令解密
       if (!passcodeInput.trim()) {
-        setError('请先输入恢复口令。如果不是加密备份，也可以直接粘贴 JSON 格式的数据');
+        setError('请先输入恢复口令。如果不是加密备份，也可以直接粘贴 JSON 或 .txt 文字摘要格式的数据');
         setPhase('error');
         return;
       }
@@ -257,13 +266,13 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
             <>
               <div className="rounded-xl bg-purple-50/50 border border-purple-200 px-3 py-2.5">
                 <p className="text-[11px] text-purple-700 leading-relaxed">
-                  支持两种格式：<b>口令加密备份(.backup)</b> 需输入口令解密；或直接粘贴 <b>JSON格式</b> 数据（无需口令）
+                  支持三种格式：<b>.backup</b>加密备份（需口令）、<b>JSON</b>数据、<b>.txt</b>文字摘要
                 </p>
               </div>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-                    恢复口令 <span className="font-normal text-muted-foreground/60">（加密备份必填，JSON格式可不填）</span>
+                    恢复口令 <span className="font-normal text-muted-foreground/60">（加密备份必填，JSON/txt可不填）</span>
                   </label>
                   <input
                     type="text"
