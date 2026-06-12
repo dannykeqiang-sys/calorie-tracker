@@ -3,111 +3,83 @@
   "meals": {
     "breakfast": [
       {
-        "id": "77a4a745-323d-48f2-a9e1-59594bf6bea6",
+        "id": "c580a840-d399-48fe-9ec4-b52e4a7e7bc4",
         "name": "黄瓜×2",
         "calories": 32,
         "protein": 1.6,
-        "carbs": 6,
-        "fat": 0.2,
-        "sodium": 4
+        "carbs": 6.8,
+        "fat": 0.4
       },
       {
-        "id": "2a96807d-af22-4701-8888-173ac318a024",
+        "id": "876fb5b7-8b43-4092-a878-b22f8d74f75b",
         "name": "苹果半个",
         "calories": 39,
         "protein": 0.2,
-        "carbs": 10,
-        "fat": 0.1,
-        "sodium": 1
+        "carbs": 10.4,
+        "fat": 0.1
       },
       {
-        "id": "fa0b67ca-f42c-4627-be9c-bbc6fb81cc23",
-        "name": "卤蛋×1",
+        "id": "529aa562-c600-41c8-8ed9-7374ff669990",
+        "name": "卤蛋",
         "calories": 70,
         "protein": 6,
-        "carbs": 0.5,
-        "fat": 5,
-        "sodium": 70
+        "carbs": 1,
+        "fat": 5
       },
       {
-        "id": "c61ebee4-2dc1-4a58-bb78-b2aaa1acc538",
+        "id": "47b796d7-1aed-4ace-b934-d243cbb4309d",
         "name": "抹茶拿铁",
-        "calories": 120,
-        "protein": 4,
-        "carbs": 15,
-        "fat": 5,
-        "sodium": 100
+        "calories": 160,
+        "protein": 6,
+        "carbs": 20,
+        "fat": 6
       }
     ],
     "lunch": [
       {
-        "id": "9d3def29-2a1f-4176-b650-5770be50bb03",
-        "name": "农家小炒肉（瘦肉）",
+        "id": "8f5e4c8f-9cd5-4a9c-86bb-87bab91bb70d",
+        "name": "农家小炒肉",
         "calories": 250,
         "protein": 30,
         "carbs": 5,
-        "fat": 12,
-        "sodium": 500
+        "fat": 12
       },
       {
-        "id": "34ee7190-ccbe-4087-bebd-b5c8a8542195",
+        "id": "badfd3b8-0e65-458e-a438-fefb3ef8ed29",
         "name": "米饭",
         "calories": 174,
-        "protein": 3.6,
-        "carbs": 38.4,
-        "fat": 0.3,
-        "sodium": 2
+        "protein": 4,
+        "carbs": 38,
+        "fat": 0.5
       },
       {
-        "id": "b954215d-0e59-464d-83bf-f13ae3ca6e19",
+        "id": "4cab2b59-6cfb-4476-9d17-384191ea6e88",
         "name": "沙拉",
         "calories": 50,
         "protein": 2,
         "carbs": 10,
-        "fat": 0.5,
-        "sodium": 30
+        "fat": 1
       },
       {
-        "id": "22d92ddb-98d9-4ad9-9c08-430098a10ed1",
-        "name": "口水鸡（去皮）",
+        "id": "a59a9454-5fbd-47d5-bb16-e3567a63fa5e",
+        "name": "口水鸡",
         "calories": 150,
         "protein": 20,
         "carbs": 2,
-        "fat": 7,
-        "sodium": 400
+        "fat": 7
       },
       {
-        "id": "5f70b4da-0a7b-4b1a-9d22-79b42e59892c",
+        "id": "499cf93e-c9bd-43e1-b246-941762e0bc50",
         "name": "康普茶",
         "calories": 30,
         "protein": 0,
-        "carbs": 7,
-        "fat": 0,
-        "sodium": 10
+        "carbs": 8,
+        "fat": 0
       }
     ],
     "dinner": [],
     "snack": []
   },
   "exercises": [],
-  "water": [
-    {
-      "id": "352918df-fd59-4c90-88b1-1e69caec1690",
-      "amount": 250,
-      "note": "抹茶拿铁",
-      "time": ""
-    },
-    {
-      "id": "870c92ed-2b2f-4b50-8058-90465d027911",
-      "amount": 230,
-      "note": "康普茶",
-      "time": ""
-    },
-    {
-      "id": "d749d20b-fa41-47bd-bfd8-5c68035b123c",
-      "amount": 500,
-      "note": "",
-      "time": "16:02"
-    }
-  ]
+  "water": []
 }
