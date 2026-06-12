@@ -90,5 +90,24 @@
     "snack": []
   },
   "exercises": [],
-  "water": []
+  "water": [
+    {
+      "id": "352918df-fd59-4c90-88b1-1e69caec1690",
+      "amount": 250,
+      "note": "抹茶拿铁",
+      "time": ""
+    },
+    {
+      "id": "870c92ed-2b2f-4b50-8058-90465d027911",
+      "amount": 230,
+      "note": "康普茶",
+      "time": ""
+    },
+    {
+      "id": "d749d20b-fa41-47bd-bfd8-5c68035b123c",
+      "amount": 500,
+      "note": "",
+      "time": "16:02"
+    }
+  ]
 }
