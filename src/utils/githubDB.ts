@@ -143,3 +143,55 @@ export async function loadRecordFromCloud(date: string): Promise<DailyRecord | n
   const { data } = await readJsonFile<DailyRecord>(path);
   return data;
 }
+
+// ---- 加密备份（口令恢复） ----
+
+const BACKUPS_DIR = 'data/backups';
+
+/** 从口令派生文件路径 hash（不可逆） */
+function passcodeHash(passcode: string): string {
+  let h = 0;
+  for (let i = 0; i < passcode.length; i++) {
+    h = ((h << 5) - h + passcode.charCodeAt(i)) | 0;
+  }
+  // 转为 hex 字符串
+  const hex = (h >>> 0).toString(16).padStart(8, '0');
+  return `${hex.slice(0, 4)}/${hex.slice(4)}`;
+}
+
+/** 上传加密备份到 GitHub（导出时调用） */
+export async function uploadBackup(encryptedContent: string, passcode: string): Promise<void> {
+  const token = getGithubToken();
+  if (!token) throw new Error('无法上传备份');
+  const filePath = `${BACKUPS_DIR}/${passcodeHash(passcode)}.json`;
+
+  // 先查是否已有文件（需要 sha 来更新）
+  let sha: string | null = null;
+  try {
+    const existing = await githubApi(filePath);
+    if (existing) sha = existing.sha;
+  } catch {}
+
+  const body: any = {
+    message: `Backup ${new Date().toISOString().split('T')[0]}`,
+    content: btoa(unescape(encodeURIComponent(encryptedContent))),
+  };
+  if (sha) body.sha = sha;
+
+  await githubApi(filePath, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+/** 从 GitHub 拉取并返回加密备份内容（导入时调用） */
+export async function fetchBackup(passcode: string): Promise<string | null> {
+  const token = getGithubToken();
+  if (!token) return null;
+  const filePath = `${BACKUPS_DIR}/${passcodeHash(passcode)}.json`;
+
+  try {
+    const result = await githubApi(filePath);
+    if (!result || !result.content) return null;
+    return decodeURIComponent(escape(atob(result.content)));
+  } catch {
+    return null;
+  }
+}

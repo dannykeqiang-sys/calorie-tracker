@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Download, Loader2, FileText, LayoutDashboard, Sheet, Shield, Key, Copy, Check } from 'lucide-react';
 import { idbGetAllRecords } from '../../utils/indexedDB';
 import { generatePasscode, encryptData } from '../../utils/crypto';
+import { uploadBackup } from '../../utils/githubDB';
 import type { DailyRecord } from '../../types';
 
 interface ExportDataModalProps {
@@ -387,7 +388,7 @@ const FORMAT_CONFIGS = [
     key: 'backup' as ExportFormat,
     icon: Shield,
     title: '口令加密备份',
-    desc: '加密打包所有数据，生成6位口令。可在「数据导入」中输入口令恢复',
+    desc: '加密打包并上传云端，生成6位口令。下次只需输入口令即可恢复',
     color: '#8b5cf6',
     ext: '.backup',
     mime: 'text/plain;charset=utf-8',
@@ -426,6 +427,8 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
         content = encryptData(json, passcode);
         setBackupPasscode(passcode);
         setPasscodeCopied(false);
+        // 同时上传到 GitHub，下次只需输入口令即可恢复
+        uploadBackup(content, passcode).catch(() => {});
       }
       downloadFile(content, '健康记录_' + today + cfg.ext, cfg.mime);
       setStatus(fmt, 'done');
@@ -539,7 +542,7 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
                 {backupPasscode}
               </p>
               <p className="text-[11px] text-muted-foreground mb-3">
-                下次导入数据时，输入此口令即可恢复全部历史记录
+                备份已上传云端。下次在「口令恢复」中输入此口令即可恢复全部数据
               </p>
               <button
                 onClick={() => {
