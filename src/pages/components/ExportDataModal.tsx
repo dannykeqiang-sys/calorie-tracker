@@ -361,33 +361,37 @@ const FORMAT_CONFIGS = [
     color: '#6366f1',
     ext: '.html',
     mime: 'text/html;charset=utf-8',
+    reimportable: false,
   },
   {
     key: 'text' as ExportFormat,
     icon: FileText,
     title: '文字摘要版',
-    desc: '纯文本格式，清晰易读，适合复制和归档',
+    desc: '纯文本格式，清晰易读。可在「数据导入」中粘贴恢复',
     color: '#10b981',
     ext: '.txt',
     mime: 'text/plain;charset=utf-8',
+    reimportable: true,
   },
   {
     key: 'csv' as ExportFormat,
     icon: Sheet,
     title: '表格数据 CSV',
-    desc: '结构化数据，可用 Excel / Numbers 打开分析，包含所有字段',
+    desc: '结构化数据，可用 Excel / Numbers 打开分析',
     color: '#f59e0b',
     ext: '.csv',
     mime: 'text/csv;charset=utf-8',
+    reimportable: false,
   },
   {
     key: 'backup' as ExportFormat,
     icon: Shield,
     title: '口令加密备份',
-    desc: '加密打包所有数据，生成6位口令，下次通过口令即可恢复全部历史',
+    desc: '加密打包所有数据，生成6位口令。可在「数据导入」中输入口令恢复',
     color: '#8b5cf6',
     ext: '.backup',
     mime: 'text/plain;charset=utf-8',
+    reimportable: true,
   },
 ];
 
@@ -482,7 +486,14 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
                   <Icon className="w-5 h-5" style={{ color: cfg.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{cfg.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">{cfg.title}</p>
+                    {cfg.reimportable && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                        可重新导入
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{cfg.desc}</p>
                   {isError && (
                     <p className="text-[11px] text-destructive mt-0.5">导出失败，请重试</p>
