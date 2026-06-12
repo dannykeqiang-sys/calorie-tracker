@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Flame, Volume2, VolumeX, SkipForward, Loader2 } from 'lucide-react';
 
-const VIDEO_DESKTOP =
-  'https://cdn.jsdelivr.net/gh/dannykeqiang-sys/image-hosting@main/videos/2026-06-01/1780299984666-pv3e67-mp_.mp4';
-const VIDEO_MOBILE =
-  'https://cdn.jsdelivr.net/gh/dannykeqiang-sys/image-hosting@main/videos/2026-06-01/1780300493654-jnewcp-lQbPJxFi6mZzxQ8AALAaW1kS_8vBnwnyKZWXFlgA.mp4';
+const VIDEO_URL =
+  'https://cdn.jsdelivr.net/gh/dannykeqiang-sys/image-hosting@main/videos/2026-06-12/1781256347654-t476ov-Vertical_aspect_ratio_ci.mp4';
 
-export const VIDEO_URL = typeof window !== 'undefined' && window.innerWidth < 768 ? VIDEO_MOBILE : VIDEO_DESKTOP;
+export { VIDEO_URL };
 
 interface VideoIntroProps {
   onEnd: () => void;
@@ -72,8 +70,8 @@ export default function VideoIntro({ onEnd, leaving }: VideoIntroProps) {
         playsInline
         onCanPlay={handleLoaded}
         onEnded={handleEnded}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease' }}
+        className="absolute inset-0 w-full h-full object-cover md:object-contain"
+        style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease', background: '#000' }}
       />
 
       {!loaded && (
