@@ -8,8 +8,6 @@ import VideoIntro, { VIDEO_URL } from './components/VideoIntro';
 
 type PageState = 'idle' | 'loading' | 'not-found' | 'error';
 
-const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -32,11 +30,7 @@ export default function LoginPage() {
         setSession(result.workid, trimmed);
         localStorage.setItem('calorie_workid', result.workid);
         saveProfile(result.profile);
-        if (isDesktop) {
-          setShowOutro(true);
-        } else {
-          navigate('/');
-        }
+        setShowOutro(true);
       } else {
         setState('not-found');
       }
