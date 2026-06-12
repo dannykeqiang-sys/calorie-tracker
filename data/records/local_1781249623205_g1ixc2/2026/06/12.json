@@ -1,0 +1,85 @@
+{
+  "date": "2026-06-12",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "e10f95b9-b068-4cba-82d6-c793d91499ad",
+        "name": "黄瓜×2",
+        "calories": 32,
+        "protein": 1.6,
+        "carbs": 6.8,
+        "fat": 0.4
+      },
+      {
+        "id": "e25121e6-4630-4641-8bc0-1b1a3f036f24",
+        "name": "苹果半个",
+        "calories": 39,
+        "protein": 0.2,
+        "carbs": 10.4,
+        "fat": 0.1
+      },
+      {
+        "id": "a69f6a8d-8929-40f7-960c-d92abde6bc92",
+        "name": "卤蛋",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 1,
+        "fat": 5
+      },
+      {
+        "id": "b669525d-3c9d-4c16-99c1-2ef55e1f1cfe",
+        "name": "抹茶拿铁",
+        "calories": 120,
+        "protein": 4,
+        "carbs": 15,
+        "fat": 5
+      }
+    ],
+    "lunch": [
+      {
+        "id": "da769e06-c2eb-4357-a2b3-b6959bc42eac",
+        "name": "农家小炒肉",
+        "calories": 250,
+        "protein": 30,
+        "carbs": 5,
+        "fat": 12
+      },
+      {
+        "id": "66b1ae9c-4735-4038-b622-a051c980d8c6",
+        "name": "米饭",
+        "calories": 174,
+        "protein": 3.6,
+        "carbs": 38.4,
+        "fat": 0.3
+      },
+      {
+        "id": "e2a73b98-1f8c-4e10-8183-67cdee69b298",
+        "name": "沙拉",
+        "calories": 50,
+        "protein": 2,
+        "carbs": 8,
+        "fat": 1
+      },
+      {
+        "id": "12fb805a-8b35-44a8-a9e1-9c17d35fe29a",
+        "name": "口水鸡",
+        "calories": 150,
+        "protein": 20,
+        "carbs": 2,
+        "fat": 7
+      },
+      {
+        "id": "b672bea7-a752-46bb-85a8-df4a3c7a92b6",
+        "name": "康普茶",
+        "calories": 30,
+        "protein": 0,
+        "carbs": 7,
+        "fat": 0
+      }
+    ],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": []
+}
