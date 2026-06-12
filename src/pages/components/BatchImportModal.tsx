@@ -111,15 +111,36 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
     }
   };
 
-  // 口令恢复：解密备份内容
+  // 口令恢复：解密备份内容（同时支持加密备份和纯 JSON）
   const handlePasscodeDecrypt = () => {
-    if (!passcodeInput.trim() || !backupContent.trim()) return;
+    const content = backupContent.trim();
+    if (!content) return;
     setPhase('parsing');
     setError('');
+
     try {
-      const json = decryptData(backupContent.trim(), passcodeInput.trim());
+      // 先尝试直接当作 JSON 解析（不经加密的纯数据导入）
+      try {
+        const directRecords: DailyRecord[] = JSON.parse(content);
+        if (Array.isArray(directRecords) && directRecords.length > 0 && directRecords[0]?.date) {
+          setBackupRecords(directRecords);
+          setPhase('preview');
+          return;
+        }
+      } catch {
+        // 不是有效 JSON，继续尝试解密
+      }
+
+      // 尝试用口令解密
+      if (!passcodeInput.trim()) {
+        setError('请先输入恢复口令。如果不是加密备份，也可以直接粘贴 JSON 格式的数据');
+        setPhase('error');
+        return;
+      }
+
+      const json = decryptData(content, passcodeInput.trim());
       if (!json) {
-        setError('口令错误或备份数据无效，请检查后重试');
+        setError('口令错误或备份数据无效。请确认：\n1. 使用的是「口令加密备份(.backup)」格式\n2. 口令输入正确\n3. 文件内容完整未被修改');
         setPhase('error');
         return;
       }
@@ -165,7 +186,7 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
           <DialogDescription className="text-muted-foreground text-sm">
             {importType === 'ai'
               ? '用自然语言描述多天的饮食和运动，AI 自动识别日期并回填'
-              : '输入导出时生成的口令和备份文件内容，恢复全部历史数据'}
+              : '输入口令恢复加密备份，或直接粘贴 JSON 数据'}  
           </DialogDescription>
         </DialogHeader>
 
@@ -234,10 +255,15 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
           {/* 口令恢复输入 */}
           {importType === 'passcode' && (phase === 'input' || phase === 'parsing' || phase === 'error') && (
             <>
+              <div className="rounded-xl bg-purple-50/50 border border-purple-200 px-3 py-2.5">
+                <p className="text-[11px] text-purple-700 leading-relaxed">
+                  支持两种格式：<b>口令加密备份(.backup)</b> 需输入口令解密；或直接粘贴 <b>JSON格式</b> 数据（无需口令）
+                </p>
+              </div>
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-                    恢复口令
+                    恢复口令 <span className="font-normal text-muted-foreground/60">（加密备份必填，JSON格式可不填）</span>
                   </label>
                   <input
                     type="text"
@@ -256,7 +282,7 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
                   <textarea
                     value={backupContent}
                     onChange={e => setBackupContent(e.target.value)}
-                    placeholder="粘贴 .backup 文件的全部内容"
+                    placeholder="粘贴 .backup 文件内容 或 JSON数据"
                     disabled={phase === 'parsing'}
                     className="w-full h-28 p-3 text-xs rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground/40 resize-none outline-none focus:border-purple-500/50 transition-colors font-mono leading-relaxed disabled:opacity-60"
                   />
@@ -281,9 +307,9 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
                   style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)' }}
                 >
                   {phase === 'parsing' ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" />解密中...</>
+                    <><Loader2 className="w-4 h-4 animate-spin" />解析中...</>
                   ) : (
-                    <><Key className="w-4 h-4" />解密恢复</>
+                    <><Key className="w-4 h-4" />解密/导入</>
                   )}
                 </button>
               </div>
