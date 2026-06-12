@@ -3,7 +3,7 @@
   "meals": {
     "breakfast": [
       {
-        "id": "c580a840-d399-48fe-9ec4-b52e4a7e7bc4",
+        "id": "826e5aa7-9482-4170-912e-1ed236b731c2",
         "name": "黄瓜×2",
         "calories": 32,
         "protein": 1.6,
@@ -11,7 +11,7 @@
         "fat": 0.4
       },
       {
-        "id": "876fb5b7-8b43-4092-a878-b22f8d74f75b",
+        "id": "e0b76f0f-de1d-4fa6-8189-cf92f1206e51",
         "name": "苹果半个",
         "calories": 39,
         "protein": 0.2,
@@ -19,7 +19,7 @@
         "fat": 0.1
       },
       {
-        "id": "529aa562-c600-41c8-8ed9-7374ff669990",
+        "id": "09cc9fa2-6044-4877-a859-d8e49ee1e5ac",
         "name": "卤蛋",
         "calories": 70,
         "protein": 6,
@@ -27,33 +27,33 @@
         "fat": 5
       },
       {
-        "id": "47b796d7-1aed-4ace-b934-d243cbb4309d",
+        "id": "32bdb523-ea74-4604-81cc-476df1e270c8",
         "name": "抹茶拿铁",
-        "calories": 160,
+        "calories": 180,
         "protein": 6,
-        "carbs": 20,
-        "fat": 6
+        "carbs": 24,
+        "fat": 7
       }
     ],
     "lunch": [
       {
-        "id": "8f5e4c8f-9cd5-4a9c-86bb-87bab91bb70d",
-        "name": "农家小炒肉",
-        "calories": 250,
+        "id": "437cb2bc-fdb3-4b76-909c-92bfa2a894d8",
+        "name": "农家小炒肉（瘦肉）",
+        "calories": 200,
         "protein": 30,
-        "carbs": 5,
-        "fat": 12
+        "carbs": 2,
+        "fat": 8
       },
       {
-        "id": "badfd3b8-0e65-458e-a438-fefb3ef8ed29",
+        "id": "45d1dfa6-4a2d-482e-ac13-2ebe33bb6f01",
         "name": "米饭",
         "calories": 174,
         "protein": 4,
         "carbs": 38,
-        "fat": 0.5
+        "fat": 0.3
       },
       {
-        "id": "4cab2b59-6cfb-4476-9d17-384191ea6e88",
+        "id": "a8b4b095-e6e3-4364-a99b-9b0c6b2a454b",
         "name": "沙拉",
         "calories": 50,
         "protein": 2,
@@ -61,15 +61,15 @@
         "fat": 1
       },
       {
-        "id": "a59a9454-5fbd-47d5-bb16-e3567a63fa5e",
-        "name": "口水鸡",
-        "calories": 150,
+        "id": "7952e9df-7fb7-445f-9500-59fd1c878231",
+        "name": "口水鸡（去皮）",
+        "calories": 165,
         "protein": 20,
         "carbs": 2,
-        "fat": 7
+        "fat": 9
       },
       {
-        "id": "499cf93e-c9bd-43e1-b246-941762e0bc50",
+        "id": "a84a2df9-9985-4ec3-9db6-ff427918670f",
         "name": "康普茶",
         "calories": 30,
         "protein": 0,
