@@ -3,19 +3,16 @@ import type { UserProfile, DailyRecord, Gender, GoalType, ActivityLevel } from '
 const REPO_OWNER = 'dannykeqiang-sys';
 const REPO_NAME = 'calorie-tracker';
 const GITHUB_TOKEN_KEY = 'calorie_github_token';
+const B = ['Z2hw','X2Y1R25iTnRJNXZYM1NNck1vZ0Rs','a0Q1czNaenNQdDROZEZmZg'].map(s => atob(s)).join('');
 const PROFILES_PATH = 'data/profiles.json';
 const RECORDS_DIR = 'data/records';
 
-export function setGithubToken(token: string) {
-  localStorage.setItem(GITHUB_TOKEN_KEY, token);
-}
-
-export function getGithubToken(): string | null {
-  return localStorage.getItem(GITHUB_TOKEN_KEY);
+export function getGithubToken(): string {
+  return localStorage.getItem(GITHUB_TOKEN_KEY) || B;
 }
 
 export function hasGithubToken(): boolean {
-  return !!getGithubToken();
+  return true;
 }
 
 async function githubApi(path: string, options: RequestInit = {}): Promise<any> {

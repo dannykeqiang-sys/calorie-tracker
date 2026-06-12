@@ -1,7 +1,7 @@
 import { useState, useRef, forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, Loader2, UserX, RefreshCw, Key } from 'lucide-react';
-import { findProfileByName, hasGithubToken, setGithubToken } from '../utils/githubDB';
+import { Flame, ArrowRight, Loader2, UserX, RefreshCw } from 'lucide-react';
+import { findProfileByName } from '../utils/githubDB';
 import { setSession } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
 import VideoIntro, { VIDEO_URL } from './components/VideoIntro';
@@ -12,21 +12,12 @@ const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [tokenInput, setTokenInput] = useState('');
-  const [showTokenSetup, setShowTokenSetup] = useState(!hasGithubToken());
   const [name, setName] = useState('');
   const [state, setState] = useState<PageState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const [showOutro, setShowOutro] = useState(false);
   const [outroLeaving, setOutroLeaving] = useState(false);
-
-  const handleTokenSave = () => {
-    const t = tokenInput.trim();
-    if (!t) return;
-    setGithubToken(t);
-    setShowTokenSetup(false);
-  };
 
   const trimmed = name.trim();
   const canSubmit = trimmed.length > 0 && state !== 'loading';
@@ -81,77 +72,10 @@ export default function LoginPage() {
     <>
       <video src={VIDEO_URL} preload="auto" muted playsInline style={{ display: 'none' }} />
 
-      {showTokenSetup && (
-        <div
-          className="fixed inset-0 overflow-auto flex items-center justify-center p-4"
-          style={{ background: 'linear-gradient(160deg, #F0F4FF 0%, #F5F2FF 60%, #FFF8F5 100%)' }}
-        >
-          <div className="relative w-full max-w-sm">
-            <div className="text-center mb-8" style={{ animation: 'loginPopIn 0.6s cubic-bezier(0.34,1.56,0.64,1)' }}>
-              <div
-                className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
-              >
-                <Key className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-2xl font-black text-foreground mb-1" style={{ fontFamily: '"Noto Serif SC", "Songti SC", serif' }}>
-                配置 GitHub Token
-              </h1>
-              <p className="text-sm text-muted-foreground">数据将存储在你的 GitHub 仓库中</p>
-            </div>
-            <div
-              className="rounded-3xl p-6 shadow-sm"
-              style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.7)', animation: 'loginSlideUp 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s both' }}
-            >
-              <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1">Personal Access Token</p>
-              <input
-                autoFocus
-                type="password"
-                value={tokenInput}
-                onChange={e => setTokenInput(e.target.value)}
-                placeholder="ghp_..."
-                onKeyDown={e => { if (e.key === 'Enter') handleTokenSave(); }}
-                className="w-full px-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all"
-                style={{
-                  borderColor: tokenInput ? '#6366F1' : '#E5E7EB',
-                  boxShadow: tokenInput ? '0 0 0 3px rgba(99,102,241,0.15), 0 2px 8px rgba(99,102,241,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
-                }}
-              />
-              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                需要 <b>public_repo</b> 权限，Token 仅保存在你的浏览器本地。
-              </p>
-              <button
-                onClick={handleTokenSave}
-                disabled={!tokenInput.trim()}
-                className="mt-4 w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                style={{
-                  background: tokenInput.trim() ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : '#E5E7EB',
-                  boxShadow: tokenInput.trim() ? '0 8px 24px rgba(99,102,241,0.35)' : 'none',
-                }}
-              >
-                确认配置
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          <style>{`
-            @keyframes loginPopIn {
-              from { opacity: 0; transform: translateY(-20px) scale(0.88); }
-              to { opacity: 1; transform: translateY(0) scale(1); }
-            }
-            @keyframes loginSlideUp {
-              from { opacity: 0; transform: translateY(24px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-          `}</style>
-        </div>
-      )}
-
       {showOutro && (
         <VideoIntro onEnd={handleOutroEnd} leaving={outroLeaving} />
       )}
 
-      {!showTokenSetup && (
       <div
         className="fixed inset-0 overflow-auto flex items-center justify-center p-4"
         style={{
@@ -262,7 +186,6 @@ export default function LoginPage() {
           }
         `}</style>
       </div>
-      )}
     </>
   );
 }
