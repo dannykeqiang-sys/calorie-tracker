@@ -17,10 +17,10 @@
     "name": "c c",
     "profile": {
       "name": "c c",
-      "gender": "female",
-      "age": 36,
       "height": 158,
       "weight": 58,
+      "age": 36,
+      "gender": "female",
       "goal": "lose",
       "activityLevel": "sedentary"
     }
