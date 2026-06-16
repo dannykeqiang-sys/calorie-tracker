@@ -23,15 +23,6 @@
     ],
     "lunch": [
       {
-        "id": "a6a0b728-2aa0-4a61-94ee-c6ed5bb81de5",
-        "name": "傣味烤鸡（去皮）×240g",
-        "calories": 360,
-        "protein": 60,
-        "carbs": 0,
-        "fat": 12,
-        "sodium": 240
-      },
-      {
         "id": "00f2a64f-07a3-48af-ad90-f064b6fcb5fe",
         "name": "黄瓜花拌双菇×150g",
         "calories": 60,
