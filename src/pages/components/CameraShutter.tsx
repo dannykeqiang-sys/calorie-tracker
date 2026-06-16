@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, Image, Loader2, Sparkles, X, CheckCircle, Plus, RefreshCw, ScanLine, Edit3 } from 'lucide-react';
+import { Camera, Image, Loader2, Sparkles, X, CheckCircle, Plus, RefreshCw, ScanLine } from 'lucide-react';
 import { analyzeFoodImage, analyzeNutritionLabel, fileToBase64 } from '../../utils/qwen-vl';
 import type { VisionFoodItem, NutritionLabelResult } from '../../utils/qwen-vl';
 import type { FoodItem, MealType } from '../../types';
@@ -11,13 +11,12 @@ interface CameraShutterProps {
   onResult: (items: FoodItem[], mealType: MealType, summary: string) => void;
 }
 
-type Mode = 'food-photo' | 'nutrition-label';
 type Phase = 'idle' | 'selecting' | 'analyzing' | 'preview' | 'nutrition-form' | 'success' | 'error';
 
 export default function CameraShutter({ open, apiKey, onClose, onResult }: CameraShutterProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<Mode>('food-photo');
+
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
@@ -29,6 +28,7 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
   const [nutritionResult, setNutritionResult] = useState<NutritionLabelResult | null>(null);
   const [nutritionGrams, setNutritionGrams] = useState('');
   const [nutritionName, setNutritionName] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const reset = useCallback(() => {
     setPhase('idle');
@@ -39,6 +39,7 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
     setNutritionResult(null);
     setNutritionGrams('');
     setNutritionName('');
+    setPendingFile(null);
   }, []);
 
   const handleClose = () => {
@@ -47,26 +48,19 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
   };
 
   const triggerCamera = () => {
-    setMode('food-photo');
     setPhase('selecting');
     setTimeout(() => cameraInputRef.current?.click(), 100);
   };
 
   const triggerGallery = () => {
-    setMode('food-photo');
     setPhase('selecting');
     setTimeout(() => galleryInputRef.current?.click(), 100);
   };
 
-  const triggerNutritionLabel = () => {
-    setMode('nutrition-label');
-    setPhase('selecting');
-    setTimeout(() => galleryInputRef.current?.click(), 100);
-  };
-
-  const handleFoodPhoto = async (file: File) => {
+  const analyzeAsFood = async (file: File) => {
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+    setPendingFile(file);
     setPhase('analyzing');
 
     try {
@@ -86,9 +80,9 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
     }
   };
 
-  const handleNutritionPhoto = async (file: File) => {
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+  const switchToNutritionLabel = async () => {
+    const file = pendingFile;
+    if (!file) return;
     setPhase('analyzing');
 
     try {
@@ -108,15 +102,10 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
     const file = e.target.files?.[0];
     if (!file) { setPhase('idle'); return; }
 
-    if (mode === 'nutrition-label') {
-      await handleNutritionPhoto(file);
-    } else {
-      await handleFoodPhoto(file);
-    }
+    await analyzeAsFood(file);
 
-    // Reset inputs
-    if (galleryInputRef.current) galleryInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
   };
 
   const handleConfirm = () => {
@@ -128,7 +117,6 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
       carbs: f.carbs,
       fat: f.fat,
     }));
-    // 即刻写入：通过 onResult 立即触发存储
     onResult(items, mealType, summary);
     setPhase('success');
     setTimeout(handleClose, 1600);
@@ -151,7 +139,6 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
       fat: Math.round(nutritionResult.per100g.fat * ratio * 10) / 10,
     };
 
-    // 即刻写入
     onResult([item], mealType, `已记录 ${name} ${grams}g`);
     setPhase('success');
     setTimeout(handleClose, 1600);
@@ -169,8 +156,7 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
   if (!open) return null;
 
   const isAnalyzing = phase === 'analyzing';
-
-  const analyzingLabel = mode === 'nutrition-label' ? 'AI 正在读取营养成分表...' : 'AI 正在扫描食物...';
+  const isNutritionMode = phase === 'nutrition-form';
 
   return (
     <>
@@ -223,9 +209,11 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
           <div className="flex items-center gap-2.5">
             <div
               className="w-9 h-9 rounded-2xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)' }}
+              style={{ background: isNutritionMode
+                ? 'linear-gradient(135deg, #10b981, #059669)'
+                : 'linear-gradient(135deg, #8b5cf6, #6366f1)' }}
             >
-              {mode === 'nutrition-label' ? (
+              {isNutritionMode ? (
                 <ScanLine className="w-4.5 h-4.5 text-white" />
               ) : (
                 <Camera className="w-4.5 h-4.5 text-white" />
@@ -233,10 +221,10 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">
-                {mode === 'nutrition-label' ? '营养成分表识别' : 'AI 视觉识别'}
+                {isNutritionMode ? '营养成分表识别' : 'AI 视觉识别'}
               </p>
               <p className="text-xs text-muted-foreground">
-                {mode === 'nutrition-label' ? '识别标签后输入克数' : '拍照分析食物营养'}
+                {isNutritionMode ? '输入克数自动折算' : '拍照或从相册选择'}
               </p>
             </div>
           </div>
@@ -249,7 +237,7 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
         </div>
 
         <div className="px-5 pb-8 space-y-4">
-          {/* Idle: 模式选择 */}
+          {/* Idle: 拍照 / 相册 */}
           {!isAnalyzing && phase !== 'preview' && phase !== 'nutrition-form' && phase !== 'success' && phase !== 'error' && (
             <>
               {/* 拍照 */}
@@ -267,42 +255,24 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
                 >
                   <Camera className="w-7 h-7 text-white" />
                 </div>
-                <p className="text-sm font-semibold" style={{ color: '#7c3aed' }}>拍照识别食物</p>
-                <p className="text-xs text-muted-foreground mt-1">直接拍照，AI 自动识别食物和营养</p>
+                <p className="text-sm font-semibold" style={{ color: '#7c3aed' }}>拍照识别</p>
+                <p className="text-xs text-muted-foreground mt-1">AI 自动识别食物或营养成分表</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* 相册 */}
+              {/* 相册 */}
+              <div
+                className="rounded-2xl p-4 text-center border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}
+                onClick={triggerGallery}
+              >
                 <div
-                  className="rounded-2xl p-4 text-center border-2 border-dashed border-blue-200 hover:border-blue-400 transition-colors cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}
-                  onClick={triggerGallery}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-2"
+                  style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
                 >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-2"
-                    style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
-                  >
-                    <Image className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-sm font-semibold" style={{ color: '#2563eb' }}>从相册选择</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">上传已有照片</p>
+                  <Image className="w-5 h-5 text-white" />
                 </div>
-
-                {/* 营养成分表 */}
-                <div
-                  className="rounded-2xl p-4 text-center border-2 border-dashed border-emerald-200 hover:border-emerald-400 transition-colors cursor-pointer"
-                  style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)' }}
-                  onClick={triggerNutritionLabel}
-                >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-2"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
-                  >
-                    <ScanLine className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-sm font-semibold" style={{ color: '#059669' }}>营养成分表</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">识别标签，输入克数</p>
-                </div>
+                <p className="text-sm font-semibold" style={{ color: '#2563eb' }}>从相册选择</p>
+                <p className="text-xs text-muted-foreground mt-0.5">上传已有照片，同样智能识别</p>
               </div>
             </>
           )}
@@ -322,10 +292,8 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
                 <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-white" />
-                    <span className="text-sm text-white/90 font-medium">{analyzingLabel}</span>
-                    <span className="text-xs text-white/60">
-                      {mode === 'nutrition-label' ? '读取营养成分中' : '识别营养成分中'}
-                    </span>
+                    <span className="text-sm text-white/90 font-medium">AI 正在识别...</span>
+                    <span className="text-xs text-white/60">分析图片内容中</span>
                   </div>
                 </div>
               </div>
@@ -350,7 +318,6 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
           {/* 营养标签表单 */}
           {phase === 'nutrition-form' && nutritionResult && (
             <>
-              {/* 识别结果摘要 */}
               <div className="rounded-xl p-3" style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '1px solid #6ee7b7' }}>
                 <div className="flex items-start gap-2">
                   <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#059669' }} />
@@ -369,7 +336,6 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
                 </div>
               </div>
 
-              {/* 克数输入 */}
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium text-foreground block mb-1.5">食物名称</label>
@@ -401,7 +367,6 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
                   </div>
                 </div>
 
-                {/* 实时计算预览 */}
                 {nutritionGrams && parseFloat(nutritionGrams) > 0 && (
                   <div className="rounded-xl p-3" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1px solid #86efac' }}>
                     <p className="text-xs font-semibold mb-1.5" style={{ color: '#166534' }}>预计营养摄入</p>
@@ -457,8 +422,8 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
             </>
           )}
 
-          {/* Preview: 食物照片识别结果 */}
-          {phase === 'preview' && mode === 'food-photo' && (
+          {/* Preview: 食物识别结果 */}
+          {phase === 'preview' && (
             <>
               {/* AI Summary */}
               <div className="rounded-xl p-3" style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', border: '1px solid #c4b5fd' }}>
@@ -467,6 +432,16 @@ export default function CameraShutter({ open, apiKey, onClose, onResult }: Camer
                   <p className="text-sm leading-relaxed" style={{ color: '#5b21b6' }}>{summary}</p>
                 </div>
               </div>
+
+              {/* 切换为营养成分表 */}
+              <button
+                onClick={switchToNutritionLabel}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer border border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50/50"
+                style={{ color: '#059669' }}
+              >
+                <ScanLine className="w-3.5 h-3.5" />
+                识别的是营养成分表？点此切换
+              </button>
 
               {/* Food capsules with edit */}
               <div className="space-y-1.5">

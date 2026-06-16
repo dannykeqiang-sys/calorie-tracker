@@ -30,7 +30,7 @@ import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, Exercise
 
 const DEEPSEEK_KEY_STORAGE = 'calorie_deepseek_api_key';
 const QWEN_KEY_STORAGE = 'calorie_qwen_api_key';
-const BUILT_IN_DEEPSEEK_KEY = 'sk-REPLACE_WITH_YOUR_DEEPSEEK_KEY';
+const BUILT_IN_DEEPSEEK_KEY = 'sk-c0385f6b8bcb406b91a59a56fab9a477';
 const BUILT_IN_QWEN_KEY = 'sk-ws-H.REPPMXR.ifl2.MEQCIFIxa_gYlNpNOP8eSa5p2qo2fY583jzpyeEAzriVEeE2AiBrCvoYMHd5DC5rzmt7NNJx_m5tU0L07W4I1NxUPZEUQw';
 
 function loadDeepSeekKey(): string {
@@ -401,14 +401,15 @@ export default function Home() {
   }, []);
 
   const handleHubPress = useCallback(() => {
-    if (activeTab === 'ai') {
-      // 已在 AI 分析页 → 唤起拍照底栏
+    if (aiOpen) {
+      // AIDrawer 已打开 → 二次点击唤起拍照底栏
       setShowCamera(true);
     } else {
-      // 首次点击 → 切到 AI 逐日分析页
-      setActiveTab('ai');
+      // 首次点击 → 打开 AI 面板（文字输入 + 智能问答）
+      setAiDefaultTab('record');
+      setAiOpen(true);
     }
-  }, [activeTab]);
+  }, [aiOpen]);
 
   // 视觉识别回填
   const handleVisionResult = useCallback((items: FoodItem[], mealType: MealType, _summary: string) => {
