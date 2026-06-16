@@ -1,4 +1,4 @@
-import { BookOpen, TrendingUp, Camera } from 'lucide-react';
+import { BookOpen, TrendingUp, Sparkles } from 'lucide-react';
 
 interface BottomNavProps {
   activeTab: string;
@@ -15,7 +15,7 @@ const RIGHT_TABS = [
 ];
 
 export default function BottomNav({ activeTab, onTabChange, onCameraOpen }: BottomNavProps) {
-  const isCameraActive = activeTab === 'camera';
+  const isAIActive = activeTab === 'ai';
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-border sm:hidden">
@@ -74,13 +74,13 @@ export default function BottomNav({ activeTab, onTabChange, onCameraOpen }: Bott
             className="w-14 h-14 rounded-full flex items-center justify-center text-white cursor-pointer active:scale-90 transition-all"
             style={{
               background: 'linear-gradient(145deg, #8b5cf6, #6366f1)',
-              boxShadow: isCameraActive
+              boxShadow: isAIActive
                 ? '0 -4px 24px rgba(139,92,246,0.7), 0 4px 16px rgba(99,102,241,0.5), 0 0 0 3px rgba(139,92,246,0.3)'
                 : '0 -4px 20px rgba(139,92,246,0.5), 0 4px 16px rgba(99,102,241,0.4), 0 2px 8px rgba(0,0,0,0.14)',
               animation: 'shutter-pulse 2.5s ease-in-out infinite',
             }}
           >
-            <Camera className="w-6 h-6" />
+            <Sparkles className="w-6 h-6" />
           </button>
         </div>
       </div>

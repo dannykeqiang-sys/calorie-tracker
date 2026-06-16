@@ -409,13 +409,14 @@ export default function Home() {
   }, []);
 
   const handleHubPress = useCallback(() => {
-    if (aiOpen) {
+    if (activeTab === 'ai') {
+      // 已在 AI 分析页 → 唤起拍照底栏
       setShowCamera(true);
     } else {
-      setAiDefaultTab('record');
-      setAiOpen(true);
+      // 首次点击 → 切到 AI 逐日分析页
+      setActiveTab('ai');
     }
-  }, [aiOpen]);
+  }, [activeTab]);
 
   // 视觉识别回填
   const handleVisionResult = useCallback((items: FoodItem[], mealType: MealType, _summary: string) => {
