@@ -3,28 +3,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
 import { Label } from '@/components/shadcn/label';
-import { Eye, EyeOff, Key, ExternalLink, LogOut, Download, Upload, Sparkles, Camera } from 'lucide-react';
+import { Eye, EyeOff, Key, ExternalLink, LogOut, Download, Upload, Camera } from 'lucide-react';
 
 interface SettingsPanelProps {
   open: boolean;
-  apiKey: string;
   qwenApiKey: string;
   onClose: () => void;
-  onSave: (key: string) => void;
   onSaveQwen: (key: string) => void;
   onLogout: () => void;
   onExport: () => void;
   onBatchImport: () => void;
 }
 
-export default function SettingsPanel({ open, apiKey, qwenApiKey, onClose, onSave, onSaveQwen, onLogout, onExport, onBatchImport }: SettingsPanelProps) {
-  const [inputKey, setInputKey] = useState(apiKey);
+export default function SettingsPanel({ open, qwenApiKey, onClose, onSaveQwen, onLogout, onExport, onBatchImport }: SettingsPanelProps) {
   const [inputQwenKey, setInputQwenKey] = useState(qwenApiKey);
-  const [showKey, setShowKey] = useState(false);
   const [showQwenKey, setShowQwenKey] = useState(false);
 
   const handleSave = () => {
-    onSave(inputKey.trim());
     onSaveQwen(inputQwenKey.trim());
     onClose();
   };
@@ -42,39 +37,11 @@ export default function SettingsPanel({ open, apiKey, qwenApiKey, onClose, onSav
             API 设置
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            配置 DeepSeek 和千问视觉 API Key
+            配置千问视觉 API Key（拍照识图）
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          {/* DeepSeek API Key */}
-          <div className="space-y-2">
-            <Label className="text-foreground text-sm flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              DeepSeek API Key
-            </Label>
-            <div className="relative">
-              <Input
-                type={showKey ? 'text' : 'password'}
-                value={inputKey}
-                onChange={e => setInputKey(e.target.value)}
-                placeholder="sk-..."
-                className="bg-muted border-border text-foreground pr-10 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-              >
-                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {inputKey && !showKey && (
-              <p className="text-xs text-muted-foreground font-mono">{maskedKey(inputKey)}</p>
-            )}
-            <p className="text-[10px] text-muted-foreground/50">用于 AI 对话、食物文本解析、批量导入等文字类 AI 功能</p>
-          </div>
-
           {/* Qwen Vision API Key */}
           <div className="space-y-2">
             <Label className="text-foreground text-sm flex items-center gap-1.5">
@@ -107,19 +74,10 @@ export default function SettingsPanel({ open, apiKey, qwenApiKey, onClose, onSav
             <p className="text-xs font-semibold text-primary">使用须知</p>
             <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
               <li>API Key 仅存储在本地浏览器，不会上传到任何服务器</li>
-              <li>DeepSeek 用于 AI 对话和文字解析；千问 Vision 仅用于拍照识图</li>
-              <li>拍照识别食物（每次约 0.003 元），AI 文字解析消耗 DeepSeek 额度</li>
+              <li>千问 Vision 仅用于拍照识图，AI 对话和文字解析已内置</li>
+              <li>拍照识别食物，每次约 0.003 元</li>
             </ul>
             <div className="flex gap-3 pt-1">
-              <a
-                href="https://platform.deepseek.com/api_keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                DeepSeek 控制台
-                <ExternalLink className="w-3 h-3" />
-              </a>
               <a
                 href="https://bailian.console.aliyun.com/"
                 target="_blank"

@@ -30,14 +30,11 @@ import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, Exercise
 
 const DEEPSEEK_KEY_STORAGE = 'calorie_deepseek_api_key';
 const QWEN_KEY_STORAGE = 'calorie_qwen_api_key';
+const BUILT_IN_DEEPSEEK_KEY = 'sk-REPLACE_WITH_YOUR_DEEPSEEK_KEY';
 const BUILT_IN_QWEN_KEY = 'sk-ws-H.REPPMXR.ifl2.MEQCIFIxa_gYlNpNOP8eSa5p2qo2fY583jzpyeEAzriVEeE2AiBrCvoYMHd5DC5rzmt7NNJx_m5tU0L07W4I1NxUPZEUQw';
 
 function loadDeepSeekKey(): string {
-  return localStorage.getItem(DEEPSEEK_KEY_STORAGE) || '';
-}
-
-function saveDeepSeekKey(key: string) {
-  localStorage.setItem(DEEPSEEK_KEY_STORAGE, key);
+  return localStorage.getItem(DEEPSEEK_KEY_STORAGE) || BUILT_IN_DEEPSEEK_KEY;
 }
 
 function loadQwenKey(): string {
@@ -386,11 +383,6 @@ export default function Home() {
   const handleProfileSave = useCallback((p: UserProfile) => {
     setProfile(p);
     syncProfileToCloud(p).catch(() => {});
-  }, []);
-
-  const handleApiKeySave = useCallback((key: string) => {
-    setApiKey(key);
-    saveDeepSeekKey(key);
   }, []);
 
   const handleQwenApiKeySave = useCallback((key: string) => {
@@ -805,10 +797,8 @@ export default function Home() {
       />
       <SettingsPanel
         open={showSettings}
-        apiKey={apiKey}
         qwenApiKey={qwenApiKey}
         onClose={() => setShowSettings(false)}
-        onSave={handleApiKeySave}
         onSaveQwen={handleQwenApiKeySave}
         onLogout={handleLogout}
         onExport={() => setShowExport(true)}
