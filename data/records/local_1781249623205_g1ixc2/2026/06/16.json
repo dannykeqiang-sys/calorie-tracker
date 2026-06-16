@@ -3,16 +3,34 @@
   "meals": {
     "breakfast": [
       {
-        "id": "b0b4e50a-09f1-4e49-8196-3de3f804c53c",
+        "id": "d3cc29cc-ecbe-4a50-86c4-43b49b7b2148",
         "name": "抹茶拿铁×1杯",
         "calories": 150,
         "protein": 5,
         "carbs": 15,
-        "fat": 8,
+        "fat": 7,
         "sodium": 100
       },
       {
-        "id": "2f28e891-1f06-4724-b420-93cc26078fca",
+        "id": "5f13431f-baf8-4607-a610-40253c06bf87",
+        "name": "香蕉×1根",
+        "calories": 105,
+        "protein": 1.3,
+        "carbs": 27,
+        "fat": 0.4,
+        "sodium": 1
+      },
+      {
+        "id": "13043cfc-6df0-4c1a-b246-ec19a794e2a5",
+        "name": "抹茶拿铁×1杯",
+        "calories": 150,
+        "protein": 5,
+        "carbs": 20,
+        "fat": 5,
+        "sodium": 100
+      },
+      {
+        "id": "f4a04d24-809d-4a84-87c2-1c54624385dc",
         "name": "香蕉×1根",
         "calories": 105,
         "protein": 1.3,
@@ -23,16 +41,50 @@
     ],
     "lunch": [
       {
-        "id": "6d5fd959-4629-4153-8a31-0ce20ae7a17d",
-        "name": "傣味烤鸡（去皮）×240g",
-        "calories": 400,
-        "protein": 50,
+        "id": "00f2a64f-07a3-48af-ad90-f064b6fcb5fe",
+        "name": "黄瓜花拌双菇×150g",
+        "calories": 60,
+        "protein": 4,
+        "carbs": 8,
+        "fat": 2,
+        "sodium": 200
+      },
+      {
+        "id": "8adb1f1b-10d5-4923-a888-cf583f71aaef",
+        "name": "溏心蛋三明治",
+        "calories": 350,
+        "protein": 15.6,
+        "carbs": 32.5,
+        "fat": 16.8
+      },
+      {
+        "id": "4c55693a-9771-481c-b352-9c8b4020b1eb",
+        "name": "傣味烤鸡（去皮）",
+        "calories": 271,
+        "protein": 45.6,
         "carbs": 0,
-        "fat": 22,
+        "fat": 8.6
+      },
+      {
+        "id": "8c36007c-f6f0-47d0-b7c3-db7f0fd16980",
+        "name": "溏心蛋三明治×195g",
+        "calories": 366,
+        "protein": 15,
+        "carbs": 40,
+        "fat": 15,
+        "sodium": 500
+      },
+      {
+        "id": "3d8bc962-2e5a-4a06-b042-48c0d06a421d",
+        "name": "傣味烤鸡（去皮）×240g",
+        "calories": 360,
+        "protein": 60,
+        "carbs": 0,
+        "fat": 12,
         "sodium": 700
       },
       {
-        "id": "c66c78c1-39cd-40ac-9ae5-f8cfffd75a75",
+        "id": "5cab939c-af0a-46ed-a979-cefc2e361089",
         "name": "黄瓜花拌双菇×150g",
         "calories": 60,
         "protein": 4,
