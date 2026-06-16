@@ -30,6 +30,22 @@
         "carbs": 8,
         "fat": 2,
         "sodium": 200
+      },
+      {
+        "id": "8adb1f1b-10d5-4923-a888-cf583f71aaef",
+        "name": "溏心蛋三明治",
+        "calories": 350,
+        "protein": 15.6,
+        "carbs": 32.5,
+        "fat": 16.8
+      },
+      {
+        "id": "4c55693a-9771-481c-b352-9c8b4020b1eb",
+        "name": "傣味烤鸡（去皮）",
+        "calories": 271,
+        "protein": 45.6,
+        "carbs": 0,
+        "fat": 8.6
       }
     ],
     "dinner": [],
