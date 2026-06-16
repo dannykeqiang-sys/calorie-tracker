@@ -25,14 +25,14 @@ interface ComputedLayout {
 
 const STEPS = [
   {
-    selectors: ['[data-tutorial="ai-btn"]', '[data-tutorial="ai-tab"]'],
+    selectors: ['[data-tutorial="camera-btn"]', '[data-tutorial="ai-tab"]'],
     tab: 'today',
     padding: 18,
     shape: 'circle' as const,
-    accent: '#F97316',
-    icon: '🎙️',
-    label: '第一步：把计算抛给 AI',
-    desc: '点击这个按钮，用大白话告诉我你吃了什么、做了什么运动，AI 会自动识别并分类回填——无需手动查表。',
+    accent: '#8b5cf6',
+    icon: '📸',
+    label: '第一步：拍照交给 AI',
+    desc: '点击这个按钮，拍一张食物照片，AI 会自动识别营养和热量——无需手动查表。',
     btnText: '明白了，下一步',
   },
   {

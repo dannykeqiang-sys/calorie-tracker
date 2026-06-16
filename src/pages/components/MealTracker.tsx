@@ -4,7 +4,6 @@ import { Input } from '@/components/shadcn/input';
 import { Badge } from '@/components/shadcn/badge';
 import { Plus, Trash2, Coffee, Sun, Moon, Cookie, Sparkles, Check, X, Pencil } from 'lucide-react';
 import type { DailyRecord, FoodItem, MealType } from '../../types';
-import VoiceInputButton from './VoiceInputButton';
 import { estimateCalories } from '../../utils/deepseek';
 import { safeNormalizeString } from '../../utils/stringUtils';
 
@@ -83,11 +82,6 @@ function MealSection({
   const handleQuickAdd = (food: { name: string; calories: number }) => {
     onAdd({ id: crypto.randomUUID(), ...food });
     setShowQuick(false);
-  };
-
-  const handleVoiceResult = (foodName: string, cal: number) => {
-    setName(foodName);
-    if (cal > 0) setCalories(String(cal));
   };
 
   const handleAIEstimate = async () => {
@@ -227,11 +221,6 @@ function MealSection({
       )}
 
       <div className="relative space-y-2">
-        <VoiceInputButton
-          apiKey={apiKey}
-          color={config.color}
-          onResult={handleVoiceResult}
-        />
         <div className="flex gap-2">
           <Input
             value={name}

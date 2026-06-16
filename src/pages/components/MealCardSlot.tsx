@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Pencil, X, ChevronDown, ChevronUp, Minus } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, ChevronDown, ChevronUp, Minus, Camera, Sparkles } from 'lucide-react';
 import { Input } from '@/components/shadcn/input';
 import { safeNormalizeString } from '../../utils/stringUtils';
 import type { FoodItem } from '../../types';
@@ -34,9 +34,12 @@ interface MealCardSlotProps {
   fullscreen?: boolean;
   bareMode?: boolean;
   noImage?: boolean;
+  recommendation?: string;
+  showRecommendation?: boolean;
   onAdd: (item: FoodItem) => void;
   onRemove: (id: string) => void;
   onUpdate: (item: FoodItem) => void;
+  onCameraOpen?: () => void;
 }
 
 type FoodGroup = { name: string; items: FoodItem[] };
@@ -430,9 +433,12 @@ export default function MealCardSlot({
   fullscreen = false,
   bareMode = false,
   noImage = false,
+  recommendation,
+  showRecommendation = false,
   onAdd,
   onRemove,
   onUpdate,
+  onCameraOpen,
 }: MealCardSlotProps) {
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
@@ -649,7 +655,34 @@ export default function MealCardSlot({
         >
           {groups.length === 0 && (
             <div className="py-2">
-              <p className="text-[10px] text-muted-foreground/35 tracking-wide text-center mb-3">还没有{config.label}记录</p>
+              {showRecommendation && recommendation ? (
+                <button
+                  onClick={onCameraOpen}
+                  className="w-full text-left rounded-2xl p-3.5 transition-all active:scale-[0.98] cursor-pointer"
+                  style={{
+                    background: 'rgba(255,255,255,0.18)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 12px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)' }}>
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground/80 leading-relaxed">{recommendation}</p>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <Camera className="w-3 h-3" style={{ color: '#8b5cf6' }} />
+                        <span className="text-[10px] font-semibold" style={{ color: '#8b5cf6' }}>点击拍照记录</span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <p className="text-[10px] text-muted-foreground/35 tracking-wide text-center mb-3">还没有{config.label}记录</p>
+              )}
               <div className="flex gap-2">
                 {[
                   { label: '蛋白质', value: resolvedMacroTarget.protein, color: '#3B82F6', bg: 'rgba(59,130,246,0.07)' },

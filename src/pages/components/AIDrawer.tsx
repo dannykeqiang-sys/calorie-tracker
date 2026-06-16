@@ -21,6 +21,7 @@ interface AIDrawerProps {
   onWaterUpdate: (items: WaterItem[]) => void;
   onWaterReplace?: (items: WaterItem[]) => void;
   onRecordSuccess?: () => void;
+  onCameraOpen?: () => void;
 }
 
 const QUICK_QUESTIONS = [
@@ -137,6 +138,7 @@ export default function AIDrawer({
   onWaterUpdate,
   onWaterReplace,
   onRecordSuccess,
+  onCameraOpen,
 }: AIDrawerProps) {
   const [activeTab, setActiveTab] = useState<'record' | 'chat'>('record');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -287,6 +289,7 @@ export default function AIDrawer({
                 onWaterUpdate={onWaterUpdate}
                 onWaterReplace={onWaterReplace}
                 onRecordSuccess={onRecordSuccess}
+                onCameraOpen={onCameraOpen}
               />
             </div>
           )}

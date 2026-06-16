@@ -170,10 +170,11 @@ interface MealCarouselProps {
   onChange: (record: DailyRecord) => void;
   onWaterReplace?: (items: WaterItem[]) => void;
   onActiveIndexChange?: (index: number) => void;
+  onCameraOpen?: () => void;
 }
 
 const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
-  ({ record, apiKey, isViewingToday = true, profile, journalDate, fullscreen = false, bareMode = false, onChange, onWaterReplace, onActiveIndexChange }, ref) => {
+  ({ record, apiKey, isViewingToday = true, profile, journalDate, fullscreen = false, bareMode = false, onChange, onWaterReplace, onActiveIndexChange, onCameraOpen }, ref) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [highlightedType, setHighlightedType] = useState<CarouselCardType | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -202,6 +203,46 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
     const uneatenRatioSum = MEAL_CONFIGS_BASE
       .filter(m => record.meals[m.type].length === 0)
       .reduce((sum, m) => sum + MEAL_RATIOS[m.type], 0);
+
+    // 智能推荐：根据时间和摄入缺口生成推荐
+    const recommendations = useMemo(() => {
+      if (!isViewingToday) return {} as Record<MealType, string>;
+      const hour = new Date().getHours();
+      const intake = allItems.reduce((s, f) => s + f.calories, 0);
+      const totalWater = (record.water ?? []).reduce((s, w) => s + w.amount, 0);
+      const waterGap = 2000 - totalWater;
+      const hasExercise = (record.exercises ?? []).length > 0;
+      const target = profile ? (() => {
+        const bmr = profile.gender === 'male'
+          ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
+          : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+        const af: Record<string, number> = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
+        const tdee = bmr * (af[profile.activityLevel] ?? 1.55);
+        return Math.round(profile.goal === 'lose' ? tdee - 500 : profile.goal === 'gain' ? tdee + 300 : tdee);
+      })() : 2000;
+      const calRemaining = target - intake;
+
+      const result: Record<MealType, string> = {} as Record<MealType, string>;
+      const isCurrentMeal = (mt: MealType) => {
+        if (mt === 'breakfast' && hour >= 7 && hour < 11) return true;
+        if (mt === 'lunch' && hour >= 11 && hour < 15) return true;
+        if (mt === 'dinner' && hour >= 17 && hour < 21) return true;
+        return false;
+      };
+
+      for (const cfg of MEAL_CONFIGS_BASE) {
+        if (record.meals[cfg.type].length > 0 || !isCurrentMeal(cfg.type)) continue;
+        
+        if (waterGap > 800) {
+          result[cfg.type] = `🥗 胃口呼唤：你今天水份摄入偏低，${cfg.label}推荐来一份【冬瓜虾仁汤 + 荞麦面】，补水又饱腹，试试拍张照吧。`;
+        } else if (hasExercise && totalCarbs < carbsTarget * 0.4 && (cfg.type === 'lunch' || cfg.type === 'dinner')) {
+          result[cfg.type] = `🍠 能量补位：检测到你刚结束运动，当前最适合补充优质碳水。推荐【蒸甘薯 + 煎鸡胸肉】，去厨房准备一下吧！`;
+        } else {
+          result[cfg.type] = `📸 智能推荐：${cfg.label}时间到啦～来一份均衡搭配吧，拍照即可自动识别营养，开启${cfg.label}记录。`;
+        }
+      }
+      return result;
+    }, [isViewingToday, allItems, record, profile, totalCarbs, carbsTarget]);
 
     const dateStr = journalDate ?? '';
     const mealConfigs = useMemo(() =>
@@ -491,6 +532,9 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                           isHighlighted={highlightedType === cfg.type}
                           macroTarget={macroTarget}
                           noImage={true}
+                          recommendation={recommendations[cfg.type]}
+                          showRecommendation={!!recommendations[cfg.type]}
+                          onCameraOpen={onCameraOpen}
                           onAdd={mealHandlers[cfg.type].onAdd}
                           onRemove={mealHandlers[cfg.type].onRemove}
                           onUpdate={mealHandlers[cfg.type].onUpdate}
@@ -684,6 +728,9 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                       macroTarget={macroTarget}
                       fullscreen={fullscreen || isMobile}
                       bareMode={bareMode}
+                      recommendation={recommendations[cfg.type]}
+                      showRecommendation={!!recommendations[cfg.type]}
+                      onCameraOpen={onCameraOpen}
                       onAdd={mealHandlers[cfg.type].onAdd}
                       onRemove={mealHandlers[cfg.type].onRemove}
                       onUpdate={mealHandlers[cfg.type].onUpdate}

@@ -219,7 +219,7 @@ export default function MacroRhythmBars({ stats, targetCalories }: MacroRhythmBa
                 style={{ background: 'rgba(14,165,233,0.07)', color: '#0369A1', border: '1px solid rgba(14,165,233,0.18)' }}
               >
                 <b>钠 (Na)</b> 是调节体液平衡的矿物质。WHO 建议每日摄入不超过 <b>2300 mg</b>，理想目标为 <b>1500 mg</b> 以下。长期高钠饮食会升高血压，增加心血管和肾脏疾病风险。减少食盐、酱油、腌制品和加工食品是降钠的最有效方式。
-                {!hasSodiumData && ' 通过 AI 语音批量录入可自动获取钠含量。'}
+                {!hasSodiumData && ' 通过 AI 拍照识别可自动获取钠含量。'}
               </div>
             )}
           </div>

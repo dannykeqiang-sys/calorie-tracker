@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/shadcn/button';
-import { Mic, MicOff, Sparkles, CheckCircle, AlertCircle, X, Plus, RefreshCw } from 'lucide-react';
+import { Sparkles, CheckCircle, AlertCircle, X, Plus, RefreshCw, Camera } from 'lucide-react';
 import { parseMixedMeals } from '../../utils/deepseek';
 import { safeNormalizeString } from '../../utils/stringUtils';
 import type { FoodItem, MealType, DailyRecord, ExerciseItem, WaterItem } from '../../types';
@@ -16,20 +16,10 @@ interface GlobalTreeholeInputProps {
   onWaterUpdate: (items: WaterItem[]) => void;
   onWaterReplace?: (items: WaterItem[]) => void;
   onRecordSuccess?: () => void;
+  onCameraOpen?: () => void;
 }
 
-type Status = 'idle' | 'listening' | 'parsing' | 'confirm' | 'success' | 'error';
-
-declare class WebkitSpeechRecognition {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  onresult: ((e: { results: { [i: number]: { [i: number]: { transcript: string } }; isFinal: boolean } }) => void) | null;
-  onend: (() => void) | null;
-  onerror: (() => void) | null;
-  start(): void;
-  stop(): void;
-}
+type Status = 'idle' | 'parsing' | 'confirm' | 'success' | 'error';
 
 const MEAL_LABELS: Record<string, string> = {
   breakfast: '早餐',
@@ -65,6 +55,7 @@ export default function GlobalTreeholeInput({
   onWaterUpdate,
   onWaterReplace,
   onRecordSuccess,
+  onCameraOpen,
 }: GlobalTreeholeInputProps) {
   const [text, setText] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -72,39 +63,6 @@ export default function GlobalTreeholeInput({
   const [errorMsg, setErrorMsg] = useState('');
   const [summaryItems, setSummaryItems] = useState<SummaryItem[]>([]);
   const [pending, setPending] = useState<PendingResult | null>(null);
-  const recognitionRef = useRef<WebkitSpeechRecognition | null>(null);
-
-  const isSpeechSupported = () =>
-    typeof window !== 'undefined' &&
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
-
-  const startVoice = () => {
-    if (!isSpeechSupported()) return;
-    const SR =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    const recognition = new SR() as WebkitSpeechRecognition;
-    recognition.lang = 'zh-CN';
-    recognition.interimResults = true;
-    recognition.continuous = false;
-    recognitionRef.current = recognition;
-    setStatus('listening');
-
-    recognition.onresult = (e) => {
-      const transcript = safeNormalizeString(e.results[0][0].transcript);
-      setText(transcript);
-    };
-    recognition.onend = () => {
-      if (status === 'listening') setStatus('idle');
-    };
-    recognition.onerror = () => setStatus('idle');
-    recognition.start();
-  };
-
-  const stopVoice = () => {
-    recognitionRef.current?.stop();
-    setStatus('idle');
-  };
 
   const handleSubmit = async () => {
     if (!text.trim()) return;
@@ -243,7 +201,6 @@ export default function GlobalTreeholeInput({
     setText('');
   };
 
-  const isListening = status === 'listening';
   const isParsing = status === 'parsing';
 
   return (
@@ -362,7 +319,7 @@ export default function GlobalTreeholeInput({
             <textarea
               value={text}
               onChange={e => setText(e.target.value)}
-              placeholder={isListening ? '正在聆听，请说话...' : '如：早上喝了牛奶，中午吃了米饭和鸡胸肉，下午跑步了30分钟'}
+              placeholder="如：早上喝了牛奶，中午吃了米饭和鸡胸肉，下午跑步了30分钟"
               rows={4}
               className="w-full resize-none rounded-xl border border-border/70 bg-white/80 px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               onKeyDown={e => {
@@ -382,49 +339,18 @@ export default function GlobalTreeholeInput({
             )}
           </div>
 
-          {isSpeechSupported() && (
+          {onCameraOpen && (
             <button
               type="button"
-              onClick={isListening ? stopVoice : startVoice}
-              className="w-full h-12 rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer border overflow-hidden relative"
+              onClick={onCameraOpen}
+              className="w-full h-12 rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer border overflow-hidden"
               style={{
-                backgroundColor: isListening ? 'rgba(163,184,153,0.18)' : 'rgba(163,184,153,0.08)',
-                borderColor: isListening ? '#A3B899' : 'rgba(163,184,153,0.35)',
-                boxShadow: isListening ? '0 0 0 3px rgba(163,184,153,0.18), inset 0 1px 3px rgba(163,184,153,0.1)' : 'none',
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(99,102,241,0.04))',
+                borderColor: 'rgba(139,92,246,0.35)',
               }}
             >
-              {isListening ? (
-                <>
-                  <div className="flex items-end gap-[3px] h-6">
-                    {[0.35, 0.6, 0.9, 1.0, 0.75, 0.5, 0.85, 0.65, 1.0, 0.7, 0.45, 0.8].map((h, i) => (
-                      <span
-                        key={i}
-                        className="w-[3px] rounded-full bg-primary"
-                        style={{
-                          height: `${h * 22}px`,
-                          animation: `voiceBar 0.7s ease-in-out ${i * 0.06}s infinite alternate`,
-                          opacity: 0.75 + h * 0.25,
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-semibold text-primary">点击停止</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4 text-primary/70" />
-                  <span className="text-xs font-medium text-primary/70">语音输入</span>
-                  <div className="flex items-end gap-[3px] h-4 opacity-30">
-                    {[0.5, 0.8, 1.0, 0.8, 0.5, 0.7, 0.9, 0.6].map((h, i) => (
-                      <span
-                        key={i}
-                        className="w-[2px] rounded-full bg-primary"
-                        style={{ height: `${h * 14}px` }}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
+              <Camera className="w-4 h-4 text-purple-500" />
+              <span className="text-xs font-medium" style={{ color: '#8b5cf6' }}>拍照识别食物</span>
             </button>
           )}
 
@@ -466,10 +392,6 @@ export default function GlobalTreeholeInput({
       )}
 
       <style>{`
-        @keyframes voiceBar {
-          from { transform: scaleY(0.3); opacity: 0.6; }
-          to { transform: scaleY(1); opacity: 1; }
-        }
         @keyframes bounce {
           0%, 100% { transform: translateY(0); opacity: 0.5; }
           50% { transform: translateY(-4px); opacity: 1; }

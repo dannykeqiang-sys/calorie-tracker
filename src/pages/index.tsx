@@ -25,18 +25,27 @@ import { loadProfile, saveProfile, loadTodayRecord, saveTodayRecord, loadRecordB
 import { idbSaveRecord, idbGetRecord } from '../utils/indexedDB';
 import { syncRecordToCloud, syncProfileToCloud, loadProfileFromCloud } from '../utils/githubDB';
 import { getSession } from '../utils/auth';
-import AIRecordCelebration from './components/AIRecordCelebration';
+import CameraShutter from './components/CameraShutter';
 import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
 
-const API_KEY_STORAGE = 'calorie_deepseek_api_key';
-const BUILT_IN_API_KEY = 'sk-c0385f6b8bcb406b91a59a56fab9a477';
+const DEEPSEEK_KEY_STORAGE = 'calorie_deepseek_api_key';
+const QWEN_KEY_STORAGE = 'calorie_qwen_api_key';
+const BUILT_IN_QWEN_KEY = 'sk-ws-H.REPPMXR.ifl2.MEQCIFIxa_gYlNpNOP8eSa5p2qo2fY583jzpyeEAzriVEeE2AiBrCvoYMHd5DC5rzmt7NNJx_m5tU0L07W4I1NxUPZEUQw';
 
-function loadApiKey(): string {
-  return localStorage.getItem(API_KEY_STORAGE) || BUILT_IN_API_KEY;
+function loadDeepSeekKey(): string {
+  return localStorage.getItem(DEEPSEEK_KEY_STORAGE) || '';
 }
 
-function saveApiKey(key: string) {
-  localStorage.setItem(API_KEY_STORAGE, key);
+function saveDeepSeekKey(key: string) {
+  localStorage.setItem(DEEPSEEK_KEY_STORAGE, key);
+}
+
+function loadQwenKey(): string {
+  return localStorage.getItem(QWEN_KEY_STORAGE) || BUILT_IN_QWEN_KEY;
+}
+
+function saveQwenKey(key: string) {
+  localStorage.setItem(QWEN_KEY_STORAGE, key);
 }
 
 function getTodayKey(): string {
@@ -64,6 +73,7 @@ export default function Home() {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState<string>('');
+  const [qwenApiKey, setQwenApiKey] = useState<string>('');
   const [activeTab, setActiveTab] = useState('today');
   const [journalDate, setJournalDate] = useState(getTodayKey);
   const [historyRecord, setHistoryRecord] = useState<DailyRecord | null>(null);
@@ -74,6 +84,7 @@ export default function Home() {
   const [showAICelebration, setShowAICelebration] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showBatchImport, setShowBatchImport] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [mobileCarouselActiveIndex, setMobileCarouselActiveIndex] = useState(0);
 
   const carouselRef = useRef<MealCarouselRef>(null);
@@ -88,7 +99,8 @@ export default function Home() {
     }
     document.title = '燃烧我的卡路里 - 科学管理你的热量';
     setRecord(loadTodayRecord());
-    setApiKey(loadApiKey());
+    setApiKey(loadDeepSeekKey());
+    setQwenApiKey(loadQwenKey());
     const localProfile = loadProfile();
     if (localProfile) {
       setProfile(localProfile);
@@ -343,7 +355,7 @@ export default function Home() {
     setProfile(p);
     if (key) {
       setApiKey(key);
-      saveApiKey(key);
+      saveDeepSeekKey(key);
     }
     syncProfileToCloud(p).catch(() => {});
     setShowOnboarding(false);
@@ -378,7 +390,12 @@ export default function Home() {
 
   const handleApiKeySave = useCallback((key: string) => {
     setApiKey(key);
-    saveApiKey(key);
+    saveDeepSeekKey(key);
+  }, []);
+
+  const handleQwenApiKeySave = useCallback((key: string) => {
+    setQwenApiKey(key);
+    saveQwenKey(key);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -392,13 +409,19 @@ export default function Home() {
   }, []);
 
   const handleHubPress = useCallback(() => {
-    if (activeTab !== 'ai') {
-      setActiveTab('ai');
-    } else {
-      setAiDefaultTab('record');
-      setAiOpen(true);
-    }
-  }, [activeTab]);
+    setShowCamera(true);
+  }, []);
+
+  // 视觉识别回填
+  const handleVisionResult = useCallback((items: FoodItem[], mealType: MealType, _summary: string) => {
+    const updates = items.map(item => ({
+      mealType,
+      item: { ...item, id: crypto.randomUUID() },
+    }));
+    handleMealsUpdate(updates);
+    const uniqueTypes = [...new Set(updates.map(u => u.mealType))];
+    uniqueTypes.forEach(type => scheduleScroll(type));
+  }, [handleMealsUpdate, scheduleScroll]);
 
   const handleBatchImport = useCallback(async (entries: MultiDateEntry[], mode: ImportMode) => {
     const todayKey = getTodayKey();
@@ -571,6 +594,7 @@ export default function Home() {
                   journalDate={journalDate}
                   onChange={activeOnChange}
                   onWaterReplace={isViewingToday ? handleWaterReplace : handleHistoryWaterReplace}
+                  onCameraOpen={() => setShowCamera(true)}
                 />
               </div>
               <DesktopRightPanel
@@ -727,6 +751,7 @@ export default function Home() {
                   onChange={activeOnChange}
                   onWaterReplace={isViewingToday ? handleWaterReplace : handleHistoryWaterReplace}
                   onActiveIndexChange={setMobileCarouselActiveIndex}
+                  onCameraOpen={() => setShowCamera(true)}
                 />
               </div>
             </div>
@@ -748,7 +773,7 @@ export default function Home() {
         <BottomNav
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          onAIOpen={handleHubPress}
+          onCameraOpen={handleHubPress}
         />
       </div>
 
@@ -762,6 +787,7 @@ export default function Home() {
         isViewingToday={isViewingToday}
         defaultTab={aiDefaultTab}
         onRecordSuccess={() => setShowAICelebration(true)}
+        onCameraOpen={() => setShowCamera(true)}
         {...aiHandlers}
       />
 
@@ -774,8 +800,10 @@ export default function Home() {
       <SettingsPanel
         open={showSettings}
         apiKey={apiKey}
+        qwenApiKey={qwenApiKey}
         onClose={() => setShowSettings(false)}
         onSave={handleApiKeySave}
+        onSaveQwen={handleQwenApiKeySave}
         onLogout={handleLogout}
         onExport={() => setShowExport(true)}
         onBatchImport={() => setShowBatchImport(true)}
@@ -794,6 +822,13 @@ export default function Home() {
         onImportBackup={handleBackupImport}
       />
 
+      <CameraShutter
+        open={showCamera}
+        apiKey={qwenApiKey}
+        onClose={() => setShowCamera(false)}
+        onResult={handleVisionResult}
+      />
+
       {showOnboarding && (
         <OnboardingPanel onComplete={handleOnboardingComplete} />
       )}
@@ -804,10 +839,6 @@ export default function Home() {
           onDone={handleTutorialDone}
           onTabChange={handleTabChange}
         />
-      )}
-
-      {showAICelebration && (
-        <AIRecordCelebration onDismiss={() => setShowAICelebration(false)} />
       )}
     </>
   );
