@@ -29,20 +29,11 @@ import CameraShutter from './components/CameraShutter';
 import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
 
 const DEEPSEEK_KEY_STORAGE = 'calorie_deepseek_api_key';
-const QWEN_KEY_STORAGE = 'calorie_qwen_api_key';
 const BUILT_IN_DEEPSEEK_KEY = 'sk-c0385f6b8bcb406b91a59a56fab9a477';
 const BUILT_IN_QWEN_KEY = 'sk-ws-H.REPPMXR.ifl2.MEQCIFIxa_gYlNpNOP8eSa5p2qo2fY583jzpyeEAzriVEeE2AiBrCvoYMHd5DC5rzmt7NNJx_m5tU0L07W4I1NxUPZEUQw';
 
 function loadDeepSeekKey(): string {
   return localStorage.getItem(DEEPSEEK_KEY_STORAGE) || BUILT_IN_DEEPSEEK_KEY;
-}
-
-function loadQwenKey(): string {
-  return localStorage.getItem(QWEN_KEY_STORAGE) || BUILT_IN_QWEN_KEY;
-}
-
-function saveQwenKey(key: string) {
-  localStorage.setItem(QWEN_KEY_STORAGE, key);
 }
 
 function getTodayKey(): string {
@@ -70,7 +61,6 @@ export default function Home() {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState<string>('');
-  const [qwenApiKey, setQwenApiKey] = useState<string>('');
   const [activeTab, setActiveTab] = useState('today');
   const [journalDate, setJournalDate] = useState(getTodayKey);
   const [historyRecord, setHistoryRecord] = useState<DailyRecord | null>(null);
@@ -97,7 +87,6 @@ export default function Home() {
     document.title = '燃烧我的卡路里 - 科学管理你的热量';
     setRecord(loadTodayRecord());
     setApiKey(loadDeepSeekKey());
-    setQwenApiKey(loadQwenKey());
     const localProfile = loadProfile();
     if (localProfile) {
       setProfile(localProfile);
@@ -383,11 +372,6 @@ export default function Home() {
   const handleProfileSave = useCallback((p: UserProfile) => {
     setProfile(p);
     syncProfileToCloud(p).catch(() => {});
-  }, []);
-
-  const handleQwenApiKeySave = useCallback((key: string) => {
-    setQwenApiKey(key);
-    saveQwenKey(key);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -713,16 +697,8 @@ export default function Home() {
                 </div>
               )}
             </div>
-            {activeTab === 'today' && (
-              <button
-                onClick={() => setShowBatchImport(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white flex-shrink-0 cursor-pointer active:scale-95 transition-transform"
-                style={{ background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}
-              >
-                <Upload className="w-3 h-3" />
-                导入
-              </button>
-            )}
+            {/* 批量导入已收敛至设置面板 */}
+
           </div>
 
           {activeTab === 'today' && (
@@ -798,9 +774,7 @@ export default function Home() {
       />
       <SettingsPanel
         open={showSettings}
-        qwenApiKey={qwenApiKey}
         onClose={() => setShowSettings(false)}
-        onSaveQwen={handleQwenApiKeySave}
         onLogout={handleLogout}
         onExport={() => setShowExport(true)}
         onBatchImport={() => setShowBatchImport(true)}
@@ -821,7 +795,7 @@ export default function Home() {
 
       <CameraShutter
         open={showCamera}
-        apiKey={qwenApiKey}
+        apiKey={BUILT_IN_QWEN_KEY}
         onClose={() => setShowCamera(false)}
         onResult={handleVisionResult}
       />
