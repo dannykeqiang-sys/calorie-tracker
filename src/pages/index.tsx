@@ -409,8 +409,13 @@ export default function Home() {
   }, []);
 
   const handleHubPress = useCallback(() => {
-    setShowCamera(true);
-  }, []);
+    if (aiOpen) {
+      setShowCamera(true);
+    } else {
+      setAiDefaultTab('record');
+      setAiOpen(true);
+    }
+  }, [aiOpen]);
 
   // 视觉识别回填
   const handleVisionResult = useCallback((items: FoodItem[], mealType: MealType, _summary: string) => {
