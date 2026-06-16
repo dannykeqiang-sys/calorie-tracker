@@ -23,15 +23,6 @@
     ],
     "lunch": [
       {
-        "id": "ed676b0b-feb2-404f-b0c2-c336037dfc4c",
-        "name": "溏心蛋三明治×195g",
-        "calories": 1464,
-        "protein": 30,
-        "carbs": 50,
-        "fat": 20,
-        "sodium": 500
-      },
-      {
         "id": "a6a0b728-2aa0-4a61-94ee-c6ed5bb81de5",
         "name": "傣味烤鸡（去皮）×240g",
         "calories": 360,
