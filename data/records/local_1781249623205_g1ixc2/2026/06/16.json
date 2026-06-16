@@ -3,16 +3,16 @@
   "meals": {
     "breakfast": [
       {
-        "id": "b0b4e50a-09f1-4e49-8196-3de3f804c53c",
+        "id": "d3cc29cc-ecbe-4a50-86c4-43b49b7b2148",
         "name": "抹茶拿铁×1杯",
         "calories": 150,
         "protein": 5,
         "carbs": 15,
-        "fat": 8,
+        "fat": 7,
         "sodium": 100
       },
       {
-        "id": "2f28e891-1f06-4724-b420-93cc26078fca",
+        "id": "5f13431f-baf8-4607-a610-40253c06bf87",
         "name": "香蕉×1根",
         "calories": 105,
         "protein": 1.3,
@@ -23,31 +23,31 @@
     ],
     "lunch": [
       {
-        "id": "ec71bd10-39b5-4304-888d-0d80cd13acfd",
+        "id": "ed676b0b-feb2-404f-b0c2-c336037dfc4c",
         "name": "溏心蛋三明治×195g",
         "calories": 1464,
         "protein": 30,
-        "carbs": 40,
+        "carbs": 50,
         "fat": 20,
-        "sodium": 600
+        "sodium": 500
       },
       {
-        "id": "6d5fd959-4629-4153-8a31-0ce20ae7a17d",
+        "id": "a6a0b728-2aa0-4a61-94ee-c6ed5bb81de5",
         "name": "傣味烤鸡（去皮）×240g",
-        "calories": 400,
-        "protein": 50,
+        "calories": 360,
+        "protein": 60,
         "carbs": 0,
-        "fat": 22,
-        "sodium": 700
+        "fat": 12,
+        "sodium": 240
       },
       {
-        "id": "c66c78c1-39cd-40ac-9ae5-f8cfffd75a75",
+        "id": "00f2a64f-07a3-48af-ad90-f064b6fcb5fe",
         "name": "黄瓜花拌双菇×150g",
         "calories": 60,
         "protein": 4,
         "carbs": 8,
         "fat": 2,
-        "sodium": 300
+        "sodium": 200
       }
     ],
     "dinner": [],
