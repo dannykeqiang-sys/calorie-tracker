@@ -41,15 +41,6 @@
     ],
     "lunch": [
       {
-        "id": "00f2a64f-07a3-48af-ad90-f064b6fcb5fe",
-        "name": "黄瓜花拌双菇×150g",
-        "calories": 60,
-        "protein": 4,
-        "carbs": 8,
-        "fat": 2,
-        "sodium": 200
-      },
-      {
         "id": "8adb1f1b-10d5-4923-a888-cf583f71aaef",
         "name": "溏心蛋三明治",
         "calories": 350,
