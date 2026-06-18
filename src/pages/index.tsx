@@ -573,11 +573,12 @@ export default function Home() {
     <div
       className="flex-shrink-0"
       style={{
-        background: 'rgba(255,255,255,0.42)',
+        background: 'var(--background)',
+        opacity: 0.88,
         backdropFilter: 'blur(20px) saturate(160%)',
         WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-        borderBottom: '1px solid rgba(255,255,255,0.5)',
-        boxShadow: 'inset 0 6px 12px rgba(255,255,255,0.3)',
+        borderBottom: '1px solid var(--border)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4)',
         zIndex: 30,
       }}
     >
@@ -599,7 +600,7 @@ export default function Home() {
       {/* 桌面端全屏布局 */}
       <div
         className="hidden lg:flex flex-col overflow-hidden"
-        style={{ height: '100dvh', background: 'linear-gradient(135deg, #e6efe0 0%, #d4e8f4 40%, #e8d8f2 100%)' }}
+        style={{ height: '100dvh', background: 'linear-gradient(155deg, #e8efe4 0%, #d8e8f6 35%, #e8daf4 100%)' }}
       >
         <DesktopHeader
           profile={profile}
@@ -619,7 +620,7 @@ export default function Home() {
                   <div className="absolute top-3 left-6 z-50">
                     <button
                       onClick={() => { handleReuseHistoryRecord(); setJournalDate(getTodayKey()); }}
-                      className="flex items-center gap-2 py-2 px-4 rounded-xl border border-primary/30 bg-white/80 text-primary text-sm font-medium hover:bg-primary/10 transition-all cursor-pointer shadow-sm"
+                      className="flex items-center gap-2 py-2 px-4 rounded-xl border border-primary/30 bg-card/90 text-primary text-sm font-medium hover:bg-primary/10 transition-all cursor-pointer shadow-sm tactile-hover"
                       style={{ backdropFilter: 'blur(8px)' }}
                     >
                       <Copy className="w-4 h-4" />
@@ -705,7 +706,7 @@ export default function Home() {
           ))}
           <div
             className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.52) 45%, rgba(255,255,255,0.72) 100%)' }}
+            style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.48) 45%, rgba(255,255,255,0.68) 100%)' }}
           />
         </div>
 
@@ -715,7 +716,7 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
         />
 
-        <div className="flex-shrink-0 z-10 border-b border-white/40" style={{ background: 'rgba(250,248,245,0.72)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <div className="flex-shrink-0 z-10 border-b border-border" style={{ background: 'var(--background)', opacity: 0.92, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
           <div className="px-4 sm:px-6 py-1.5 flex items-center gap-2">
             <div className="flex-1 min-w-0">
               <DateSwitcher

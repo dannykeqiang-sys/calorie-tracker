@@ -198,7 +198,7 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
   const recentStats = useMemo(() => stats.slice(-7), [stats]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 stagger-in">
       <TodayDualRingBar
         profile={profile}
         record={record}
@@ -216,9 +216,10 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
 
       {!loading && recentStats.length > 0 && (
         <div className="space-y-3">
-          <div className="rounded-2xl border border-white/50 shadow-sm p-4 relative overflow-hidden"
+          <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,248,240,0.55), rgba(255,240,235,0.45))',
+              borderColor: 'var(--ck-chart-card-border)',
+              background: 'var(--ck-card-orange)',
               backdropFilter: 'blur(12px)',
             }}>
             <div className="flex items-center justify-between gap-2.5 mb-3">
@@ -283,9 +284,10 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/50 shadow-sm p-4 relative overflow-hidden"
+          <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(245,240,255,0.5), rgba(240,238,255,0.4))',
+              borderColor: 'var(--ck-chart-card-border)',
+              background: 'var(--ck-card-indigo)',
               backdropFilter: 'blur(12px)',
             }}>
             <div className="flex items-center gap-2.5 mb-3">

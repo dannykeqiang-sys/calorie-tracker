@@ -29,15 +29,15 @@ export function ChartCard({ icon: Icon, title, iconColor, kind = 'indigo', child
   icon: React.ElementType; title: string; iconColor: string; kind?: 'orange' | 'purple' | 'indigo'; children: React.ReactNode; subtitle?: string;
 }) {
   return (
-    <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden group"
+    <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden group tactile-hover"
       style={{
         borderColor: 'var(--ck-chart-card-border)',
         background: `var(--ck-card-${kind})`,
+        boxShadow: '0 2px 12px rgba(139,130,120,0.08), inset 0 1px 0 rgba(255,255,255,0.5)',
       }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-            style={{ background: `linear-gradient(135deg, ${iconColor}20, ${iconColor}0D)`, boxShadow: `0 2px 10px ${iconColor}18` }}>
+          <div className="w-7 h-7 rounded-xl flex items-center justify-center transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-spring)', background: `linear-gradient(135deg, ${iconColor}1A, ${iconColor}08)`, boxShadow: `0 2px 10px ${iconColor}12` }}>
             <Icon className="w-3.5 h-3.5" style={{ color: iconColor }} />
           </div>
           <span className="text-xs font-bold tracking-tight" style={{ color: 'var(--ck-chart-card-text)' }}>{title}</span>
