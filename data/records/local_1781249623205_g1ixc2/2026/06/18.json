@@ -1,0 +1,52 @@
+{
+  "date": "2026-06-18",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "fc46524b-5277-4643-95ae-556ff95f281a",
+        "name": "拿铁",
+        "calories": 150,
+        "protein": 6,
+        "carbs": 12,
+        "fat": 8
+      },
+      {
+        "id": "50d5201e-8abe-4cb2-8ed4-e0da876022de",
+        "name": "AD钙奶450ml",
+        "calories": 270,
+        "protein": 9,
+        "carbs": 45,
+        "fat": 6
+      },
+      {
+        "id": "c5ff2ecf-3b70-47f1-8f94-974a4a4d782b",
+        "name": "黄瓜",
+        "calories": 16,
+        "protein": 1,
+        "carbs": 3,
+        "fat": 0
+      },
+      {
+        "id": "66239aab-4539-4fcd-9109-bbde8a1b28c3",
+        "name": "番茄",
+        "calories": 20,
+        "protein": 1,
+        "carbs": 4,
+        "fat": 0
+      },
+      {
+        "id": "fb019000-3f61-45ec-a585-ec757869e91e",
+        "name": "卤蛋",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 1,
+        "fat": 5
+      }
+    ],
+    "lunch": [],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": []
+}
