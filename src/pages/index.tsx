@@ -23,7 +23,7 @@ import type { ImportMode } from './components/BatchImportModal';
 import type { MultiDateEntry } from '../utils/deepseek';
 import { loadProfile, saveProfile, loadTodayRecord, saveTodayRecord, loadRecordByDate, saveRecordByDate } from '../utils/storage';
 import { idbSaveRecord, idbGetRecord } from '../utils/indexedDB';
-import { syncRecordToCloud, syncProfileToCloud, loadProfileFromCloud } from '../utils/githubDB';
+import { syncRecordToCloud, syncProfileToCloud, loadProfileFromCloud, loadRecordFromCloud } from '../utils/githubDB';
 import { getSession } from '../utils/auth';
 import CameraShutter from './components/CameraShutter';
 import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
@@ -83,7 +83,48 @@ export default function Home() {
     document.title = '燃烧我的卡路里 - 科学管理你的热量';
     // 清理历史遗留的 API Key localStorage 条目
     ['calorie_deepseek_api_key', 'calorie_qwen_api_key'].forEach(k => localStorage.removeItem(k));
-    setRecord(loadTodayRecord());
+    const localRecord = loadTodayRecord();
+    setRecord(localRecord);
+
+    // 异步从云端同步今日记录（跨设备数据同步）
+    const todayKey = getTodayKey();
+    loadRecordFromCloud(todayKey)
+      .then(cloudRecord => {
+        if (!cloudRecord) return;
+        const localEmpty = !localRecord.meals.breakfast.length && !localRecord.meals.lunch.length && !localRecord.meals.dinner.length && !localRecord.meals.snack.length && !localRecord.exercises.length;
+        const cloudHasData = cloudRecord.meals.breakfast.length || cloudRecord.meals.lunch.length || cloudRecord.meals.dinner.length || cloudRecord.meals.snack.length || cloudRecord.exercises.length;
+        if (localEmpty && cloudHasData) {
+          // 本地为空 → 直接用云端数据
+          const merged = { ...cloudRecord, date: todayKey };
+          setRecord(merged);
+          saveTodayRecord(merged);
+          idbSaveRecord(merged).catch(() => {});
+        } else if (cloudHasData) {
+          // 本地和云端都有数据 → 合并（云端有而本地没有的项追加）
+          setRecord(prev => {
+            if (!prev) return prev;
+            const mergedMeals = { ...prev.meals };
+            const existingNames = new Set(Object.values(mergedMeals).flat().map(f => f.name));
+            for (const mt of ['breakfast', 'lunch', 'dinner', 'snack'] as const) {
+              const newItems = (cloudRecord.meals[mt] || []).filter(f => !existingNames.has(f.name));
+              if (newItems.length > 0) {
+                mergedMeals[mt] = [...mergedMeals[mt], ...newItems];
+              }
+            }
+            const existingEx = new Set(prev.exercises.map(e => e.name));
+            const newEx = cloudRecord.exercises.filter(e => !existingEx.has(e.name));
+            const mergedExercises = [...prev.exercises, ...newEx];
+            const existingWater = prev.water.map(w => w.amount + w.time);
+            const newWater = cloudRecord.water.filter(w => !existingWater.includes(w.amount + w.time));
+            const mergedWater = [...prev.water, ...newWater];
+            const result = { ...prev, meals: mergedMeals, exercises: mergedExercises, water: mergedWater };
+            saveTodayRecord(result);
+            idbSaveRecord(result).catch(() => {});
+            return result;
+          });
+        }
+      })
+      .catch(() => {});
 
     const localProfile = loadProfile();
     if (localProfile) {
@@ -110,12 +151,37 @@ export default function Home() {
       setHistoryRecord(null);
       return;
     }
+    // 先加载本地/IndexedDB，再异步从云端同步
     idbGetRecord(journalDate)
       .then(idbRec => {
-        setHistoryRecord(idbRec ?? loadRecordByDate(journalDate));
+        const localRec = idbRec ?? loadRecordByDate(journalDate);
+        setHistoryRecord(localRec);
+        // 异步尝试从云端加载
+        loadRecordFromCloud(journalDate)
+          .then(cloudRec => {
+            if (!cloudRec) return;
+            const localEmpty = !localRec?.meals?.breakfast?.length && !localRec?.meals?.lunch?.length && !localRec?.meals?.dinner?.length && !localRec?.meals?.snack?.length && !localRec?.exercises?.length;
+            const cloudHasData = cloudRec.meals.breakfast.length || cloudRec.meals.lunch.length || cloudRec.meals.dinner.length || cloudRec.meals.snack.length || cloudRec.exercises.length;
+            if (localEmpty && cloudHasData) {
+              setHistoryRecord(cloudRec);
+              saveRecordByDate(cloudRec);
+              idbSaveRecord(cloudRec).catch(() => {});
+            }
+          })
+          .catch(() => {});
       })
       .catch(() => {
-        setHistoryRecord(loadRecordByDate(journalDate));
+        const localRec = loadRecordByDate(journalDate);
+        setHistoryRecord(localRec);
+        loadRecordFromCloud(journalDate)
+          .then(cloudRec => {
+            if (cloudRec) {
+              setHistoryRecord(cloudRec);
+              saveRecordByDate(cloudRec);
+              idbSaveRecord(cloudRec).catch(() => {});
+            }
+          })
+          .catch(() => {});
       });
   }, [journalDate]);
 
