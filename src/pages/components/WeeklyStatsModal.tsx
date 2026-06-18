@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
-import { X, Calendar, Flame, Droplets, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Radar, Scale } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Radar } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import AIHealingCard, { type DayStats } from './AIHealingCard';
 import {
   CalorieTrendChart,
   MacroLineChart,
-  CalorieGauge,
   NutritionRadar,
   MacroSankey,
   MealHeatmap,
@@ -18,12 +17,10 @@ interface WeeklyStatsModalProps {
   stats: DayStats[];
   profile: UserProfile | null;
   activeDaysCount: number;
-  waterDays: number;
   exerciseDays: number;
   daysOnTarget: number;
   targetCalories: number;
   tdee: number;
-  baseWeight: number;
   dateRange?: string;
 }
 
@@ -37,11 +34,10 @@ function getHeadline(name: string, activeDays: number, daysOnTarget: number, exe
   return `${name}，你一直都在路上`;
 }
 
-function getSubline(activeDays: number, exerciseDays: number, waterDays: number): string {
+function getSubline(activeDays: number, exerciseDays: number): string {
   const parts: string[] = [];
   if (activeDays > 0) parts.push(`记录了 ${activeDays} 天`);
   if (exerciseDays > 0) parts.push(`运动了 ${exerciseDays} 天`);
-  if (waterDays > 0) parts.push(`${waterDays} 天认真补水`);
   if (parts.length === 0) return '开启你的健康旅程吧';
   return parts.join('，');
 }
@@ -122,115 +118,94 @@ function getSuggestions(stats: DayStats[], profile: UserProfile | null, targetCa
   return suggestions.sort((a, b) => a.priority - b.priority).slice(0, 3);
 }
 
-/* ─── 全周期体重饮水趋势 ─── */
-function FullWeightWaterChart({ stats, baseWeight }: { stats: DayStats[]; baseWeight: number }) {
-  const weightData = stats.filter(d => d.weight != null && d.weight > 0);
-  const waterData = stats.filter(d => d.water > 0);
-  const hasAny = weightData.length > 0 || waterData.length > 0;
-  if (!hasAny) return null;
+/* ─── 周K线图 ─── */
+function WeeklyKLineChart({ stats }: { stats: DayStats[] }) {
+  const activeDays = stats.filter(d => d.intake > 0);
+  if (activeDays.length < 5) return null;
 
-  const w = Math.max(300, stats.length * 48);
-  const H = 130, BAR = 100;
-  const allVals = [...weightData.map(d => d.weight!), ...waterData.map(d => d.water)];
-  const maxW = Math.max(...allVals, 50);
-  const minWeight = weightData.length > 0 ? Math.min(...weightData.map(d => d.weight!)) : 0;
+  // 按周聚合
+  const weeks: { label: string; open: number; close: number; high: number; low: number; avg: number; days: number }[] = [];
+  let weekStart = -1;
 
-  function px(i: number) { return i * 44 + 22; }
+  for (const d of stats) {
+    const date = new Date(d.date + 'T00:00:00');
+    const dayOfWeek = date.getDay();
+    const mondayDate = new Date(date);
+    mondayDate.setDate(date.getDate() - ((dayOfWeek + 6) % 7));
+    const weekKey = mondayDate.toISOString().split('T')[0];
 
-  const [hover, setHover] = useState<number | null>(null);
+    if (d.intake === 0) continue;
 
-  // 贝塞尔平滑
-  function smoothPath(data: { i: number; val: number; norm: number }[]): string {
-    if (data.length < 2) return '';
-    const tension = 0.3;
-    let d = `M${px(data[0].i)},${BAR - data[0].norm * BAR}`;
-    for (let j = 0; j < data.length - 1; j++) {
-      const p0 = data[j], p1 = data[j + 1];
-      const cp1x = px(p0.i) + (px(p1.i) - px(p0.i)) * tension;
-      const cp1y = BAR - p0.norm * BAR;
-      const cp2x = px(p1.i) - (px(p1.i) - px(p0.i)) * tension;
-      const cp2y = BAR - p1.norm * BAR;
-      d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${px(p1.i)},${BAR - p1.norm * BAR}`;
+    if (weekStart === -1 || weeks.length === 0) {
+      weeks.push({ label: weekKey.slice(5), open: d.intake, close: d.intake, high: d.intake, low: d.intake, avg: d.intake, days: 1 });
+      weekStart = weeks.length - 1;
+    } else if (weeks[weeks.length - 1].label !== weekKey.slice(5)) {
+      weeks.push({ label: weekKey.slice(5), open: d.intake, close: d.intake, high: d.intake, low: d.intake, avg: d.intake, days: 1 });
+    } else {
+      const w = weeks[weeks.length - 1];
+      w.close = d.intake;
+      w.high = Math.max(w.high, d.intake);
+      w.low = Math.min(w.low, d.intake);
+      w.avg = Math.round((w.avg * w.days + d.intake) / (w.days + 1));
+      w.days++;
     }
-    return d;
   }
 
-  const weightPts = weightData.map((d, idx) => ({ i: idx, val: d.weight!, norm: (d.weight! - (minWeight - 0.5)) / Math.max(maxW - minWeight + 1, 1) }));
-  const waterPts = waterData.map((d, idx) => ({ i: stats.indexOf(d), val: d.water, norm: d.water / maxW }));
+  if (weeks.length < 2) return null;
+
+  const maxVal = Math.max(...weeks.map(w => w.high), 50);
+  const W = Math.max(300, weeks.length * 56);
+  const CH = 160, BH = 120, PAD = 40;
+  const candleW = 20, candleGap = 36;
+
+  function px(i: number) { return PAD + i * candleGap + candleW / 2; }
 
   return (
-    <ChartCard icon={Scale} title="体重 & 饮水全周期" iconColor="#0EA5E9"
-      bg="linear-gradient(135deg, rgba(245,248,255,0.65), rgba(240,245,255,0.5))">
-      <div className="relative overflow-x-auto no-scrollbar">
-        <svg width={w} viewBox={`0 0 ${w} ${H}`} style={{ height: 130, minWidth: w, overflow: 'visible' }}>
+    <ChartCard icon={TrendingUp} title="周K线图" iconColor="#6366F1" kind="indigo" subtitle="每周热量开盘/收盘/最高/最低">
+      <div className="relative overflow-x-auto no-scrollbar w-full">
+        <svg width={W} viewBox={`0 0 ${W} ${CH}`} style={{ height: CH, minWidth: W, overflow: 'visible', width: '100%' }} preserveAspectRatio="xMidYMid meet">
           <defs>
-            <linearGradient id="fwArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.12" /><stop offset="100%" stopColor="#0EA5E9" stopOpacity="0.0" />
-            </linearGradient>
-            <linearGradient id="wwArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#A3B899" stopOpacity="0.15" /><stop offset="100%" stopColor="#A3B899" stopOpacity="0.0" />
-            </linearGradient>
-            <filter id="fwGlow"><feGaussianBlur stdDeviation="1.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <filter id="klGlow"><feGaussianBlur stdDeviation="1.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
-
-          {/* 基线 */}
-          {[0, 0.5].map(p => (
-            <line key={p} x1={0} y1={BAR * (1 - p)} x2={w} y2={BAR * (1 - p)} stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" />
+          {/* 网格 */}
+          {[0.25, 0.5, 0.75].map(pct => (
+            <line key={pct} x1={0} y1={BH * (1 - pct)} x2={W} y2={BH * (1 - pct)} stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" />
           ))}
-          {baseWeight > 0 && <line x1={0} y1={BAR - (baseWeight / maxW) * BAR} x2={w} y2={BAR - (baseWeight / maxW) * BAR}
-            stroke="#A3B899" strokeWidth={1} strokeDasharray="4 3" opacity={0.4} />}
+          {/* K线 */}
+          {weeks.map((w, i) => {
+            const x = px(i);
+            const openY = BH - (w.open / maxVal) * BH;
+            const closeY = BH - (w.close / maxVal) * BH;
+            const highY = BH - (w.high / maxVal) * BH;
+            const lowY = BH - (w.low / maxVal) * BH;
+            const isGreen = w.close >= w.open;
+            const color = isGreen ? '#22c55e' : '#ef4444';
+            const bodyTop = Math.min(openY, closeY);
+            const bodyH = Math.max(Math.abs(closeY - openY), 1);
 
-          {/* 饮水面积 + 线 */}
-          {waterPts.length > 1 && (
-            <>
-              <polygon points={`${px(waterPts[0].i)},${BAR} ${waterPts.map(p => `${px(p.i)},${BAR - p.norm * BAR}`).join(' ')} ${px(waterPts[waterPts.length - 1].i)},${BAR}`}
-                fill="url(#fwArea)" />
-              <path d={smoothPath(waterPts)} fill="none" stroke="#0EA5E9" strokeWidth={2} opacity={0.7} />
-            </>
-          )}
-
-          {/* 体重面积 + 线 */}
-          {weightPts.length > 1 && (
-            <>
-              <polygon points={`${px(weightPts[0].i)},${BAR} ${weightPts.map(p => `${px(p.i)},${BAR - p.norm * BAR}`).join(' ')} ${px(weightPts[weightPts.length - 1].i)},${BAR}`}
-                fill="url(#wwArea)" />
-              <path d={smoothPath(weightPts)} fill="none" stroke="#A3B899" strokeWidth={2.5} filter="url(#fwGlow)" />
-            </>
-          )}
-
-          {/* 体重数据点 */}
-          {weightPts.map((p, i) => {
-            const isH = hover === i;
             return (
-              <g key={`w${i}`} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} style={{ cursor: 'pointer' }}>
-                <circle cx={px(p.i)} cy={BAR - p.norm * BAR} r={isH ? 5 : 3} fill="white"
-                  stroke="#A3B899" strokeWidth={isH ? 2.5 : 1.5} filter={isH ? 'url(#fwGlow)' : undefined}
-                  style={{ transition: 'all 0.2s' }} />
-                {isH && (
-                  <>
-                    <rect x={px(p.i) - 24} y={BAR - p.norm * BAR - 22} width={48} height={16} rx={5} fill="var(--ck-chart-tooltip-bg)" opacity={0.9} />
-                    <text x={px(p.i)} y={BAR - p.norm * BAR - 9} textAnchor="middle" fontSize={8} fill="var(--ck-chart-tooltip-fg)" fontWeight="800">
-                      {p.val.toFixed(1)} kg
-                    </text>
-                  </>
-                )}
+              <g key={i}>
+                {/* 影线 */}
+                <line x1={x} y1={highY} x2={x} y2={lowY} stroke={color} strokeWidth={1.5} opacity={0.7} />
+                {/* 实体 */}
+                <rect x={x - candleW / 2} y={bodyTop} width={candleW} height={bodyH} rx={2}
+                  fill={isGreen ? color : color} opacity={isGreen ? 0.75 : 0.85}
+                  stroke={color} strokeWidth={0.5} filter="url(#klGlow)" />
+                {/* 均价线 */}
+                <circle cx={x} cy={BH - (w.avg / maxVal) * BH} r={2} fill="white" stroke="#818cf8" strokeWidth={1.5} />
+                {/* 周标签 */}
+                <text x={x} y={BH + 16} textAnchor="middle" fontSize={7} fill="var(--ck-chart-label)">{w.label}</text>
               </g>
             );
           })}
-
-          {/* 标签 */}
-          {stats.map((d, i) => (
-            <text key={`l${i}`} x={px(i)} y={H - 4} textAnchor="middle" fontSize={7} fill="var(--ck-chart-label)">{d.label}</text>
-          ))}
+          {/* 图例 */}
+          <g transform={`translate(${W - 120}, ${BH + 30})`}>
+            <rect x={0} y={0} width={10} height={6} rx={1} fill="#22c55e" opacity={0.75} />
+            <text x={14} y={5} fontSize={7} fill="var(--ck-chart-dim)">阳线(涨)</text>
+            <rect x={56} y={0} width={10} height={6} rx={1} fill="#ef4444" opacity={0.85} />
+            <text x={70} y={5} fontSize={7} fill="var(--ck-chart-dim)">阴线(跌)</text>
+          </g>
         </svg>
-      </div>
-      <div className="flex items-center gap-3 mt-1 flex-wrap opacity-60">
-        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-full" style={{ background: '#A3B899' }} />体重
-        </span>
-        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-full" style={{ background: '#0EA5E9' }} />饮水
-        </span>
       </div>
     </ChartCard>
   );
@@ -238,13 +213,13 @@ function FullWeightWaterChart({ stats, baseWeight }: { stats: DayStats[]; baseWe
 
 export default function WeeklyStatsModal({
   open, onClose, stats, profile,
-  activeDaysCount, waterDays, exerciseDays, daysOnTarget,
-  targetCalories, tdee, baseWeight, dateRange,
+  activeDaysCount, exerciseDays, daysOnTarget,
+  targetCalories, tdee, dateRange,
 }: WeeklyStatsModalProps) {
   const trendItems = getTrendItems(stats);
   const suggestions = getSuggestions(stats, profile, targetCalories);
 
-  // 计算全周期平均摄入用于仪表盘
+  // 计算全周期平均摄入
   const activeDays = stats.filter(d => d.intake > 0);
   const avgIntake = activeDays.length > 0
     ? Math.round(activeDays.reduce((s, d) => s + d.intake, 0) / activeDays.length)
@@ -260,13 +235,12 @@ export default function WeeklyStatsModal({
 
   const name = profile?.name || '你';
   const headline = getHeadline(name, activeDaysCount, daysOnTarget, exerciseDays);
-  const subline = getSubline(activeDaysCount, exerciseDays, waterDays);
+  const subline = getSubline(activeDaysCount, exerciseDays);
 
   const metrics = [
     { label: '记录', value: activeDaysCount, icon: Calendar, color: '#8B5CF6' },
     { label: '达标', value: daysOnTarget, icon: Flame, color: '#F97316' },
     { label: '运动', value: exerciseDays, icon: Dumbbell, color: '#22C55E' },
-    { label: '补水', value: waterDays, icon: Droplets, color: '#0EA5E9' },
     { label: '均摄入', value: `${avgIntake}`, icon: Gauge, color: '#6366F1' },
   ];
 
@@ -308,7 +282,7 @@ export default function WeeklyStatsModal({
 
           {/* ─── 指标卡 ─── */}
           <div className="flex-shrink-0 px-4 -mt-6 relative z-10">
-            <div className="rounded-2xl grid grid-cols-5 gap-1 p-3"
+            <div className="rounded-2xl grid grid-cols-4 gap-1 p-3"
               style={{ background: 'var(--ck-modal-card)', backdropFilter: 'blur(16px)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
               {metrics.map(m => {
                 const Icon = m.icon;
@@ -334,11 +308,8 @@ export default function WeeklyStatsModal({
               exerciseDays={exerciseDays} daysOnTarget={daysOnTarget}
             />
 
-            {/* Gauge + Radar */}
-            <div className="grid grid-cols-2 gap-3">
-              <CalorieGauge stats={stats} target={targetCalories} />
-              <NutritionRadar stats={stats} target={targetCalories} />
-            </div>
+            {/* 营养雷达 全宽 */}
+            <NutritionRadar stats={stats} target={targetCalories} />
 
             {/* 三大宏量全周期趋势 */}
             <MacroLineChart stats={stats} target={targetCalories} />
@@ -349,16 +320,14 @@ export default function WeeklyStatsModal({
               <CalorieTrendChart stats={stats} target={targetCalories} />
             </ChartCard>
 
-            {/* 体重饮水 + 宏量流向 */}
-            <div className="grid grid-cols-2 gap-3">
-              <MacroSankey stats={stats} />
-            </div>
+            {/* 宏量流向 全宽 */}
+            <MacroSankey stats={stats} />
 
             {/* 全周期用餐热力图 */}
-            <MealHeatmap stats={stats} maxDays={0} />
+            <MealHeatmap stats={stats} />
 
-            {/* 体重饮水全周期 */}
-            <FullWeightWaterChart stats={stats} baseWeight={baseWeight} />
+            {/* 周K线图 */}
+            <WeeklyKLineChart stats={stats} />
 
             {/* 全程趋势对比 */}
             {trendItems.length > 0 && (

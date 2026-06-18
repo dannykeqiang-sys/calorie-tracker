@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, ChevronRight, Calendar, Flame, Droplets, Dumbbell, TrendingUp } from 'lucide-react';
+import { Sparkles, ChevronRight, Calendar, Flame, Dumbbell } from 'lucide-react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { idbGetAllRecords } from '../../utils/indexedDB';
 import { loadAllRecords } from '../../utils/storage';
@@ -7,13 +7,11 @@ import { sumMacrosWithEstimate } from '../../utils/calculations';
 import { loadWeightRecords } from './TodayWeightCard';
 import type { DayStats } from './AIHealingCard';
 import WeeklyStatsModal from './WeeklyStatsModal';
-import WeeklyCharts from './WeeklyCharts';
+import WeeklyCharts, { NutritionSunburst, NutritionFunnel } from './WeeklyCharts';
 import TodayDualRingBar from './TodayDualRingBar';
 import InflammationIndexCard from './InflammationIndexCard';
 import SodiumAnalysisCard from './SodiumAnalysisCard';
 import ActivityBurnCard from './ActivityBurnCard';
-import MacroRhythmBars from './MacroRhythmBars';
-import WaterWeightChart from './WaterWeightChart';
 
 interface AnalyticsPanelProps {
   profile: UserProfile | null;
@@ -177,21 +175,16 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
   const tdee = profile ? calcTDEE(profile) : 0;
   const activeDays = stats.filter(d => d.intake > 0);
   const daysOnTarget = stats.filter(d => d.intake > 0 && d.intake <= targetCalories).length;
-  const waterDays = stats.filter(d => d.water >= 1500).length;
   const exerciseDays = stats.filter(d => d.burn > 0).length;
   const today = new Date().toISOString().split('T')[0];
   const todayWeightRecords = loadWeightRecords();
   const currentJournalDate = journalDate ?? today;
-  const baseWeight = todayWeightRecords[today] ?? profile?.weight ?? 0;
   const currentDayWeight = todayWeightRecords[currentJournalDate];
-
-  const totalWater = (record.water || []).reduce((s, w) => s + w.amount, 0);
 
   const allTimeMetrics = [
     { label: '记录天', value: activeDays.length, icon: Calendar, color: '#8B5CF6' },
     { label: '达标天', value: daysOnTarget, icon: Flame, color: '#F97316' },
     { label: '运动天', value: exerciseDays, icon: Dumbbell, color: '#22C55E' },
-    { label: '补水天', value: waterDays, icon: Droplets, color: '#0EA5E9' },
   ];
 
   // 时光机主页仅展示最近 7 天
@@ -207,7 +200,7 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
       />
 
       {!loading && recentStats.length > 0 && (
-        <WeeklyCharts stats={recentStats} targetCalories={targetCalories} />
+        <WeeklyCharts stats={recentStats} targetCalories={targetCalories} selectedDate={journalDate} />
       )}
 
       {!loading && recentStats.length > 0 && (
@@ -231,57 +224,11 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
                   }}>
                   <Flame className="w-4 h-4" style={{ color: '#F97316' }} />
                 </div>
-                <p className="text-sm font-bold text-foreground">近 7 天热量明细</p>
+                <p className="text-sm font-bold text-foreground">近 7 天营养明细</p>
               </div>
-              <span className="text-[10px] text-muted-foreground/50">仅展示最近一周</span>
+              <span className="text-[10px] text-muted-foreground/50">旭日图</span>
             </div>
-            <div className="space-y-1">
-              {recentStats.map(d => {
-                const totalExp = (tdee > 0 ? tdee : targetCalories) + d.burn;
-                const gap = d.intake > 0 ? d.intake - totalExp : null;
-                const pctIntake = d.intake > 0 ? Math.min(d.intake / (targetCalories > 0 ? targetCalories : 2000), 1.2) : 0;
-                const pctBurn = d.intake > 0 ? Math.min(totalExp / (targetCalories > 0 ? targetCalories : 2000), 1.2) : 0;
-                const gapStatus = gap !== null ? (gap <= 0 ? 'green' : 'red') : 'none';
-                return (
-                  <div key={d.date} className="group flex items-center gap-2.5 py-2 px-2 rounded-xl transition-all hover:bg-muted/60">
-                    <span className="text-[11px] font-semibold text-muted-foreground w-9 text-center tabular-nums">{d.label}</span>
-                    <div className="flex-1 space-y-1">
-                      {d.intake > 0 ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{d.intake}</span>
-                            <div className="flex-1 h-2 bg-orange-100 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${Math.min(pctIntake * 100, 100)}%`,
-                                  background: 'linear-gradient(90deg, #fb923c, #f97316)',
-                                }} />
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{totalExp}</span>
-                            <div className="flex-1 h-2 bg-indigo-100 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${Math.min(pctBurn * 100, 100)}%`,
-                                  background: 'linear-gradient(90deg, #818cf8, #6366f1)',
-                                }} />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground/30 italic">无记录</span>
-                      )}
-                    </div>
-                    <span className="text-[11px] font-bold tabular-nums w-12 text-right" style={{
-                      color: gapStatus === 'green' ? '#22c55e' : gapStatus === 'red' ? '#ef4444' : '#9ca3af',
-                    }}>
-                      {gap !== null ? `${gap > 0 ? '+' : ''}${gap}` : '—'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <NutritionSunburst stats={recentStats} />
           </div>
 
           <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
@@ -296,21 +243,18 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
                   background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.06))',
                   boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
                 }}>
-                <TrendingUp className="w-4 h-4" style={{ color: '#6366F1' }} />
+                <Flame className="w-4 h-4" style={{ color: '#6366F1' }} />
               </div>
-              <p className="text-sm font-bold text-foreground">营养节律</p>
+              <p className="text-sm font-bold text-foreground">营养节律漏斗</p>
             </div>
-            <MacroRhythmBars stats={recentStats} targetCalories={targetCalories} />
+            <NutritionFunnel stats={recentStats} targetCalories={targetCalories} />
           </div>
-
-          <WaterWeightChart stats={recentStats} baseWeight={baseWeight} />
         </div>
       )}
 
       <InflammationIndexCard
         profile={profile}
         record={record}
-        waterAmount={totalWater}
       />
 
       <SodiumAnalysisCard profile={profile} record={record} />
@@ -404,7 +348,7 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
             )}
 
             {!loading && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {allTimeMetrics.map((m, idx) => {
                   const Icon = m.icon;
                   return (
@@ -438,12 +382,10 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
         stats={stats}
         profile={profile}
         activeDaysCount={activeDays.length}
-        waterDays={waterDays}
         exerciseDays={exerciseDays}
         daysOnTarget={daysOnTarget}
         targetCalories={targetCalories}
         tdee={tdee}
-        baseWeight={baseWeight}
         dateRange={dateRange}
       />
     </div>
