@@ -43,7 +43,32 @@
         "fat": 5
       }
     ],
-    "lunch": [],
+    "lunch": [
+      {
+        "id": "add3bddf-cbc2-47e1-8893-fe8c1e5ecedb",
+        "name": "去皮油焖鸡",
+        "calories": 198,
+        "protein": 24,
+        "carbs": 0,
+        "fat": 11
+      },
+      {
+        "id": "f0c64014-ebc5-4bfd-90a6-0f613677d999",
+        "name": "土豆",
+        "calories": 77,
+        "protein": 2,
+        "carbs": 17,
+        "fat": 0
+      },
+      {
+        "id": "fce8b331-1c77-452f-abf7-b10fa30843c8",
+        "name": "米饭",
+        "calories": 58,
+        "protein": 1,
+        "carbs": 13,
+        "fat": 0
+      }
+    ],
     "dinner": [],
     "snack": []
   },
