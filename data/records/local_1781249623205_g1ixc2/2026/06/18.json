@@ -13,7 +13,7 @@
       {
         "id": "50d5201e-8abe-4cb2-8ed4-e0da876022de",
         "name": "AD钙奶450ml",
-        "calories": 270,
+        "calories": 200,
         "protein": 9,
         "carbs": 45,
         "fat": 6
@@ -48,5 +48,18 @@
     "snack": []
   },
   "exercises": [],
-  "water": []
+  "water": [
+    {
+      "id": "56cba76b-d918-48ce-9a31-7f678e747958",
+      "amount": 250,
+      "note": "拿铁",
+      "time": "11:56"
+    },
+    {
+      "id": "50b1a165-5c2c-4879-b34c-86baf68e665e",
+      "amount": 450,
+      "note": "AD钙奶",
+      "time": "11:56"
+    }
+  ]
 }
