@@ -28,13 +28,9 @@ import { getSession } from '../utils/auth';
 import CameraShutter from './components/CameraShutter';
 import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
 
-const DEEPSEEK_KEY_STORAGE = 'calorie_deepseek_api_key';
 const BUILT_IN_DEEPSEEK_KEY = 'sk-c0385f6b8bcb406b91a59a56fab9a477';
 const BUILT_IN_QWEN_KEY = 'sk-ws-H.REPPMXR.ifl2.MEQCIFIxa_gYlNpNOP8eSa5p2qo2fY583jzpyeEAzriVEeE2AiBrCvoYMHd5DC5rzmt7NNJx_m5tU0L07W4I1NxUPZEUQw';
 
-function loadDeepSeekKey(): string {
-  return localStorage.getItem(DEEPSEEK_KEY_STORAGE) || BUILT_IN_DEEPSEEK_KEY;
-}
 
 function getTodayKey(): string {
   return new Date().toISOString().split('T')[0];
@@ -60,7 +56,7 @@ export default function Home() {
   const [record, setRecord] = useState<DailyRecord | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey] = useState<string>(BUILT_IN_DEEPSEEK_KEY);
   const [activeTab, setActiveTab] = useState('today');
   const [journalDate, setJournalDate] = useState(getTodayKey);
   const [historyRecord, setHistoryRecord] = useState<DailyRecord | null>(null);
@@ -85,8 +81,10 @@ export default function Home() {
       return;
     }
     document.title = '燃烧我的卡路里 - 科学管理你的热量';
+    // 清理历史遗留的 API Key localStorage 条目
+    ['calorie_deepseek_api_key', 'calorie_qwen_api_key'].forEach(k => localStorage.removeItem(k));
     setRecord(loadTodayRecord());
-    setApiKey(loadDeepSeekKey());
+
     const localProfile = loadProfile();
     if (localProfile) {
       setProfile(localProfile);
@@ -337,12 +335,8 @@ export default function Home() {
     [journalDate],
   );
 
-  const handleOnboardingComplete = useCallback((p: UserProfile, key: string) => {
+  const handleOnboardingComplete = useCallback((p: UserProfile, _key?: string) => {
     setProfile(p);
-    if (key) {
-      setApiKey(key);
-      saveDeepSeekKey(key);
-    }
     syncProfileToCloud(p).catch(() => {});
     setShowOnboarding(false);
     setShowTutorial(true);
