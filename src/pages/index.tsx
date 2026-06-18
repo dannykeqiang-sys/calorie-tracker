@@ -28,8 +28,8 @@ import { getSession } from '../utils/auth';
 import CameraShutter from './components/CameraShutter';
 import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
 
-const BUILT_IN_DEEPSEEK_KEY = 'sk-c0385f6b8bcb406b91a59a56fab9a477';
-const BUILT_IN_QWEN_KEY = 'sk-ws-H.REPPMXR.ifl2.MEQCIFIxa_gYlNpNOP8eSa5p2qo2fY583jzpyeEAzriVEeE2AiBrCvoYMHd5DC5rzmt7NNJx_m5tU0L07W4I1NxUPZEUQw';
+const BUILT_IN_DEEPSEEK_KEY = import.meta.env.VITE_DEEPSEEK_KEY || '';
+const BUILT_IN_QWEN_KEY = import.meta.env.VITE_QWEN_KEY || '';
 
 
 function getTodayKey(): string {
