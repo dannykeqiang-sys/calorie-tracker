@@ -17,7 +17,7 @@ export default function WaterWeightChart({ stats, baseWeight }: WaterWeightChart
   const hasAny = rows.some(d => d.water > 0 || loadWeight(d.date) !== null);
 
   return (
-    <div className="rounded-2xl bg-white border border-border shadow-sm p-3">
+    <div className="rounded-2xl bg-card border border-border shadow-sm p-3">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ backgroundColor: '#0EA5E918' }}>
           <span className="text-[10px]" style={{ color: '#0EA5E9' }}>

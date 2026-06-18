@@ -174,7 +174,7 @@ export default function TodayNutritionCard({ record, profile }: TodayNutritionCa
   const indicatorPct = score >= 0 ? Math.max(3, Math.min(97, 100 - score)) : 50;
 
   return (
-    <div className="rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+    <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
       <div className="p-4 pb-3">
         <div className="flex items-center gap-2 mb-3">
           <div

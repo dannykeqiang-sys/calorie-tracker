@@ -8,6 +8,9 @@
     <title>燃烧我的卡路里</title>
   </head>
   <body>
+    <script>
+      (function(){try{var d=localStorage.getItem('calorie-theme');var p=window.matchMedia('(prefers-color-scheme: dark)');var isDark=d==='dark'||(!d&&p.matches);if(isDark)document.documentElement.classList.add('dark');p.addEventListener('change',function(e){if(!localStorage.getItem('calorie-theme'))document.documentElement.classList.toggle('dark',e.matches)});}catch(e){}}());
+    </script>
     <svg style="display: none;">
       <defs>
         <filter id="liquid-distort" x="-10%" y="-10%" width="120%" height="120%">

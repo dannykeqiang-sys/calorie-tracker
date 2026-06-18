@@ -2,6 +2,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* ═══ Tailwind v4 dark mode via .dark class ═══ */
+@variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -89,6 +92,122 @@
   --sidebar-ring: #A3B899;
 }
 
+/* ═══ Dark mode overrides ═══ */
+.dark {
+  --background: #111118;
+  --foreground: #e2e2e8;
+  --card: #1a1a24;
+  --card-foreground: #e2e2e8;
+  --popover: #1a1a24;
+  --popover-foreground: #e2e2e8;
+  --primary: #A3B899;
+  --primary-foreground: #111118;
+  --secondary: #EBB193;
+  --secondary-foreground: #111118;
+  --muted: #252530;
+  --muted-foreground: #8e8e9a;
+  --accent: #2a2a38;
+  --accent-foreground: #e2e2e8;
+  --destructive: #E07878;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a38;
+  --input: #252530;
+  --ring: #A3B899;
+  --chart-1: #A3B899;
+  --chart-2: #EBB193;
+  --chart-3: #C5B8E8;
+  --chart-4: #B8D4E8;
+  --chart-5: #E8D4B8;
+  --sidebar: #111118;
+  --sidebar-foreground: #e2e2e8;
+  --sidebar-primary: #A3B899;
+  --sidebar-primary-foreground: #111118;
+  --sidebar-accent: #2a2a38;
+  --sidebar-accent-foreground: #e2e2e8;
+  --sidebar-border: #2a2a38;
+  --sidebar-ring: #A3B899;
+}
+
+/* ═══ Chart shared color tokens ═══ */
+:root {
+  --ck-chart-grid: rgba(0,0,0,0.06);
+  --ck-chart-text: #6B7280;
+  --ck-chart-dim: #9CA3AF;
+  --ck-chart-tooltip-bg: #1e293b;
+  --ck-chart-tooltip-fg: #ffffff;
+  --ck-chart-empty: #d1d5db;
+  --ck-chart-label: #9CA3AF;
+  --ck-chart-label-hover: #111827;
+  --ck-chart-card-text: #1e293b;
+  --ck-chart-card-border: rgba(255,255,255,0.4);
+  /* Chart card backgrounds */
+  --ck-card-orange: linear-gradient(135deg, rgba(255,248,240,0.65), rgba(255,242,235,0.5));
+  --ck-card-purple: linear-gradient(135deg, rgba(248,245,255,0.65), rgba(242,238,255,0.5));
+  --ck-card-indigo: linear-gradient(135deg, rgba(245,242,255,0.65), rgba(240,238,255,0.5));
+}
+.dark {
+  --ck-chart-grid: rgba(255,255,255,0.07);
+  --ck-chart-text: #9CA3AF;
+  --ck-chart-dim: #6B7280;
+  --ck-chart-tooltip-bg: #e5e7eb;
+  --ck-chart-tooltip-fg: #111827;
+  --ck-chart-empty: #475569;
+  --ck-chart-label: #6B7280;
+  --ck-chart-label-hover: #f3f4f6;
+  --ck-chart-card-text: #e2e8f0;
+  --ck-chart-card-border: rgba(255,255,255,0.08);
+  /* Chart card backgrounds */
+  --ck-card-orange: linear-gradient(135deg, rgba(30,25,20,0.82), rgba(25,20,18,0.9));
+  --ck-card-purple: linear-gradient(135deg, rgba(25,20,35,0.82), rgba(20,18,30,0.9));
+  --ck-card-indigo: linear-gradient(135deg, rgba(22,20,35,0.82), rgba(18,16,30,0.9));
+}
+
+/* ═══ TodayDualRingBar / dock colors ═══ */
+:root {
+  --ck-dock-bg: linear-gradient(160deg, #f5f3f0 0%, #ece8e2 40%, #f0ede8 100%);
+  --ck-dock-border: rgba(0,0,0,0.08);
+  --ck-dock-title: #1e293b;
+  --ck-dock-sub: #64748b;
+  --ck-dock-pool-bg: rgba(0,0,0,0.06);
+  --ck-dock-pool-border: rgba(0,0,0,0.12);
+  --ck-dock-scale: rgba(0,0,0,0.18);
+  --ck-dock-scale-text: rgba(0,0,0,0.4);
+  --ck-dock-macro-bg: rgba(0,0,0,0.06);
+  --ck-dock-macro-text: rgba(0,0,0,0.8);
+  --ck-dock-macro-sub: rgba(0,0,0,0.4);
+  --ck-dock-metric-label: rgba(0,0,0,0.35);
+  --ck-dock-metric-val: rgba(0,0,0,0.7);
+  --ck-dock-stripe: rgba(0,0,0,0.05);
+  --ck-dock-exercise-chip-bg: rgba(124,185,232,0.12);
+}
+.dark {
+  --ck-dock-bg: linear-gradient(160deg, #1e293b 0%, #1a1f2e 40%, #1e2040 100%);
+  --ck-dock-border: rgba(255,255,255,0.08);
+  --ck-dock-title: rgba(255,255,255,0.9);
+  --ck-dock-sub: rgba(255,255,255,0.5);
+  --ck-dock-pool-bg: rgba(255,255,255,0.12);
+  --ck-dock-pool-border: rgba(255,255,255,0.25);
+  --ck-dock-scale: rgba(255,255,255,0.2);
+  --ck-dock-scale-text: rgba(255,255,255,0.3);
+  --ck-dock-macro-bg: rgba(255,255,255,0.15);
+  --ck-dock-macro-text: rgba(255,255,255,0.9);
+  --ck-dock-macro-sub: rgba(255,255,255,0.4);
+  --ck-dock-metric-label: rgba(255,255,255,0.35);
+  --ck-dock-metric-val: rgba(255,255,255,0.8);
+  --ck-dock-stripe: rgba(255,255,255,0.06);
+  --ck-dock-exercise-chip-bg: rgba(124,185,232,0.15);
+}
+
+/* ═══ Modal / overlay colors ═══ */
+:root {
+  --ck-modal-bg: linear-gradient(170deg, rgba(255,249,245,0.97) 0%, rgba(245,242,255,0.97) 50%, rgba(240,248,255,0.97) 100%);
+  --ck-modal-card: rgba(255,255,255,0.88);
+}
+.dark {
+  --ck-modal-bg: linear-gradient(170deg, rgba(20,20,30,0.98) 0%, rgba(18,16,30,0.98) 50%, rgba(15,18,28,0.98) 100%);
+  --ck-modal-card: rgba(30,30,42,0.92);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -118,6 +237,16 @@
   50% { opacity: 1; transform: scale(1.2); }
 }
 
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .btn-breathe {
   animation: breathe 2.5s ease-in-out infinite;
 }
@@ -134,6 +263,11 @@
   border: 1px solid #E8E3DC;
   border-radius: 1.25rem;
   box-shadow: 0 2px 12px rgba(163,184,153,0.10);
+}
+.dark .journal-card {
+  background: #1a1a24;
+  border-color: #2a2a38;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 .journal-texture {

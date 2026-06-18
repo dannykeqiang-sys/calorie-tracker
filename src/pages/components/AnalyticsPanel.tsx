@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Sparkles, ChevronRight, Calendar, Flame, Droplets, Dumbbell, TrendingUp } from 'lucide-react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { idbGetAllRecords } from '../../utils/indexedDB';
@@ -122,12 +122,21 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
           }
 
           const { protein, carbs, fat } = sumMacrosWithEstimate(rec.meals ?? {});
+          const fiber = Math.round(allFoods.reduce((s, f) => s + (f.fiber ?? 0), 0));
           const sodium = Math.round(allFoods.reduce((s, f) => s + (f.sodium ?? 0), 0));
           const exercises = (rec.exercises ?? []).map(e => ({
             name: e.name,
             duration: e.duration,
             calories: e.calories,
           }));
+
+          // 四餐热量
+          const mealCals = [
+            (rec.meals?.breakfast ?? []).reduce((s, f) => s + (f.calories ?? 0), 0),
+            (rec.meals?.lunch ?? []).reduce((s, f) => s + (f.calories ?? 0), 0),
+            (rec.meals?.dinner ?? []).reduce((s, f) => s + (f.calories ?? 0), 0),
+            (rec.meals?.snack ?? []).reduce((s, f) => s + (f.calories ?? 0), 0),
+          ];
 
           computed.push({
             date,
@@ -141,9 +150,11 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
             protein,
             carbs,
             fat,
+            fiber,
             sodium,
             exercises,
             weight: weightRecords[date],
+            mealCals,
           });
         } catch {}
       }
@@ -183,6 +194,9 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
     { label: '补水天', value: waterDays, icon: Droplets, color: '#0EA5E9' },
   ];
 
+  // 时光机主页仅展示最近 7 天
+  const recentStats = useMemo(() => stats.slice(-7), [stats]);
+
   return (
     <div className="space-y-4">
       <TodayDualRingBar
@@ -192,72 +206,102 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
         currentWeight={currentDayWeight}
       />
 
-      {!loading && stats.length > 0 && (
-        <WeeklyCharts stats={stats} targetCalories={targetCalories} />
+      {!loading && recentStats.length > 0 && (
+        <WeeklyCharts stats={recentStats} targetCalories={targetCalories} />
       )}
 
-      {!loading && stats.length > 0 && (
-        <ActivityBurnCard stats={stats} />
+      {!loading && recentStats.length > 0 && (
+        <ActivityBurnCard stats={recentStats} />
       )}
 
-      {!loading && stats.length > 0 && (
+      {!loading && recentStats.length > 0 && (
         <div className="space-y-3">
-          <div className="rounded-2xl bg-white border border-border shadow-sm p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ backgroundColor: '#F9731618' }}>
-                <Flame className="w-3 h-3" style={{ color: '#F97316' }} />
+          <div className="rounded-2xl border border-white/50 shadow-sm p-4 relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,248,240,0.55), rgba(255,240,235,0.45))',
+              backdropFilter: 'blur(12px)',
+            }}>
+            <div className="flex items-center justify-between gap-2.5 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(249,115,22,0.18), rgba(249,115,22,0.06))',
+                    boxShadow: '0 2px 8px rgba(249,115,22,0.15)',
+                  }}>
+                  <Flame className="w-4 h-4" style={{ color: '#F97316' }} />
+                </div>
+                <p className="text-sm font-bold text-foreground">近 7 天热量明细</p>
               </div>
-              <p className="text-xs font-bold text-foreground">近期热量</p>
+              <span className="text-[10px] text-muted-foreground/50">仅展示最近一周</span>
             </div>
-            <table className="w-full text-[11px]">
-              <thead>
-                <tr className="text-muted-foreground border-b border-border">
-                  <th className="text-left pb-1.5 font-medium">日期</th>
-                  <th className="text-right pb-1.5 font-medium pr-2">摄入</th>
-                  <th className="text-right pb-1.5 font-medium pr-2">消耗</th>
-                  <th className="text-right pb-1.5 font-medium">缺口</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.slice(-7).map(d => {
-                  const totalExp = (tdee > 0 ? tdee : targetCalories) + d.burn;
-                  const gap = d.intake > 0 ? d.intake - totalExp : null;
-                  return (
-                    <tr key={d.date} className="border-b border-border/30 last:border-0">
-                      <td className="py-1 text-muted-foreground">{d.label}</td>
-                      <td className="py-1 text-right tabular-nums pr-2" style={{ color: '#F97316' }}>
-                        {d.intake > 0 ? d.intake : <span className="text-muted-foreground/40">—</span>}
-                      </td>
-                      <td className="py-1 text-right tabular-nums pr-2" style={{ color: '#22C55E' }}>
-                        {d.intake > 0 ? totalExp : <span className="text-muted-foreground/40">—</span>}
-                      </td>
-                      <td className="py-1 text-right tabular-nums font-semibold">
-                        {gap !== null ? (
-                          <span style={{ color: gap <= 0 ? '#22C55E' : '#F97316' }}>
-                            {gap > 0 ? '+' : ''}{gap}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground/40">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="space-y-1">
+              {recentStats.map(d => {
+                const totalExp = (tdee > 0 ? tdee : targetCalories) + d.burn;
+                const gap = d.intake > 0 ? d.intake - totalExp : null;
+                const pctIntake = d.intake > 0 ? Math.min(d.intake / (targetCalories > 0 ? targetCalories : 2000), 1.2) : 0;
+                const pctBurn = d.intake > 0 ? Math.min(totalExp / (targetCalories > 0 ? targetCalories : 2000), 1.2) : 0;
+                const gapStatus = gap !== null ? (gap <= 0 ? 'green' : 'red') : 'none';
+                return (
+                  <div key={d.date} className="group flex items-center gap-2.5 py-2 px-2 rounded-xl transition-all hover:bg-muted/60">
+                    <span className="text-[11px] font-semibold text-muted-foreground w-9 text-center tabular-nums">{d.label}</span>
+                    <div className="flex-1 space-y-1">
+                      {d.intake > 0 ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{d.intake}</span>
+                            <div className="flex-1 h-2 bg-orange-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${Math.min(pctIntake * 100, 100)}%`,
+                                  background: 'linear-gradient(90deg, #fb923c, #f97316)',
+                                }} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{totalExp}</span>
+                            <div className="flex-1 h-2 bg-indigo-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${Math.min(pctBurn * 100, 100)}%`,
+                                  background: 'linear-gradient(90deg, #818cf8, #6366f1)',
+                                }} />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground/30 italic">无记录</span>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold tabular-nums w-12 text-right" style={{
+                      color: gapStatus === 'green' ? '#22c55e' : gapStatus === 'red' ? '#ef4444' : '#9ca3af',
+                    }}>
+                      {gap !== null ? `${gap > 0 ? '+' : ''}${gap}` : '—'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="rounded-2xl bg-white border border-border shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#6366F118' }}>
-                <TrendingUp className="w-3.5 h-3.5" style={{ color: '#6366F1' }} />
+          <div className="rounded-2xl border border-white/50 shadow-sm p-4 relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(245,240,255,0.5), rgba(240,238,255,0.4))',
+              backdropFilter: 'blur(12px)',
+            }}>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.06))',
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
+                }}>
+                <TrendingUp className="w-4 h-4" style={{ color: '#6366F1' }} />
               </div>
-              <p className="text-xs font-bold text-foreground">营养节律</p>
+              <p className="text-sm font-bold text-foreground">营养节律</p>
             </div>
-            <MacroRhythmBars stats={stats} targetCalories={targetCalories} />
+            <MacroRhythmBars stats={recentStats} targetCalories={targetCalories} />
           </div>
 
-          <WaterWeightChart stats={stats} baseWeight={baseWeight} />
+          <WaterWeightChart stats={recentStats} baseWeight={baseWeight} />
         </div>
       )}
 
@@ -276,59 +320,101 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
         disabled={loading}
       >
         <div
-          className="relative rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
+          className="relative rounded-2xl overflow-hidden transition-all duration-500 group-hover:scale-[1.01] group-active:scale-[0.985]"
           style={{
-            background: 'linear-gradient(135deg, #A3B899 0%, #7CB9E8 55%, #C084FC 100%)',
-            padding: '20px',
+            background: 'linear-gradient(135deg, #a3b899 0%, #7cb9e8 35%, #a78bfa 65%, #c084fc 100%)',
+            padding: '24px',
+            boxShadow: '0 12px 40px rgba(124,185,232,0.3), 0 4px 16px rgba(167,139,250,0.15)',
           }}
         >
-          <div
-            className="absolute inset-0 pointer-events-none"
+          {/* 动态光斑 */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute -top-1/2 -right-1/4 w-72 h-72 rounded-full opacity-30 animate-pulse"
+              style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 60%)', animationDuration: '3s' }} />
+            <div className="absolute -bottom-1/2 -left-1/4 w-64 h-64 rounded-full opacity-20"
+              style={{ background: 'radial-gradient(circle, rgba(192,132,252,0.4) 0%, transparent 60%)' }} />
+          </div>
+          {/* 对角光条 */}
+          <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"
             style={{
-              background: 'radial-gradient(ellipse at 85% 15%, rgba(255,255,255,0.2) 0%, transparent 50%)',
-            }}
-          />
-          <div
-            className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 65%)' }}
-          />
+              background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 2s ease-in-out infinite',
+            }} />
 
           <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ background: 'rgba(255,255,255,0.25)' }}
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12 group-hover:scale-110 duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.22)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.25)',
+                  }}>
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm leading-none">全程档案</p>
-                  <p className="text-white/65 text-[10px] mt-0.5">{dateRange || '加载中...'}</p>
+                  <p className="text-white font-black text-base leading-none tracking-tight">全程档案</p>
+                  <p className="text-white/60 text-[11px] mt-1">{dateRange || '加载中...'}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-white/80 text-xs font-medium">
+              <div className="flex items-center gap-1.5 text-white/70 text-xs font-semibold">
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <>翻开手账 <ChevronRight className="w-4 h-4" /></>
+                  <>
+                    <span className="group-hover:underline decoration-white/30 underline-offset-4">翻开手账</span>
+                    <ChevronRight className="w-4 h-4 transition-all group-hover:translate-x-1" />
+                  </>
                 )}
               </div>
             </div>
 
+            {/* Mini Sparkline — 热量趋势预览 */}
+            {!loading && stats.length >= 3 && (
+              <div className="mb-3">
+                <svg width="100%" viewBox={`0 0 ${Math.max(stats.length * 8, 200)} 36`} className="w-full h-9 overflow-visible opacity-70">
+                  {(() => {
+                    const intakeVals = stats.map(d => d.intake);
+                    const mx = Math.max(...intakeVals, 50);
+                    const w = Math.max(stats.length * 8, 200);
+                    const points = intakeVals.map((v, i) => {
+                      const x = (i / Math.max(stats.length - 1, 1)) * w;
+                      const y = 32 - (v / mx) * 28;
+                      return `${x},${y}`;
+                    }).join(' ');
+                    const areaPts = `${0},32 ${points} ${w},32`;
+                    return (
+                      <>
+                        <defs>
+                          <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="white" stopOpacity="0.02" />
+                          </linearGradient>
+                        </defs>
+                        <polygon points={areaPts} fill="url(#sparkGrad)" />
+                        <polyline points={points} fill="none" stroke="white" strokeWidth="1.8"
+                          strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+                      </>
+                    );
+                  })()}
+                </svg>
+              </div>
+            )}
+
             {!loading && (
               <div className="grid grid-cols-4 gap-2">
-                {allTimeMetrics.map(m => {
+                {allTimeMetrics.map((m, idx) => {
                   const Icon = m.icon;
                   return (
-                    <div
-                      key={m.label}
-                      className="flex flex-col items-center gap-1 py-2 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.18)' }}
-                    >
-                      <Icon className="w-3.5 h-3.5 text-white/80" />
-                      <p className="text-white font-bold text-base leading-none">{m.value}</p>
-                      <p className="text-white/65 text-[10px]">{m.label}</p>
+                    <div key={m.label}
+                      className="flex flex-col items-center gap-1 py-2.5 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        animation: `fadeSlideUp 0.4s ${0.1 * idx}s both`,
+                      }}>
+                      <Icon className="w-4 h-4 text-white/75" />
+                      <p className="text-white font-black text-lg leading-none tabular-nums">{m.value}</p>
+                      <p className="text-white/50 text-[10px] font-medium">{m.label}</p>
                     </div>
                   );
                 })}
@@ -336,8 +422,8 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
             )}
 
             {loading && (
-              <div className="h-16 flex items-center justify-center">
-                <p className="text-white/60 text-xs">正在加载历史数据...</p>
+              <div className="h-20 flex items-center justify-center">
+                <p className="text-white/50 text-xs animate-pulse">正在加载历史数据...</p>
               </div>
             )}
           </div>

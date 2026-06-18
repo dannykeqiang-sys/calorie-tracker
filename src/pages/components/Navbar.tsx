@@ -43,7 +43,7 @@ export default function Navbar({ profile, onEditProfile, onOpenSettings }: Navba
             variant="outline"
             size="sm"
             onClick={onEditProfile}
-            className="border-border bg-white hover:bg-muted text-foreground gap-2 cursor-pointer"
+            className="border-border bg-card hover:bg-muted text-foreground gap-2 cursor-pointer"
           >
             <User className="w-4 h-4 text-primary" />
             <span className="hidden sm:inline">

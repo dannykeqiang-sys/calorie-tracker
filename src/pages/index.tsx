@@ -445,15 +445,14 @@ export default function Home() {
   }, []);
 
   const handleHubPress = useCallback(() => {
-    if (aiOpen) {
-      // AIDrawer 已打开 → 二次点击唤起拍照底栏
+    if (activeTab === 'ai') {
+      // 已在 AI 分析界面 → 二次点击唤起拍照底栏
       setShowCamera(true);
     } else {
-      // 首次点击 → 打开 AI 面板（文字输入 + 智能问答）
-      setAiDefaultTab('record');
-      setAiOpen(true);
+      // 首次点击 → 切换到 AI 分析界面（不弹出 AIDrawer）
+      setActiveTab('ai');
     }
-  }, [aiOpen]);
+  }, [activeTab]);
 
   // 视觉识别回填
   const handleVisionResult = useCallback((items: FoodItem[], mealType: MealType, _summary: string) => {

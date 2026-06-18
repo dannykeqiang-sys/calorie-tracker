@@ -14,9 +14,12 @@ export interface DayStats {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
   sodium: number;
   exercises: { name: string; duration: number; calories: number }[];
   weight?: number;
+  /** 四餐热量 [早餐, 午餐, 晚餐, 加餐] */
+  mealCals: number[];
 }
 
 interface AIHealingCardProps {

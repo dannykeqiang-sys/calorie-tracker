@@ -92,7 +92,7 @@ export default function TodayWeightCard({ baseWeight }: TodayWeightCardProps) {
   const totalDiff = todayWeight !== null && refWeight ? +(todayWeight - refWeight).toFixed(1) : null;
 
   return (
-    <div className="rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+    <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
