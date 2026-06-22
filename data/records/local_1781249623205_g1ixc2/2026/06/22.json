@@ -64,7 +64,7 @@
   },
   "exercises": [
     {
-      "id": "fde931d7-d7e6-4054-8f02-fa61339abf68",
+      "id": "f252f6c8-183e-4e95-adc6-e695fc98bf57",
       "name": "手臂",
       "calories": 347,
       "duration": 0
@@ -72,10 +72,16 @@
   ],
   "water": [
     {
-      "id": "f8b9642c-8958-4349-bd68-9b9be3ec6fe0",
+      "id": "c2368ea6-3ce5-45b1-881e-31d138573b57",
       "amount": 500,
-      "note": "茉莉花茶",
+      "note": "茉莉花茶500ml",
       "time": ""
+    },
+    {
+      "id": "36e77e5d-4010-4cc9-a1ae-54b3baa53e50",
+      "amount": 500,
+      "note": "",
+      "time": "17:56"
     }
   ]
 }
