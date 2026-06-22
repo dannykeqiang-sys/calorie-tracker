@@ -170,11 +170,11 @@ interface MealCarouselProps {
   onChange: (record: DailyRecord) => void;
   onWaterReplace?: (items: WaterItem[]) => void;
   onActiveIndexChange?: (index: number) => void;
-  onCameraOpen?: () => void;
+  onOpenAIInput?: () => void;
 }
 
 const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
-  ({ record, apiKey, isViewingToday = true, profile, journalDate, fullscreen = false, bareMode = false, onChange, onWaterReplace, onActiveIndexChange, onCameraOpen }, ref) => {
+  ({ record, apiKey, isViewingToday = true, profile, journalDate, fullscreen = false, bareMode = false, onChange, onWaterReplace, onActiveIndexChange, onOpenAIInput }, ref) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [highlightedType, setHighlightedType] = useState<CarouselCardType | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -534,10 +534,10 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                           noImage={true}
                           recommendation={recommendations[cfg.type]}
                           showRecommendation={!!recommendations[cfg.type]}
-                          onCameraOpen={onCameraOpen}
                           onAdd={mealHandlers[cfg.type].onAdd}
                           onRemove={mealHandlers[cfg.type].onRemove}
                           onUpdate={mealHandlers[cfg.type].onUpdate}
+                          onOpenAIInput={onOpenAIInput}
                         />
                       </div>
                     </div>
@@ -730,10 +730,10 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                       bareMode={bareMode}
                       recommendation={recommendations[cfg.type]}
                       showRecommendation={!!recommendations[cfg.type]}
-                      onCameraOpen={onCameraOpen}
                       onAdd={mealHandlers[cfg.type].onAdd}
                       onRemove={mealHandlers[cfg.type].onRemove}
                       onUpdate={mealHandlers[cfg.type].onUpdate}
+                      onOpenAIInput={onOpenAIInput}
                     />
                   </div>
                 );

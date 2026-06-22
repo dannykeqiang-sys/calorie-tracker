@@ -24,7 +24,7 @@ interface DesktopParallaxSliderProps {
   journalDate?: string;
   onChange: (record: DailyRecord) => void;
   onWaterReplace?: (items: WaterItem[]) => void;
-  onCameraOpen?: () => void;
+  onOpenAIInput?: () => void;
 }
 
 const MEAL_RATIOS: Record<MealType, number> = {
@@ -69,7 +69,7 @@ const BWD_ORIGIN = 'inset(22% 98% 64% 0% round 16px)';
 const INIT_ORIGIN = 'inset(22% 38% 64% 44% round 16px)';
 
 const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderProps>(
-  ({ record, apiKey, isViewingToday = true, profile, journalDate, onChange, onWaterReplace, onCameraOpen }, ref) => {
+  ({ record, apiKey, isViewingToday = true, profile, journalDate, onChange, onWaterReplace, onOpenAIInput }, ref) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const [bgOrigin, setBgOrigin] = useState(INIT_ORIGIN);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -243,10 +243,10 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
           isHighlighted={false}
           macroTarget={getMacroTarget(type as MealType, ratio)}
           bareMode
-          onCameraOpen={onCameraOpen}
           onAdd={item => handleFoodAdd(type as MealType, item)}
           onRemove={id => handleFoodRemove(type as MealType, id)}
           onUpdate={item => handleFoodUpdate(type as MealType, item)}
+          onOpenAIInput={onOpenAIInput}
         />
       );
     };

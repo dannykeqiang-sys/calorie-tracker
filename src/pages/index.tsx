@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Copy, Upload } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import Navbar from './components/Navbar';
 import UserProfilePanel from './components/UserProfilePanel';
 import SettingsPanel from './components/SettingsPanel';
@@ -19,31 +19,15 @@ import DesktopRightPanel from './components/DesktopRightPanel';
 import DesktopParallaxSlider from './components/DesktopParallaxSlider';
 import ExportDataModal from './components/ExportDataModal';
 import BatchImportModal from './components/BatchImportModal';
-import type { ImportMode } from './components/BatchImportModal';
-import type { MultiDateEntry } from '../utils/deepseek';
-import { loadProfile, saveProfile, loadTodayRecord, saveTodayRecord, loadRecordByDate, saveRecordByDate } from '../utils/storage';
-import { idbSaveRecord, idbGetRecord } from '../utils/indexedDB';
-import { syncRecordToCloud, syncProfileToCloud, loadProfileFromCloud, loadRecordFromCloud } from '../utils/githubDB';
+import { loadProfile, saveProfile } from '../utils/storage';
+import { syncProfileToCloud, loadProfileFromCloud } from '../utils/githubDB';
 import { getSession } from '../utils/auth';
-import CameraShutter from './components/CameraShutter';
-import type { UserProfile, DailyRecord, MealRecord, FoodItem, MealType, ExerciseItem, WaterItem } from '../types';
-
-const BUILT_IN_DEEPSEEK_KEY = import.meta.env.VITE_DEEPSEEK_KEY || '';
-const BUILT_IN_QWEN_KEY = import.meta.env.VITE_QWEN_KEY || '';
-
-
-function getTodayKey(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function makeEmptyRecord(date: string): DailyRecord {
-  return {
-    date,
-    meals: { breakfast: [], lunch: [], dinner: [], snack: [] } as MealRecord,
-    exercises: [],
-    water: [],
-  };
-}
+import { getTodayKey, makeEmptyRecord } from '../utils/recordHelpers';
+import { useRecordSync } from '../hooks/useRecordSync';
+import { useHistoryRecord } from '../hooks/useHistoryRecord';
+import { useRecordHandlers } from '../hooks/useRecordHandlers';
+import { useBatchImport } from '../hooks/useBatchImport';
+import type { UserProfile, FoodItem, MealType } from '../types';
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -52,14 +36,16 @@ function formatDateLabel(dateStr: string): string {
 
 export default function Home() {
   const navigate = useNavigate();
+
+  // ── UI 状态 ──────────────────────────────────────────
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [record, setRecord] = useState<DailyRecord | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [apiKey] = useState<string>(BUILT_IN_DEEPSEEK_KEY);
+  const [apiKey, setApiKey] = useState<string>(
+    () => localStorage.getItem('calorie_deepseek_api_key') || ''
+  );
   const [activeTab, setActiveTab] = useState('today');
   const [journalDate, setJournalDate] = useState(getTodayKey);
-  const [historyRecord, setHistoryRecord] = useState<DailyRecord | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -67,123 +53,17 @@ export default function Home() {
   const [showAICelebration, setShowAICelebration] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showBatchImport, setShowBatchImport] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
   const [mobileCarouselActiveIndex, setMobileCarouselActiveIndex] = useState(0);
+
+  // ── 业务 Hooks ────────────────────────────────────────
+  const { record, setRecord, handleRecordChange } = useRecordSync();
+  const { historyRecord, setHistoryRecord, handleHistoryRecordChange } =
+    useHistoryRecord(journalDate);
 
   const carouselRef = useRef<MealCarouselRef>(null);
   const desktopCarouselRef = useRef<MealCarouselRef>(null);
   const autoScrollSlot = useRef(0);
   const autoScrollResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!getSession()) {
-      navigate('/login');
-      return;
-    }
-    document.title = '燃烧我的卡路里 - 科学管理你的热量';
-    // 清理历史遗留的 API Key localStorage 条目
-    ['calorie_deepseek_api_key', 'calorie_qwen_api_key'].forEach(k => localStorage.removeItem(k));
-    const localRecord = loadTodayRecord();
-    setRecord(localRecord);
-
-    // 异步从云端同步今日记录（跨设备数据同步）
-    const todayKey = getTodayKey();
-    loadRecordFromCloud(todayKey)
-      .then(cloudRecord => {
-        if (!cloudRecord) return;
-        const localEmpty = !localRecord.meals.breakfast.length && !localRecord.meals.lunch.length && !localRecord.meals.dinner.length && !localRecord.meals.snack.length && !localRecord.exercises.length;
-        const cloudHasData = cloudRecord.meals.breakfast.length || cloudRecord.meals.lunch.length || cloudRecord.meals.dinner.length || cloudRecord.meals.snack.length || cloudRecord.exercises.length;
-        if (localEmpty && cloudHasData) {
-          // 本地为空 → 直接用云端数据
-          const merged = { ...cloudRecord, date: todayKey };
-          setRecord(merged);
-          saveTodayRecord(merged);
-          idbSaveRecord(merged).catch(() => {});
-        } else if (cloudHasData) {
-          // 本地和云端都有数据 → 合并（云端有而本地没有的项追加）
-          setRecord(prev => {
-            if (!prev) return prev;
-            const mergedMeals = { ...prev.meals };
-            const existingNames = new Set(Object.values(mergedMeals).flat().map(f => f.name));
-            for (const mt of ['breakfast', 'lunch', 'dinner', 'snack'] as const) {
-              const newItems = (cloudRecord.meals[mt] || []).filter(f => !existingNames.has(f.name));
-              if (newItems.length > 0) {
-                mergedMeals[mt] = [...mergedMeals[mt], ...newItems];
-              }
-            }
-            const existingEx = new Set(prev.exercises.map(e => e.name));
-            const newEx = cloudRecord.exercises.filter(e => !existingEx.has(e.name));
-            const mergedExercises = [...prev.exercises, ...newEx];
-            const existingWater = prev.water.map(w => w.amount + w.time);
-            const newWater = cloudRecord.water.filter(w => !existingWater.includes(w.amount + w.time));
-            const mergedWater = [...prev.water, ...newWater];
-            const result = { ...prev, meals: mergedMeals, exercises: mergedExercises, water: mergedWater };
-            saveTodayRecord(result);
-            idbSaveRecord(result).catch(() => {});
-            return result;
-          });
-        }
-      })
-      .catch(() => {});
-
-    const localProfile = loadProfile();
-    if (localProfile) {
-      setProfile(localProfile);
-    } else {
-      loadProfileFromCloud()
-        .then(cloudProfile => {
-          if (cloudProfile) {
-            setProfile(cloudProfile);
-            saveProfile(cloudProfile);
-          } else {
-            setShowOnboarding(true);
-          }
-        })
-        .catch(() => {
-          setShowOnboarding(true);
-        });
-    }
-  }, []);
-
-  useEffect(() => {
-    const today = getTodayKey();
-    if (journalDate === today) {
-      setHistoryRecord(null);
-      return;
-    }
-    // 先加载本地/IndexedDB，再异步从云端同步
-    idbGetRecord(journalDate)
-      .then(idbRec => {
-        const localRec = idbRec ?? loadRecordByDate(journalDate);
-        setHistoryRecord(localRec);
-        // 异步尝试从云端加载
-        loadRecordFromCloud(journalDate)
-          .then(cloudRec => {
-            if (!cloudRec) return;
-            const localEmpty = !localRec?.meals?.breakfast?.length && !localRec?.meals?.lunch?.length && !localRec?.meals?.dinner?.length && !localRec?.meals?.snack?.length && !localRec?.exercises?.length;
-            const cloudHasData = cloudRec.meals.breakfast.length || cloudRec.meals.lunch.length || cloudRec.meals.dinner.length || cloudRec.meals.snack.length || cloudRec.exercises.length;
-            if (localEmpty && cloudHasData) {
-              setHistoryRecord(cloudRec);
-              saveRecordByDate(cloudRec);
-              idbSaveRecord(cloudRec).catch(() => {});
-            }
-          })
-          .catch(() => {});
-      })
-      .catch(() => {
-        const localRec = loadRecordByDate(journalDate);
-        setHistoryRecord(localRec);
-        loadRecordFromCloud(journalDate)
-          .then(cloudRec => {
-            if (cloudRec) {
-              setHistoryRecord(cloudRec);
-              saveRecordByDate(cloudRec);
-              idbSaveRecord(cloudRec).catch(() => {});
-            }
-          })
-          .catch(() => {});
-      });
-  }, [journalDate]);
 
   const scheduleScroll = useCallback((type: MealType | 'exercise') => {
     const slot = autoScrollSlot.current;
@@ -199,235 +79,63 @@ export default function Home() {
     );
   }, []);
 
-  const handleRecordChange = useCallback((newRecord: DailyRecord) => {
-    setRecord(newRecord);
-    saveTodayRecord(newRecord);
-    idbSaveRecord(newRecord).catch(() => {});
-    syncRecordToCloud(newRecord).catch(() => {});
+  const {
+    handleMealsUpdate, handleMealsReplace,
+    handleExercisesUpdate, handleExercisesReplace,
+    handleWaterUpdate, handleWaterReplace,
+    handleHistoryMealsUpdate, handleHistoryMealsReplace,
+    handleHistoryExercisesUpdate, handleHistoryExercisesReplace,
+    handleHistoryWaterUpdate, handleHistoryWaterReplace,
+  } = useRecordHandlers({
+    setRecord, setHistoryRecord, journalDate, scheduleScroll,
+    makeEmptyRecordFn: makeEmptyRecord,
+  });
+
+  const { handleBatchImport, handleBackupImport, handleReuseHistoryRecord } = useBatchImport(
+    {
+      handleMealsUpdate, handleExercisesUpdate, handleWaterUpdate,
+      handleMealsReplace, handleExercisesReplace, handleWaterReplace,
+    },
+    setRecord,
+  );
+
+  // ── 初始化：鉴权 + 用户档案 ─────────────────────────────
+  useEffect(() => {
+    if (!getSession()) {
+      navigate('/login');
+      return;
+    }
+    document.title = '燃烧我的卡路里 - 科学管理你的热量';
+
+    const localProfile = loadProfile();
+    if (localProfile) {
+      setProfile(localProfile);
+    } else {
+      loadProfileFromCloud()
+        .then(cloudProfile => {
+          if (cloudProfile) {
+            setProfile(cloudProfile);
+            saveProfile(cloudProfile);
+          } else {
+            setShowOnboarding(true);
+          }
+        })
+        .catch(() => { setShowOnboarding(true); });
+    }
   }, []);
 
-  const handleHistoryRecordChange = useCallback((newRecord: DailyRecord) => {
-    setHistoryRecord(newRecord);
-    saveRecordByDate(newRecord);
-    idbSaveRecord(newRecord).catch(() => {});
-  }, []);
-
-  const handleMealsUpdate = useCallback(
-    (updates: { mealType: MealType; item: FoodItem }[]) => {
-      setRecord(prev => {
-        if (!prev) return prev;
-        const newMeals = { ...prev.meals };
-        for (const { mealType, item } of updates) {
-          newMeals[mealType] = [...newMeals[mealType], item];
-        }
-        const newRecord = { ...prev, meals: newMeals };
-        saveTodayRecord(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        syncRecordToCloud(newRecord).catch(() => {});
-        return newRecord;
-      });
-      const uniqueTypes = [...new Set(updates.map(u => u.mealType))];
-      uniqueTypes.forEach(type => scheduleScroll(type));
+  // ── 回调函数 ──────────────────────────────────────────
+  const handleOnboardingComplete = useCallback(
+    (p: UserProfile, _key?: string) => {
+      setProfile(p);
+      syncProfileToCloud(p).catch(() => {});
+      setShowOnboarding(false);
+      setShowTutorial(true);
     },
-    [scheduleScroll],
+    [],
   );
 
-  const handleExercisesUpdate = useCallback(
-    (exercises: ExerciseItem[]) => {
-      setRecord(prev => {
-        if (!prev) return prev;
-        const newRecord = { ...prev, exercises: [...prev.exercises, ...exercises] };
-        saveTodayRecord(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        syncRecordToCloud(newRecord).catch(() => {});
-        return newRecord;
-      });
-      if (exercises.length > 0) scheduleScroll('exercise');
-    },
-    [scheduleScroll],
-  );
-
-  const handleMealsReplace = useCallback(
-    (updates: { mealType: MealType; item: FoodItem }[]) => {
-      setRecord(prev => {
-        if (!prev) return prev;
-        const newMeals = { ...prev.meals };
-        const affectedTypes = new Set(updates.map(u => u.mealType));
-        for (const type of affectedTypes) newMeals[type] = [];
-        for (const { mealType, item } of updates) {
-          newMeals[mealType] = [...newMeals[mealType], item];
-        }
-        const newRecord = { ...prev, meals: newMeals };
-        saveTodayRecord(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        syncRecordToCloud(newRecord).catch(() => {});
-        return newRecord;
-      });
-      const uniqueTypes = [...new Set(updates.map(u => u.mealType))];
-      uniqueTypes.forEach(type => scheduleScroll(type));
-    },
-    [scheduleScroll],
-  );
-
-  const handleExercisesReplace = useCallback(
-    (exercises: ExerciseItem[]) => {
-      setRecord(prev => {
-        if (!prev) return prev;
-        const newRecord = { ...prev, exercises };
-        saveTodayRecord(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        syncRecordToCloud(newRecord).catch(() => {});
-        return newRecord;
-      });
-      if (exercises.length > 0) scheduleScroll('exercise');
-    },
-    [scheduleScroll],
-  );
-
-  const handleWaterUpdate = useCallback((items: WaterItem[]) => {
-    setRecord(prev => {
-      if (!prev) return prev;
-      const newRecord = { ...prev, water: [...(prev.water ?? []), ...items] };
-      saveTodayRecord(newRecord);
-      idbSaveRecord(newRecord).catch(() => {});
-      syncRecordToCloud(newRecord).catch(() => {});
-      return newRecord;
-    });
-  }, []);
-
-  const handleHistoryMealsUpdate = useCallback(
-    (updates: { mealType: MealType; item: FoodItem }[]) => {
-      setHistoryRecord(prev => {
-        const base = prev ?? makeEmptyRecord(journalDate);
-        const newMeals = { ...base.meals };
-        for (const { mealType, item } of updates) {
-          newMeals[mealType] = [...newMeals[mealType], item];
-        }
-        const newRecord = { ...base, meals: newMeals };
-        saveRecordByDate(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        return newRecord;
-      });
-      const uniqueTypes = [...new Set(updates.map(u => u.mealType))];
-      uniqueTypes.forEach(type => scheduleScroll(type));
-    },
-    [journalDate, scheduleScroll],
-  );
-
-  const handleHistoryMealsReplace = useCallback(
-    (updates: { mealType: MealType; item: FoodItem }[]) => {
-      setHistoryRecord(prev => {
-        const base = prev ?? makeEmptyRecord(journalDate);
-        const newMeals = { ...base.meals } as MealRecord;
-        const affectedTypes = new Set(updates.map(u => u.mealType));
-        for (const type of affectedTypes) newMeals[type] = [];
-        for (const { mealType, item } of updates) {
-          newMeals[mealType] = [...newMeals[mealType], item];
-        }
-        const newRecord = { ...base, meals: newMeals };
-        saveRecordByDate(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        return newRecord;
-      });
-      const uniqueTypes = [...new Set(updates.map(u => u.mealType))];
-      uniqueTypes.forEach(type => scheduleScroll(type));
-    },
-    [journalDate, scheduleScroll],
-  );
-
-  const handleHistoryExercisesUpdate = useCallback(
-    (exercises: ExerciseItem[]) => {
-      setHistoryRecord(prev => {
-        const base = prev ?? makeEmptyRecord(journalDate);
-        const newRecord = { ...base, exercises: [...base.exercises, ...exercises] };
-        saveRecordByDate(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        return newRecord;
-      });
-      if (exercises.length > 0) scheduleScroll('exercise');
-    },
-    [journalDate, scheduleScroll],
-  );
-
-  const handleHistoryExercisesReplace = useCallback(
-    (exercises: ExerciseItem[]) => {
-      setHistoryRecord(prev => {
-        const base = prev ?? makeEmptyRecord(journalDate);
-        const newRecord = { ...base, exercises };
-        saveRecordByDate(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        return newRecord;
-      });
-      if (exercises.length > 0) scheduleScroll('exercise');
-    },
-    [journalDate, scheduleScroll],
-  );
-
-  const handleHistoryWaterUpdate = useCallback(
-    (items: WaterItem[]) => {
-      setHistoryRecord(prev => {
-        const base = prev ?? makeEmptyRecord(journalDate);
-        const newRecord = { ...base, water: [...(base.water ?? []), ...items] };
-        saveRecordByDate(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        return newRecord;
-      });
-    },
-    [journalDate],
-  );
-
-  const handleWaterReplace = useCallback((items: WaterItem[]) => {
-    setRecord(prev => {
-      if (!prev) return prev;
-      const newRecord = { ...prev, water: items };
-      saveTodayRecord(newRecord);
-      idbSaveRecord(newRecord).catch(() => {});
-      syncRecordToCloud(newRecord).catch(() => {});
-      return newRecord;
-    });
-  }, []);
-
-  const handleHistoryWaterReplace = useCallback(
-    (items: WaterItem[]) => {
-      setHistoryRecord(prev => {
-        const base = prev ?? makeEmptyRecord(journalDate);
-        const newRecord = { ...base, water: items };
-        saveRecordByDate(newRecord);
-        idbSaveRecord(newRecord).catch(() => {});
-        syncRecordToCloud(newRecord).catch(() => {});
-        return newRecord;
-      });
-    },
-    [journalDate],
-  );
-
-  const handleOnboardingComplete = useCallback((p: UserProfile, _key?: string) => {
-    setProfile(p);
-    syncProfileToCloud(p).catch(() => {});
-    setShowOnboarding(false);
-    setShowTutorial(true);
-  }, []);
-
-  const handleTutorialDone = useCallback(() => {
-    setShowTutorial(false);
-  }, []);
-
-  const handleReuseHistoryRecord = useCallback(() => {
-    if (!historyRecord) return;
-    setRecord(prev => {
-      const base = prev ?? makeEmptyRecord(getTodayKey());
-      const newRecord = {
-        ...base,
-        meals: { ...historyRecord.meals },
-        exercises: [...historyRecord.exercises],
-        water: [...(historyRecord.water ?? [])],
-      };
-      saveTodayRecord(newRecord);
-      idbSaveRecord(newRecord).catch(() => {});
-      syncRecordToCloud(newRecord).catch(() => {});
-      return newRecord;
-    });
-  }, [historyRecord]);
+  const handleTutorialDone = useCallback(() => setShowTutorial(false), []);
 
   const handleProfileSave = useCallback((p: UserProfile) => {
     setProfile(p);
@@ -444,99 +152,9 @@ export default function Home() {
     if (tab !== 'ai') setAiOpen(false);
   }, []);
 
-  const handleHubPress = useCallback(() => {
-    if (activeTab === 'ai') {
-      // 已在 AI 分析界面 → 二次点击唤起拍照底栏
-      setShowCamera(true);
-    } else {
-      // 首次点击 → 切换到 AI 分析界面（不弹出 AIDrawer）
-      setActiveTab('ai');
-    }
-  }, [activeTab]);
-
-  // 视觉识别回填
-  const handleVisionResult = useCallback((items: FoodItem[], mealType: MealType, _summary: string) => {
-    const updates = items.map(item => ({
-      mealType,
-      item: { ...item, id: crypto.randomUUID() },
-    }));
-    handleMealsUpdate(updates);
-    const uniqueTypes = [...new Set(updates.map(u => u.mealType))];
-    uniqueTypes.forEach(type => scheduleScroll(type));
-  }, [handleMealsUpdate, scheduleScroll]);
-
-  const handleBatchImport = useCallback(async (entries: MultiDateEntry[], mode: ImportMode) => {
-    const todayKey = getTodayKey();
-    for (const entry of entries) {
-      const isToday = entry.date === todayKey;
-      const mealUpdates: { mealType: MealType; item: FoodItem }[] = [];
-      for (const mt of ['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]) {
-        for (const f of (entry.meals[mt] ?? [])) {
-          mealUpdates.push({
-            mealType: mt,
-            item: { id: crypto.randomUUID(), name: f.name, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, sodium: f.sodium },
-          });
-        }
-      }
-      const exerciseItems: ExerciseItem[] = (entry.exercises ?? []).map(e => ({
-        id: crypto.randomUUID(), name: e.name, calories: e.calories, duration: 0,
-      }));
-      const waterItems: WaterItem[] = (entry.water_logs ?? []).map(w => ({
-        id: crypto.randomUUID(), amount: w.amount, note: w.raw_text, time: '',
-      }));
-      if (isToday) {
-        if (mode === 'overwrite') {
-          if (mealUpdates.length > 0) handleMealsReplace(mealUpdates);
-          if (exerciseItems.length > 0) handleExercisesReplace(exerciseItems);
-          if (waterItems.length > 0) handleWaterReplace(waterItems);
-        } else {
-          if (mealUpdates.length > 0) handleMealsUpdate(mealUpdates);
-          if (exerciseItems.length > 0) handleExercisesUpdate(exerciseItems);
-          if (waterItems.length > 0) handleWaterUpdate(waterItems);
-        }
-      } else {
-        let existing: DailyRecord;
-        try {
-          existing = (await idbGetRecord(entry.date)) ?? loadRecordByDate(entry.date) ?? makeEmptyRecord(entry.date);
-        } catch {
-          existing = loadRecordByDate(entry.date) ?? makeEmptyRecord(entry.date);
-        }
-        let newRecord: DailyRecord;
-        if (mode === 'overwrite') {
-          const newMeals = { breakfast: [], lunch: [], dinner: [], snack: [] } as MealRecord;
-          for (const { mealType, item } of mealUpdates) {
-            newMeals[mealType] = [...newMeals[mealType], item];
-          }
-          newRecord = { ...existing, meals: newMeals, exercises: exerciseItems, water: waterItems };
-        } else {
-          const newMeals = { ...existing.meals };
-          for (const { mealType, item } of mealUpdates) {
-            newMeals[mealType] = [...(newMeals[mealType] ?? []), item];
-          }
-          newRecord = {
-            ...existing,
-            meals: newMeals,
-            exercises: [...(existing.exercises ?? []), ...exerciseItems],
-            water: [...(existing.water ?? []), ...waterItems],
-          };
-        }
-        saveRecordByDate(newRecord);
-        await idbSaveRecord(newRecord).catch(() => {});
-      }
-    }
-  }, [handleMealsUpdate, handleExercisesUpdate, handleWaterUpdate, handleMealsReplace, handleExercisesReplace, handleWaterReplace]);
-
-  // 口令恢复：直接将完整记录写入
-  const handleBackupImport = useCallback(async (records: DailyRecord[]) => {
-    for (const r of records) {
-      saveRecordByDate(r);
-      await idbSaveRecord(r).catch(() => {});
-    }
-    // 如果恢复的记录包含今天，刷新当前记录
-    const todayKey = getTodayKey();
-    if (records.some(r => r.date === todayKey)) {
-      setRecord(loadTodayRecord());
-    }
+  const handleAIInput = useCallback(() => {
+    setActiveTab('ai');
+    setAiOpen(true);
   }, []);
 
   const closeDrawerAndGoToday = useCallback(() => {
@@ -544,30 +162,35 @@ export default function Home() {
     setActiveTab('today');
   }, []);
 
+  // ── 派生值 ────────────────────────────────────────────
   if (!record) return null;
 
   const today = getTodayKey();
   const isViewingToday = journalDate === today;
-  const activeRecord = isViewingToday ? record : (historyRecord ?? makeEmptyRecord(journalDate));
+  const activeRecord = isViewingToday
+    ? record
+    : (historyRecord ?? makeEmptyRecord(journalDate));
   const activeOnChange = isViewingToday ? handleRecordChange : handleHistoryRecordChange;
 
-  const aiHandlers = isViewingToday
-    ? {
-        onMealsUpdate: (updates: { mealType: MealType; item: FoodItem }[]) => { handleMealsUpdate(updates); closeDrawerAndGoToday(); },
-        onMealsReplace: (updates: { mealType: MealType; item: FoodItem }[]) => { handleMealsReplace(updates); closeDrawerAndGoToday(); },
-        onExercisesUpdate: (exercises: ExerciseItem[]) => { handleExercisesUpdate(exercises); closeDrawerAndGoToday(); },
-        onExercisesReplace: (exercises: ExerciseItem[]) => { handleExercisesReplace(exercises); closeDrawerAndGoToday(); },
-        onWaterUpdate: (items: WaterItem[]) => { handleWaterUpdate(items); closeDrawerAndGoToday(); },
-        onWaterReplace: (items: WaterItem[]) => { handleWaterReplace(items); closeDrawerAndGoToday(); },
-      }
-    : {
-        onMealsUpdate: (updates: { mealType: MealType; item: FoodItem }[]) => { handleHistoryMealsUpdate(updates); closeDrawerAndGoToday(); },
-        onMealsReplace: (updates: { mealType: MealType; item: FoodItem }[]) => { handleHistoryMealsReplace(updates); closeDrawerAndGoToday(); },
-        onExercisesUpdate: (exercises: ExerciseItem[]) => { handleHistoryExercisesUpdate(exercises); closeDrawerAndGoToday(); },
-        onExercisesReplace: (exercises: ExerciseItem[]) => { handleHistoryExercisesReplace(exercises); closeDrawerAndGoToday(); },
-        onWaterUpdate: (items: WaterItem[]) => { handleHistoryWaterUpdate(items); closeDrawerAndGoToday(); },
-        onWaterReplace: (items: WaterItem[]) => { handleHistoryWaterReplace(items); closeDrawerAndGoToday(); },
-      };
+  const wrap = useCallback(
+    <T extends (...a: any[]) => void>(fn: T) => (...a: Parameters<T>) => {
+      fn(...a); closeDrawerAndGoToday();
+    },
+    [closeDrawerAndGoToday],
+  );
+
+  const activeHandlers = isViewingToday
+    ? { handleMealsUpdate, handleMealsReplace, handleExercisesUpdate, handleExercisesReplace, handleWaterUpdate, handleWaterReplace }
+    : { handleMealsUpdate: handleHistoryMealsUpdate, handleMealsReplace: handleHistoryMealsReplace, handleExercisesUpdate: handleHistoryExercisesUpdate, handleExercisesReplace: handleHistoryExercisesReplace, handleWaterUpdate: handleHistoryWaterUpdate, handleWaterReplace: handleHistoryWaterReplace };
+
+  const aiHandlers = {
+    onMealsUpdate: wrap(activeHandlers.handleMealsUpdate),
+    onMealsReplace: wrap(activeHandlers.handleMealsReplace),
+    onExercisesUpdate: wrap(activeHandlers.handleExercisesUpdate),
+    onExercisesReplace: wrap(activeHandlers.handleExercisesReplace),
+    onWaterUpdate: wrap(activeHandlers.handleWaterUpdate),
+    onWaterReplace: wrap(activeHandlers.handleWaterReplace),
+  };
 
   const desktopDateBar = (
     <div
@@ -587,7 +210,10 @@ export default function Home() {
           <DateSwitcher selectedDate={journalDate} onDateChange={setJournalDate} />
         </div>
         <div className="flex-shrink-0">
-          <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: 'rgba(163,184,153,0.12)', color: 'var(--primary)' }}>
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-full"
+            style={{ background: 'rgba(163,184,153,0.12)', color: 'var(--primary)' }}
+          >
             {isViewingToday ? '今日' : '历史'}
           </span>
         </div>
@@ -595,9 +221,26 @@ export default function Home() {
     </div>
   );
 
+  const desktopRightPanel = (
+    <DesktopRightPanel
+      record={activeRecord}
+      profile={profile}
+      apiKey={apiKey}
+      journalDate={journalDate}
+      isViewingToday={isViewingToday}
+      onMealsUpdate={aiHandlers.onMealsUpdate}
+      onMealsReplace={aiHandlers.onMealsReplace}
+      onExercisesUpdate={aiHandlers.onExercisesUpdate}
+      onExercisesReplace={aiHandlers.onExercisesReplace}
+      onWaterUpdate={aiHandlers.onWaterUpdate}
+      onWaterReplace={aiHandlers.onWaterReplace}
+      onRecordSuccess={() => setShowAICelebration(true)}
+    />
+  );
+
   return (
     <>
-      {/* 桌面端全屏布局 */}
+      {/* ── 桌面端全屏布局 ──────────────────────────────── */}
       <div
         className="hidden lg:flex flex-col overflow-hidden"
         style={{ height: '100dvh', background: 'linear-gradient(155deg, #e8efe4 0%, #d8e8f6 35%, #e8daf4 100%)' }}
@@ -619,7 +262,7 @@ export default function Home() {
                 {!isViewingToday && historyRecord && (
                   <div className="absolute top-3 left-6 z-50">
                     <button
-                      onClick={() => { handleReuseHistoryRecord(); setJournalDate(getTodayKey()); }}
+                      onClick={() => { handleReuseHistoryRecord(historyRecord); setJournalDate(getTodayKey()); }}
                       className="flex items-center gap-2 py-2 px-4 rounded-xl border border-primary/30 bg-card/90 text-primary text-sm font-medium hover:bg-primary/10 transition-all cursor-pointer shadow-sm tactile-hover"
                       style={{ backdropFilter: 'blur(8px)' }}
                     >
@@ -637,30 +280,20 @@ export default function Home() {
                   journalDate={journalDate}
                   onChange={activeOnChange}
                   onWaterReplace={isViewingToday ? handleWaterReplace : handleHistoryWaterReplace}
-                  onCameraOpen={() => setShowCamera(true)}
+                  onOpenAIInput={handleAIInput}
                 />
               </div>
-              <DesktopRightPanel
-                record={activeRecord}
-                profile={profile}
-                apiKey={apiKey}
-                journalDate={journalDate}
-                isViewingToday={isViewingToday}
-                onMealsUpdate={aiHandlers.onMealsUpdate}
-                onMealsReplace={aiHandlers.onMealsReplace}
-                onExercisesUpdate={aiHandlers.onExercisesUpdate}
-                onExercisesReplace={aiHandlers.onExercisesReplace}
-                onWaterUpdate={aiHandlers.onWaterUpdate}
-                onWaterReplace={aiHandlers.onWaterReplace}
-                onRecordSuccess={() => setShowAICelebration(true)}
-              />
+              {desktopRightPanel}
             </div>
           </div>
         ) : (
           <div className="flex flex-1 overflow-hidden">
             <main className="flex-1 flex flex-col overflow-hidden">
               {desktopDateBar}
-              <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.1) transparent' }}>
+              <div
+                className="flex-1 overflow-y-auto"
+                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.1) transparent' }}
+              >
                 <div className="px-6 py-5 space-y-5">
                   {activeTab === 'analytics' && (
                     <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} />
@@ -671,27 +304,16 @@ export default function Home() {
                 </div>
               </div>
             </main>
-            <DesktopRightPanel
-              record={activeRecord}
-              profile={profile}
-              apiKey={apiKey}
-              journalDate={journalDate}
-              isViewingToday={isViewingToday}
-              onMealsUpdate={aiHandlers.onMealsUpdate}
-              onMealsReplace={aiHandlers.onMealsReplace}
-              onExercisesUpdate={aiHandlers.onExercisesUpdate}
-              onExercisesReplace={aiHandlers.onExercisesReplace}
-              onWaterUpdate={aiHandlers.onWaterUpdate}
-              onWaterReplace={aiHandlers.onWaterReplace}
-              onRecordSuccess={() => setShowAICelebration(true)}
-            />
+            {desktopRightPanel}
           </div>
         )}
       </div>
 
-      {/* 移动端布局 */}
-      <div className="lg:hidden flex flex-col overflow-hidden" style={{ height: '100dvh', background: 'transparent' }}>
-        {/* 移动端全屏视差背景 */}
+      {/* ── 移动端布局 ──────────────────────────────────── */}
+      <div
+        className="lg:hidden flex flex-col overflow-hidden"
+        style={{ height: '100dvh', background: 'transparent' }}
+      >
         <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
           {CARD_ORDER.map((type, i) => (
             <div
@@ -716,13 +338,13 @@ export default function Home() {
           onOpenSettings={() => setShowSettings(true)}
         />
 
-        <div className="flex-shrink-0 z-10 border-b border-border" style={{ background: 'var(--background)', opacity: 0.92, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <div
+          className="flex-shrink-0 z-10 border-b border-border"
+          style={{ background: 'var(--background)', opacity: 0.92, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+        >
           <div className="px-4 sm:px-6 py-1.5 flex items-center gap-2">
             <div className="flex-1 min-w-0">
-              <DateSwitcher
-                selectedDate={journalDate}
-                onDateChange={setJournalDate}
-              />
+              <DateSwitcher selectedDate={journalDate} onDateChange={setJournalDate} />
             </div>
             <WeightChip journalDate={journalDate} />
           </div>
@@ -757,8 +379,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-            {/* 批量导入已收敛至设置面板 */}
-
           </div>
 
           {activeTab === 'today' && (
@@ -766,7 +386,7 @@ export default function Home() {
               {!isViewingToday && historyRecord && (
                 <div className="flex-shrink-0 px-4 sm:px-6 pb-2">
                   <button
-                    onClick={() => { handleReuseHistoryRecord(); setJournalDate(getTodayKey()); }}
+                    onClick={() => { handleReuseHistoryRecord(historyRecord); setJournalDate(getTodayKey()); }}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-sm font-medium hover:bg-primary/10 transition-all cursor-pointer"
                   >
                     <Copy className="w-4 h-4" />
@@ -786,7 +406,7 @@ export default function Home() {
                   onChange={activeOnChange}
                   onWaterReplace={isViewingToday ? handleWaterReplace : handleHistoryWaterReplace}
                   onActiveIndexChange={setMobileCarouselActiveIndex}
-                  onCameraOpen={() => setShowCamera(true)}
+                  onOpenAIInput={handleAIInput}
                 />
               </div>
             </div>
@@ -808,11 +428,11 @@ export default function Home() {
         <BottomNav
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          onCameraOpen={handleHubPress}
+          onAIInput={handleAIInput}
         />
       </div>
 
-      {/* 共享弹层 */}
+      {/* ── 共享弹层 ────────────────────────────────────── */}
       <AIDrawer
         open={aiOpen}
         onClose={() => setAiOpen(false)}
@@ -822,7 +442,6 @@ export default function Home() {
         isViewingToday={isViewingToday}
         defaultTab={aiDefaultTab}
         onRecordSuccess={() => setShowAICelebration(true)}
-        onCameraOpen={() => setShowCamera(true)}
         {...aiHandlers}
       />
 
@@ -838,12 +457,14 @@ export default function Home() {
         onLogout={handleLogout}
         onExport={() => setShowExport(true)}
         onBatchImport={() => setShowBatchImport(true)}
+        apiKey={apiKey}
+        onApiKeyChange={(newKey) => {
+          localStorage.setItem('calorie_deepseek_api_key', newKey);
+          setApiKey(newKey);
+        }}
       />
 
-      <ExportDataModal
-        open={showExport}
-        onClose={() => setShowExport(false)}
-      />
+      <ExportDataModal open={showExport} onClose={() => setShowExport(false)} />
 
       <BatchImportModal
         open={showBatchImport}
@@ -853,16 +474,7 @@ export default function Home() {
         onImportBackup={handleBackupImport}
       />
 
-      <CameraShutter
-        open={showCamera}
-        apiKey={BUILT_IN_QWEN_KEY}
-        onClose={() => setShowCamera(false)}
-        onResult={handleVisionResult}
-      />
-
-      {showOnboarding && (
-        <OnboardingPanel onComplete={handleOnboardingComplete} />
-      )}
+      {showOnboarding && <OnboardingPanel onComplete={handleOnboardingComplete} />}
 
       {showTutorial && profile && (
         <TutorialOverlay

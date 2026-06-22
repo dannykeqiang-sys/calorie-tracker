@@ -1,9 +1,9 @@
-import { BookOpen, TrendingUp, Sparkles } from 'lucide-react';
+import { BookOpen, TrendingUp, MessageSquare } from 'lucide-react';
 
 interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  onCameraOpen: () => void;
+  onAIInput: () => void;
 }
 
 const LEFT_TABS = [
@@ -14,7 +14,7 @@ const RIGHT_TABS = [
   { value: 'analytics', label: '时光机', icon: TrendingUp },
 ];
 
-export default function BottomNav({ activeTab, onTabChange, onCameraOpen }: BottomNavProps) {
+export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomNavProps) {
   const isAIActive = activeTab === 'ai';
 
   return (
@@ -66,27 +66,27 @@ export default function BottomNav({ activeTab, onTabChange, onCameraOpen }: Bott
           );
         })}
 
-        {/* Center Camera Button */}
+        {/* Center AI Input Button */}
         <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
           <button
-            data-tutorial="camera-btn"
-            onClick={onCameraOpen}
+            data-tutorial="ai-input-btn"
+            onClick={onAIInput}
             className="w-14 h-14 rounded-full flex items-center justify-center text-white cursor-pointer active:scale-90 transition-all"
             style={{
               background: 'linear-gradient(145deg, #8b5cf6, #6366f1)',
               boxShadow: isAIActive
                 ? '0 -4px 24px rgba(139,92,246,0.7), 0 4px 16px rgba(99,102,241,0.5), 0 0 0 3px rgba(139,92,246,0.3)'
                 : '0 -4px 20px rgba(139,92,246,0.5), 0 4px 16px rgba(99,102,241,0.4), 0 2px 8px rgba(0,0,0,0.14)',
-              animation: 'shutter-pulse 2.5s ease-in-out infinite',
+              animation: 'ai-pulse 2.5s ease-in-out infinite',
             }}
           >
-            <Sparkles className="w-6 h-6" />
+            <MessageSquare className="w-6 h-6" />
           </button>
         </div>
       </div>
 
       <style>{`
-        @keyframes shutter-pulse {
+        @keyframes ai-pulse {
           0%, 100% { box-shadow: 0 -4px 20px rgba(139,92,246,0.5), 0 4px 16px rgba(99,102,241,0.4), 0 2px 8px rgba(0,0,0,0.14); }
           50% { box-shadow: 0 -4px 28px rgba(139,92,246,0.72), 0 4px 22px rgba(99,102,241,0.58), 0 0 0 6px rgba(139,92,246,0.18); }
         }

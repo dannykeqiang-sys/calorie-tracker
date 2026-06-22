@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Pencil, X, ChevronDown, ChevronUp, Minus, Camera, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Pencil, X, ChevronDown, ChevronUp, Minus, Sparkles } from 'lucide-react';
 import { Input } from '@/components/shadcn/input';
 import { safeNormalizeString } from '../../utils/stringUtils';
 import type { FoodItem } from '../../types';
@@ -39,7 +39,7 @@ interface MealCardSlotProps {
   onAdd: (item: FoodItem) => void;
   onRemove: (id: string) => void;
   onUpdate: (item: FoodItem) => void;
-  onCameraOpen?: () => void;
+  onOpenAIInput?: () => void;
 }
 
 type FoodGroup = { name: string; items: FoodItem[] };
@@ -438,7 +438,7 @@ export default function MealCardSlot({
   onAdd,
   onRemove,
   onUpdate,
-  onCameraOpen,
+  onOpenAIInput,
 }: MealCardSlotProps) {
   const [name, setName] = useState('');
   const [calories, setCalories] = useState('');
@@ -657,8 +657,8 @@ export default function MealCardSlot({
             <div className="py-2">
               {showRecommendation && recommendation ? (
                 <button
-                  onClick={onCameraOpen}
-                  className="w-full text-left rounded-2xl p-3.5 transition-all active:scale-[0.98] cursor-pointer"
+                  onClick={onOpenAIInput}
+                  className="w-full text-left rounded-2xl p-3.5 transition-all active:scale-[0.98] cursor-pointer hover:bg-white/25"
                   style={{
                     background: 'rgba(255,255,255,0.18)',
                     border: '1px solid rgba(255,255,255,0.3)',
@@ -674,14 +674,23 @@ export default function MealCardSlot({
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-foreground/80 leading-relaxed">{recommendation}</p>
                       <div className="flex items-center gap-1.5 mt-2">
-                        <Camera className="w-3 h-3" style={{ color: '#8b5cf6' }} />
-                        <span className="text-[10px] font-semibold" style={{ color: '#8b5cf6' }}>点击拍照记录</span>
+                        <Sparkles className="w-3 h-3" style={{ color: '#8b5cf6' }} />
+                        <span className="text-[10px] font-semibold" style={{ color: '#8b5cf6' }}>点击使用 AI 快速记录</span>
                       </div>
                     </div>
                   </div>
                 </button>
               ) : (
-                <p className="text-[10px] text-muted-foreground/35 tracking-wide text-center mb-3">还没有{config.label}记录</p>
+                <button
+                  onClick={onOpenAIInput}
+                  className="w-full cursor-pointer hover:bg-white/10 transition-colors rounded-xl py-2 px-3"
+                >
+                  <p className="text-[10px] text-muted-foreground/50 tracking-wide text-center mb-1">还没有{config.label}记录</p>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-primary/60" />
+                    <span className="text-[10px] font-medium text-primary/70">使用 AI 快速记录</span>
+                  </div>
+                </button>
               )}
               <div className="flex gap-2">
                 {[

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/shadcn/button';
-import { Sparkles, CheckCircle, AlertCircle, X, Plus, RefreshCw, Camera } from 'lucide-react';
+import { Sparkles, CheckCircle, AlertCircle, X, Plus, RefreshCw } from 'lucide-react';
 import { parseMixedMeals } from '../../utils/deepseek';
 import { safeNormalizeString } from '../../utils/stringUtils';
 import type { FoodItem, MealType, DailyRecord, ExerciseItem, WaterItem } from '../../types';
@@ -16,7 +16,6 @@ interface GlobalTreeholeInputProps {
   onWaterUpdate: (items: WaterItem[]) => void;
   onWaterReplace?: (items: WaterItem[]) => void;
   onRecordSuccess?: () => void;
-  onCameraOpen?: () => void;
 }
 
 type Status = 'idle' | 'parsing' | 'confirm' | 'success' | 'error';
@@ -55,7 +54,6 @@ export default function GlobalTreeholeInput({
   onWaterUpdate,
   onWaterReplace,
   onRecordSuccess,
-  onCameraOpen,
 }: GlobalTreeholeInputProps) {
   const [text, setText] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -338,21 +336,6 @@ export default function GlobalTreeholeInput({
               </button>
             )}
           </div>
-
-          {onCameraOpen && (
-            <button
-              type="button"
-              onClick={onCameraOpen}
-              className="w-full h-12 rounded-xl flex items-center justify-center gap-3 transition-all cursor-pointer border overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(99,102,241,0.04))',
-                borderColor: 'rgba(139,92,246,0.35)',
-              }}
-            >
-              <Camera className="w-4 h-4 text-purple-500" />
-              <span className="text-xs font-medium" style={{ color: '#8b5cf6' }}>拍照识别食物</span>
-            </button>
-          )}
 
           <div className="flex items-center gap-2">
             <Button

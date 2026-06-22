@@ -4,3 +4,8 @@ dist
 .env.local
 .env.*.local
 _deploy_tmp
+tsconfig.tsbuildinfo
+
+# Compiled JS artifacts (TypeScript project, .js files are build output)
+src/**/*.js
+src/**/*.js.map
