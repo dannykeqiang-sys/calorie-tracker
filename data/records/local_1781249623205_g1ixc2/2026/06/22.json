@@ -1,0 +1,67 @@
+{
+  "date": "2026-06-22",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "1a33eb2a-352c-4f3d-b6a6-86590cbb00d7",
+        "name": "葡萄汁拿铁(1杯)",
+        "calories": 200,
+        "protein": 5,
+        "carbs": 30,
+        "fat": 7,
+        "sodium": 100
+      },
+      {
+        "id": "f5ed0395-425c-4396-97a2-b31f5d9fbd9c",
+        "name": "黄瓜(1根)",
+        "calories": 16,
+        "protein": 1,
+        "carbs": 3,
+        "fat": 0,
+        "sodium": 2
+      },
+      {
+        "id": "312f64f1-e614-4a9e-bfba-21a1bb341891",
+        "name": "番茄(1个)",
+        "calories": 22,
+        "protein": 1,
+        "carbs": 5,
+        "fat": 0,
+        "sodium": 5
+      },
+      {
+        "id": "60bd3272-ee35-4e4c-be88-045888f0915f",
+        "name": "溏心蛋三明治(1个)",
+        "calories": 350,
+        "protein": 15,
+        "carbs": 30,
+        "fat": 18,
+        "sodium": 500
+      }
+    ],
+    "lunch": [
+      {
+        "id": "ad8224de-76ef-4602-a9c7-8575b253a3a1",
+        "name": "豌杂面(半碗)",
+        "calories": 300,
+        "protein": 12,
+        "carbs": 45,
+        "fat": 8,
+        "sodium": 600
+      },
+      {
+        "id": "0b9f72e8-dd5c-40c4-856b-398df4037520",
+        "name": "茉莉花茶(500ml)",
+        "calories": 0,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 0,
+        "sodium": 0
+      }
+    ],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": []
+}
