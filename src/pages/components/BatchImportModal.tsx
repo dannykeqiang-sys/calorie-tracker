@@ -281,18 +281,16 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
               <div className="rounded-xl bg-primary/5 border border-primary/20 px-3 py-2.5">
                 <p className="text-xs text-primary/80 leading-relaxed">{summary}</p>
               </div>
-              {hasConflict && (
-                <div className="rounded-xl border border-border bg-muted/20 p-1 flex gap-1">
-                  <button onClick={() => setImportMode('append')} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                    style={importMode === 'append' ? { background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)', color: 'white' } : { color: 'var(--muted-foreground)' }}>
-                    <Plus className="w-3 h-3" />追加到已有数据
-                  </button>
-                  <button onClick={() => setImportMode('overwrite')} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                    style={importMode === 'overwrite' ? { background: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)', color: 'white' } : { color: 'var(--muted-foreground)' }}>
-                    <RefreshCw className="w-3 h-3" />覆盖已有数据
-                  </button>
-                </div>
-              )}
+              <div className="rounded-xl border border-border bg-muted/20 p-1 flex gap-1">
+                <button onClick={() => setImportMode('append')} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                  style={importMode === 'append' ? { background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)', color: 'white' } : { color: 'var(--muted-foreground)' }}>
+                  <Plus className="w-3 h-3" />追加到已有数据
+                </button>
+                <button onClick={() => setImportMode('overwrite')} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                  style={importMode === 'overwrite' ? { background: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)', color: 'white' } : { color: 'var(--muted-foreground)' }}>
+                  <RefreshCw className="w-3 h-3" />覆盖已有数据
+                </button>
+              </div>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
                 {entries.map(entry => {
                   const d = new Date(entry.date + 'T00:00:00');
@@ -327,8 +325,8 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
               <div className="flex gap-3">
                 <button onClick={() => { setPhase('input'); setEntries([]); setExistingDates(new Set()); }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer flex-shrink-0"><ChevronLeft className="w-4 h-4" />修改</button>
                 <button onClick={handleImport} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer active:scale-95"
-                  style={importMode === 'overwrite' && hasConflict ? { background: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)' } : { background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}>
-                  {importMode === 'overwrite' && hasConflict ? '覆盖导入' : '确认导入'} {entries.length} 天数据
+                  style={importMode === 'overwrite' ? { background: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)' } : { background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}>
+                  {importMode === 'overwrite' ? '覆盖导入' : '追加导入'} {entries.length} 天数据
                 </button>
               </div>
             </>

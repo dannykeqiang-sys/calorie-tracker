@@ -175,7 +175,7 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
   }
 
   const HH = 240, PAD_TOP = 32, PAD_BOT = 20;
-  const cols = [0.08, 0.42, 0.76];
+  const cols = [8, 42, 76];
   const usableH = HH - PAD_TOP - PAD_BOT;
   const totalV = nodes.reduce((s, n) => s + (n.col === 2 ? n.value * 0.5 : n.value), 0) || 1;
 
@@ -433,21 +433,21 @@ export function MealHeatmap({ stats }: { stats: DayStats[] }) {
                 onMouseLeave={() => setHoverCell(null)}
                 style={{ cursor: cal > 0 ? 'pointer' : 'default' }}>
                 {cal > 0 ? (
-                  <rect x={(PAD + ci * (CELL + MG)) - (CELL * (scale - 1)) / 2}
-                    y={(PAD + ri * (CELL + MG)) - (CELL * (scale - 1)) / 2}
-                    width={CELL * scale} height={CELL * scale} rx={5} fill={MEAL_COLORS[ri]}
+                  <rect x={(PAD + ri * (CELL + MG)) - (CELL * (scale - 1)) / 2}
+                    y={(PAD + ci * (CELL + MG)) - (CELL * (scale - 1)) / 2}
+                    width={CELL * scale} height={CELL * scale} rx={5} fill={MEAL_COLORS[ci]}
                     opacity={0.2 + intensity * 0.8} filter={isH ? 'url(#hmGlow2)' : undefined}
                     style={{ transition: 'all 0.25s ease' }} />
                 ) : (
-                  <rect x={PAD + ci * (CELL + MG)} y={PAD + ri * (CELL + MG)}
+                  <rect x={PAD + ri * (CELL + MG)} y={PAD + ci * (CELL + MG)}
                     width={CELL} height={CELL} rx={5} fill="var(--ck-chart-empty)" opacity={0.25} />
                 )}
                 {isH && cal > 0 && (
-                  <rect x={PAD + ci * (CELL + MG) - 2} y={PAD + ri * (CELL + MG) - 2}
-                    width={CELL + 4} height={CELL + 4} rx={7} fill="none" stroke={MEAL_COLORS[ri]} strokeWidth={2} />
+                  <rect x={PAD + ri * (CELL + MG) - 2} y={PAD + ci * (CELL + MG) - 2}
+                    width={CELL + 4} height={CELL + 4} rx={7} fill="none" stroke={MEAL_COLORS[ci]} strokeWidth={2} />
                 )}
                 {isH && cal > 0 && (
-                  <text x={PAD + ci * (CELL + MG) + CELL / 2} y={PAD + ri * (CELL + MG) + CELL / 2 + 4}
+                  <text x={PAD + ri * (CELL + MG) + CELL / 2} y={PAD + ci * (CELL + MG) + CELL / 2 + 4}
                     textAnchor="middle" fontSize={10} fill="white" fontWeight="800"
                     style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>{cal}</text>
                 )}

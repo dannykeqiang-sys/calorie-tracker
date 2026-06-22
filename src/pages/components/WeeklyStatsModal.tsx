@@ -219,11 +219,12 @@ export default function WeeklyStatsModal({
   const trendItems = getTrendItems(stats);
   const suggestions = getSuggestions(stats, profile, targetCalories);
 
-  // 计算全周期平均摄入
+  // 计算全周期平均摄入与饮水达标天数
   const activeDays = stats.filter(d => d.intake > 0);
   const avgIntake = activeDays.length > 0
     ? Math.round(activeDays.reduce((s, d) => s + d.intake, 0) / activeDays.length)
     : 0;
+  const waterDays = stats.filter(d => d.water >= 1500).length;
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
