@@ -84,12 +84,15 @@ export function NutritionRadar({ stats, target, selectedDate }: { stats: DayStat
   return (
     <ChartCard icon={Radar} title="营养雷达" iconColor="#8B5CF6" kind="purple" subtitle={`${today.label} 数据`}>
       <div className="flex justify-center w-full">
-        <svg viewBox="0 0 240 220" className="w-full h-auto" style={{ maxWidth: 400 }}>
+        <svg viewBox="0 0 240 220" className="w-full h-auto" style={{ maxWidth: 500 }}>
           <defs>
             <linearGradient id="radarFill2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.35" /><stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.06" />
+              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.5" /><stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.15" />
             </linearGradient>
-            <filter id="rGlow2"><feGaussianBlur stdDeviation="2" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <radialGradient id="radarFill3" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3" /><stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.08" />
+            </radialGradient>
+            <filter id="rGlow2"><feGaussianBlur stdDeviation="2.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
           {/* 网格线 */}
           {[0.25, 0.5, 0.75, 1].map(pct => {
@@ -101,18 +104,27 @@ export function NutritionRadar({ stats, target, selectedDate }: { stats: DayStat
             const p = pt(i, axes[i].max, axes[i].max);
             return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="var(--ck-chart-grid)" strokeWidth={0.5} />;
           })}
-          {/* 填充面积 + 轮廓线 — 明显围出面积 */}
-          <polygon points={path} fill="url(#radarFill2)" stroke="#8B5CF6" strokeWidth={2} strokeLinejoin="round" filter="url(#rGlow2)" opacity={0.9} />
+          {/* 双层填充面积 + 轮廓线 */}
+          <polygon points={path} fill="url(#radarFill3)" stroke="none" />
+          <polygon points={path} fill="url(#radarFill2)" stroke="#8B5CF6" strokeWidth={2.5} strokeLinejoin="round" filter="url(#rGlow2)" opacity={0.95} />
           {/* 数据点 */}
           {axes.map((a, i) => {
             const p = pt(i, today[a.key] as number, a.max);
             const isH = hoverAxis === i;
             return (
-              <g key={i} style={{ cursor: 'pointer' }} onMouseEnter={() => setHoverAxis(i)} onMouseLeave={() => setHoverAxis(null)}>
-                <circle cx={p.x} cy={p.y} r={isH ? 6 : 4} fill="white" stroke={a.color} strokeWidth={isH ? 3 : 2}
-                  filter={isH ? 'url(#rGlow2)' : undefined} style={{ transition: 'all 0.2s' }} />
-                {isH && <rect x={p.x - 28} y={p.y - 32} width={56} height={20} rx={6} fill="var(--ck-chart-tooltip-bg)" opacity={0.92} />}
-                {isH && <text x={p.x} y={p.y - 17} textAnchor="middle" fontSize={9} fill="var(--ck-chart-tooltip-fg)" fontWeight="800">{today[a.key]}{a.unit}</text>}
+              <g key={i} style={{ cursor: 'pointer' }} onMouseEnter={() => setHoverAxis(i)} onMouseLeave={() => setHoverAxis(null)}
+                onTouchStart={() => setHoverAxis(p => p === i ? null : i)}>
+                <circle cx={p.x} cy={p.y} r={isH ? 7 : 4.5} fill="white" stroke={a.color} strokeWidth={isH ? 3.5 : 2.5}
+                  filter={isH ? 'url(#rGlow2)' : undefined} style={{ transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
+                {isH && (
+                  <g>
+                    <rect x={p.x - 32} y={p.y - 38} width={64} height={26} rx={8} fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
+                    <text x={p.x} y={p.y - 24} textAnchor="middle" fontSize={10} fill="var(--ck-chart-tooltip-fg)" fontWeight="800">{today[a.key]}{a.unit}</text>
+                    <text x={p.x} y={p.y - 13} textAnchor="middle" fontSize={8} fill="var(--ck-chart-tooltip-fg)" opacity={0.8}>
+                      {Math.round((today[a.key] as number) / a.max * 100)}%
+                    </text>
+                  </g>
+                )}
               </g>
             );
           })}
@@ -121,7 +133,7 @@ export function NutritionRadar({ stats, target, selectedDate }: { stats: DayStat
             const p = pt(i, a.max * 1.22, a.max);
             return (
               <g key={i}>
-                <text x={p.x} y={p.y - 2} textAnchor="middle" fontSize={9} fill="var(--ck-chart-text)" fontWeight="600">{a.label}</text>
+                <text x={p.x} y={p.y - 2} textAnchor="middle" fontSize={10} fill="var(--ck-chart-text)" fontWeight="700">{a.label}</text>
                 <text x={p.x} y={p.y + 11} textAnchor="middle" fontSize={8} fill="var(--ck-chart-dim)">{today[a.key]}{a.unit}</text>
               </g>
             );
@@ -175,7 +187,7 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
   }
 
   const HH = 240, PAD_TOP = 32, PAD_BOT = 20;
-  const cols = [8, 42, 76];
+  const cols = [24, 126, 228];
   const usableH = HH - PAD_TOP - PAD_BOT;
   const totalV = nodes.reduce((s, n) => s + (n.col === 2 ? n.value * 0.5 : n.value), 0) || 1;
 
@@ -187,14 +199,13 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
     const goods = colNodes[col].filter(n => n.value > 0);
     if (goods.length === 0) continue;
     const colTotal = goods.reduce((s, n) => s + n.value, 0);
-    const minH = 14;
+    const minH = 18;
     let curY = PAD_TOP;
     for (const n of goods) {
       const h = Math.max(minH, Math.min(usableH * 0.6, (n.value / colTotal) * usableH * 0.85));
       nodeLayout[n.id] = { y: curY, h, x: 0 };
-      curY += h + 6;
+      curY += h + 8;
     }
-    // 计算 x 坐标
     for (const n of goods) {
       nodeLayout[n.id].x = cols[col];
     }
@@ -212,27 +223,27 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
   return (
     <ChartCard icon={ArrowRight} title="能量流向" iconColor="#a78bfa" kind="indigo">
       <div className="flex justify-center w-full">
-        <svg viewBox={`0 0 100 ${HH}`} className="w-full h-auto" style={{ maxHeight: 260, overflow: 'visible' }} preserveAspectRatio="xMidYMid meet">
+        <svg viewBox={`0 0 300 ${HH}`} className="w-full h-auto" style={{ maxWidth: 600, overflow: 'visible' }} preserveAspectRatio="xMidYMid meet">
           <defs>
             {links.map((l, i) => (
               <linearGradient key={i} id={`skH${i}`} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor={l.color} stopOpacity="0.7" />
-                <stop offset="100%" stopColor={l.color} stopOpacity="0.2" />
+                <stop offset="0%" stopColor={l.color} stopOpacity="0.75" />
+                <stop offset="100%" stopColor={l.color} stopOpacity="0.25" />
               </linearGradient>
             ))}
-            <filter id="skGlow2"><feGaussianBlur stdDeviation="2" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <filter id="skGlow2"><feGaussianBlur stdDeviation="2.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
 
           {links.map((l, i) => {
             const s = nodeLayout[l.source], t = nodeLayout[l.target];
             if (!s || !t) return null;
-            const sx = s.x + 4, sy = s.y + s.h / 2, tx = t.x, ty = t.y + t.h / 2;
+            const sx = s.x + 8, sy = s.y + s.h / 2, tx = t.x, ty = t.y + t.h / 2;
             const isH = hoverNode && (adjacents.has(l.source) || adjacents.has(l.target));
-            const w = Math.max(1, Math.min(14, (l.value / Math.max(totalV, 1)) * 20));
+            const w = Math.max(2, Math.min(18, (l.value / Math.max(totalV, 1)) * 24));
             return (
               <path key={i} d={`M${sx},${sy} C${sx + (tx - sx) * 0.4},${sy} ${sx + (tx - sx) * 0.6},${ty} ${tx},${ty}`}
-                fill="none" stroke={`url(#skH${i})`} strokeWidth={isH ? w + 4 : w}
-                opacity={hoverNode && !isH ? 0.12 : 0.65} strokeLinecap="round"
+                fill="none" stroke={`url(#skH${i})`} strokeWidth={isH ? w + 5 : w}
+                opacity={hoverNode && !isH ? 0.12 : 0.7} strokeLinecap="round"
                 filter={isH ? 'url(#skGlow2)' : undefined} style={{ transition: 'all 0.3s ease' }} />
             );
           })}
@@ -245,27 +256,31 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
             const alpha = hoverNode && !isH && !isAdj ? 0.3 : 1;
             return (
               <g key={n.id} style={{ cursor: 'pointer', transition: 'opacity 0.3s', opacity: alpha }}
-                onMouseEnter={() => setHoverNode(n.id)} onMouseLeave={() => setHoverNode(null)}>
-                <rect x={lo.x} y={lo.y} width={5} height={lo.h} rx={3}
-                  fill={n.col === 2 ? '#475569' : n.color} opacity={isH ? 1 : 0.85}
+                onMouseEnter={() => setHoverNode(n.id)} onMouseLeave={() => setHoverNode(null)}
+                onTouchStart={() => setHoverNode(p => p === n.id ? null : n.id)}>
+                <rect x={lo.x} y={lo.y} width={8} height={lo.h} rx={4}
+                  fill={n.col === 2 ? '#475569' : n.color} opacity={isH ? 1 : 0.88}
                   filter={isH ? 'url(#skGlow2)' : undefined} style={{ transition: 'all 0.2s' }} />
-                <text x={n.col === 2 ? lo.x + 9 : lo.x - 2} y={lo.y + lo.h / 2 + 3}
-                  textAnchor={n.col === 2 ? 'start' : 'end'} fontSize={7}
-                  fill="var(--ck-chart-card-text)" fontWeight={isH ? '800' : '500'}>
+                <text x={n.col === 2 ? lo.x + 12 : lo.x - 3} y={lo.y + lo.h / 2 + 4}
+                  textAnchor={n.col === 2 ? 'start' : 'end'} fontSize={9}
+                  fill="var(--ck-chart-card-text)" fontWeight={isH ? '800' : '600'}>
                   {n.label}
                 </text>
                 {isH && (
-                  <text x={n.col === 2 ? lo.x + 9 : lo.x - 2} y={lo.y + lo.h / 2 + 14}
-                    textAnchor={n.col === 2 ? 'start' : 'end'} fontSize={6} fill="var(--ck-chart-dim)">
-                    {n.value}{n.col === 0 ? 'kcal' : n.col === 1 ? 'g' : 'kcal'}
-                  </text>
+                  <g>
+                    <rect x={lo.x - 45} y={lo.y - 28} width={90} height={22} rx={6}
+                      fill="rgba(0,0,0,0.88)" opacity={0.95} />
+                    <text x={lo.x} y={lo.y - 14} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
+                      {n.value}{n.col === 0 ? 'kcal' : n.col === 1 ? 'g' : 'kcal'}
+                    </text>
+                  </g>
                 )}
               </g>
             );
           })}
 
           {['三餐', '宏量', '能量'].map((l, i) => (
-            <text key={l} x={cols[i] * 100 + 2.5} y={PAD_TOP - 12} textAnchor="middle" fontSize={6} fill="var(--ck-chart-dim)" fontWeight="600">{l}</text>
+            <text key={l} x={cols[i] + 4} y={PAD_TOP - 12} textAnchor="middle" fontSize={9} fill="var(--ck-chart-dim)" fontWeight="700">{l}</text>
           ))}
         </svg>
       </div>
@@ -431,6 +446,7 @@ export function MealHeatmap({ stats }: { stats: DayStats[] }) {
               <g key={`${ri}-${ci}`}
                 onMouseEnter={() => cal > 0 && setHoverCell({ row: ri, col: ci })}
                 onMouseLeave={() => setHoverCell(null)}
+                onTouchStart={() => cal > 0 && setHoverCell(p => p?.row === ri && p?.col === ci ? null : { row: ri, col: ci })}
                 style={{ cursor: cal > 0 ? 'pointer' : 'default' }}>
                 {cal > 0 ? (
                   <rect x={(PAD + ri * (CELL + MG)) - (CELL * (scale - 1)) / 2}
@@ -581,29 +597,29 @@ export function NutritionSunburst({ stats }: { stats: DayStats[] }) {
   const totalCal = days.reduce((s, d) => s + d.intake, 0);
   if (totalCal === 0) return null;
 
-  // 两层：内层 = 每天，外层 = 每餐
   const cx = 150, cy = 150, innerR = 40, midR = 75, outerR = 115;
+  const DAY_COLORS = ['#818cf8', '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb7185', '#fb923c'];
 
   let angle = -Math.PI / 2;
-  const arcs: { startAngle: number; endAngle: number; innerR: number; outerR: number; color: string; label: string; value: number }[] = [];
+  const arcs: { startAngle: number; endAngle: number; innerR: number; outerR: number; color: string; label: string; value: number; dayLabel?: string }[] = [];
 
-  for (const day of days) {
-    if (day.intake === 0) continue;
+  days.forEach((day, di) => {
+    if (day.intake === 0) return;
     const dayAngle = (day.intake / totalCal) * 2 * Math.PI;
-    // 内环 - 天
-    arcs.push({ startAngle: angle, endAngle: angle + dayAngle, innerR, outerR: midR, color: '#818cf8', label: day.label, value: day.intake });
+    const dayColor = DAY_COLORS[di % DAY_COLORS.length];
+    arcs.push({ startAngle: angle, endAngle: angle + dayAngle, innerR, outerR: midR, color: dayColor, label: day.label, value: day.intake, dayLabel: day.label });
 
-    // 外环 - 餐
     const meals = day.mealCals ?? [0, 0, 0, 0];
     let mealAngle = angle;
     for (let mi = 0; mi < 4; mi++) {
       if (meals[mi] === 0) continue;
       const mAngle = (meals[mi] / day.intake) * dayAngle;
-      arcs.push({ startAngle: mealAngle, endAngle: mealAngle + mAngle, innerR: midR, outerR: outerR, color: MEAL_COLORS[mi], label: '', value: meals[mi] });
+      const mealColor = mi === 0 ? '#fbbf24' : mi === 1 ? '#fb923c' : mi === 2 ? '#ef4444' : '#a78bfa';
+      arcs.push({ startAngle: mealAngle, endAngle: mealAngle + mAngle, innerR: midR, outerR: outerR, color: mealColor, label: MEAL_LABELS[mi], value: meals[mi], dayLabel: day.label });
       mealAngle += mAngle;
     }
     angle += dayAngle;
-  }
+  });
 
   function arcPath(startAngle: number, endAngle: number, innerR: number, outerR: number): string {
     const x1 = cx + innerR * Math.cos(startAngle), y1 = cy + innerR * Math.sin(startAngle);
@@ -618,31 +634,50 @@ export function NutritionSunburst({ stats }: { stats: DayStats[] }) {
 
   return (
     <div className="flex justify-center w-full">
-      <svg viewBox="0 0 300 300" className="w-full h-auto" style={{ maxWidth: 340 }}>
+      <svg viewBox="0 0 300 300" className="w-full h-auto" style={{ maxWidth: 500 }}>
         <defs>
-          <filter id="sbGlow"><feGaussianBlur stdDeviation="1.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          <filter id="sbGlow"><feGaussianBlur stdDeviation="2" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         </defs>
         {/* 中心圆 */}
         <circle cx={cx} cy={cy} r={innerR - 2} fill="var(--ck-chart-tooltip-bg)" stroke="var(--ck-chart-grid)" strokeWidth={0.5} />
-        <text x={cx} y={cy - 4} textAnchor="middle" fontSize={11} fill="var(--ck-chart-card-text)" fontWeight="800">{totalCal}</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" fontSize={8} fill="var(--ck-chart-dim)">kcal</text>
+        <text x={cx} y={cy - 6} textAnchor="middle" fontSize={13} fill="var(--ck-chart-card-text)" fontWeight="900">{totalCal}</text>
+        <text x={cx} y={cy + 8} textAnchor="middle" fontSize={9} fill="var(--ck-chart-dim)">kcal</text>
+        <text x={cx} y={cy + 20} textAnchor="middle" fontSize={8} fill="var(--ck-chart-dim)" fontWeight="600">{days.length}天</text>
 
         {arcs.map((a, i) => {
           const isH = hoverArc === i;
+          const expand = isH ? 5 : 0;
+          const midAngle = (a.startAngle + a.endAngle) / 2;
+          const dx = expand * Math.cos(midAngle);
+          const dy = expand * Math.sin(midAngle);
           return (
-            <g key={i} onMouseEnter={() => setHoverArc(i)} onMouseLeave={() => setHoverArc(null)} style={{ cursor: 'pointer' }}>
+            <g key={i} onMouseEnter={() => setHoverArc(i)} onMouseLeave={() => setHoverArc(null)}
+              onTouchStart={() => setHoverArc(p => p === i ? null : i)} style={{ cursor: 'pointer' }}
+              transform={`translate(${dx},${dy})`}>
               <path d={arcPath(a.startAngle, a.endAngle, a.innerR, a.outerR)}
                 fill={a.color}
-                opacity={isH ? 0.85 : 0.55 + (a.outerR === midR ? 0.1 : 0)}
-                stroke="var(--ck-chart-tooltip-bg)" strokeWidth={isH ? 2 : 0.5}
+                opacity={isH ? 0.95 : a.outerR === midR ? 0.65 : 0.75}
+                stroke="var(--ck-chart-tooltip-bg)" strokeWidth={isH ? 2.5 : 0.8}
                 filter={isH ? 'url(#sbGlow)' : undefined}
-                style={{ transition: 'all 0.2s' }} />
-              {a.label && (a.endAngle - a.startAngle) > 0.15 && (
+                style={{ transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
+              {a.label && (a.endAngle - a.startAngle) > 0.15 && !isH && (
                 <text
                   x={cx + (a.innerR + a.outerR) / 2 * Math.cos((a.startAngle + a.endAngle) / 2)}
                   y={cy + (a.innerR + a.outerR) / 2 * Math.sin((a.startAngle + a.endAngle) / 2) + 3}
                   textAnchor="middle" fontSize={8} fill="white" fontWeight="700"
                   style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{a.label}</text>
+              )}
+              {isH && (
+                <g>
+                  <rect x={cx - 50} y={cy + outerR + 10} width={100} height={32} rx={8}
+                    fill="rgba(0,0,0,0.9)" opacity={0.95} />
+                  <text x={cx} y={cy + outerR + 26} textAnchor="middle" fontSize={10} fill="white" fontWeight="700">
+                    {a.dayLabel} {a.label}
+                  </text>
+                  <text x={cx} y={cy + outerR + 38} textAnchor="middle" fontSize={9} fill="white" opacity={0.9}>
+                    {a.value} kcal
+                  </text>
+                </g>
               )}
             </g>
           );
@@ -651,7 +686,7 @@ export function NutritionSunburst({ stats }: { stats: DayStats[] }) {
         {/* 图例 */}
         {MEAL_LABELS.map((l, i) => (
           <g key={l} transform={`translate(${230 + i * 17}, ${260})`}>
-            <rect x={0} y={0} width={8} height={8} rx={2} fill={MEAL_COLORS[i]} opacity={0.7} />
+            <rect x={0} y={0} width={8} height={8} rx={2} fill={i === 0 ? '#fbbf24' : i === 1 ? '#fb923c' : i === 2 ? '#ef4444' : '#a78bfa'} opacity={0.8} />
             <text x={12} y={7} fontSize={7} fill="var(--ck-chart-dim)">{l}</text>
           </g>
         ))}
@@ -662,6 +697,7 @@ export function NutritionSunburst({ stats }: { stats: DayStats[] }) {
 
 /* ════════════════════ 7. 漏斗图 Funnel — 营养节律 ════════════════════ */
 export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; targetCalories: number }) {
+  const [hoverLevel, setHoverLevel] = useState<number | null>(null);
   const hasData = stats.some(d => d.intake > 0);
   if (!hasData) return null;
 
@@ -689,16 +725,16 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
 
   return (
     <div className="flex justify-center w-full">
-      <svg viewBox={`0 0 ${W} ${H2}`} className="w-full h-auto" style={{ maxWidth: 340 }}>
+      <svg viewBox={`0 0 ${W} ${H2}`} className="w-full h-auto" style={{ maxWidth: 500 }}>
         <defs>
           {levels.map((l, i) => (
             <linearGradient key={i} id={`fnGrad${i}`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={l.color} stopOpacity="0.2" />
-              <stop offset="50%" stopColor={l.color} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={l.color} stopOpacity="0.2" />
+              <stop offset="0%" stopColor={l.color} stopOpacity="0.15" />
+              <stop offset="50%" stopColor={l.color} stopOpacity="0.75" />
+              <stop offset="100%" stopColor={l.color} stopOpacity="0.15" />
             </linearGradient>
           ))}
-          <filter id="fnGlow"><feGaussianBlur stdDeviation="2" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          <filter id="fnGlow"><feGaussianBlur stdDeviation="2.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         </defs>
 
         {levels.map((l, i) => {
@@ -710,22 +746,47 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
             ? (levels[i + 1].pct / maxPct) * (W / 2 - 30) + 15
             : halfW;
           const nx1 = cx2 - nextHalfW, nx2 = cx2 + nextHalfW;
+          const isH = hoverLevel === i;
+          const isOver = l.pct > 105;
+          const isOnTarget = l.pct >= 95 && l.pct <= 105;
 
           return (
-            <g key={i}>
-              {/* 梯形主体 */}
-              <path d={`M${x1},${topY} L${x2},${topY} L${nx2},${botY} L${nx1},${botY} Z`}
-                fill={`url(#fnGrad${i})`} stroke={l.color} strokeWidth={1.5} strokeLinejoin="round"
-                filter="url(#fnGlow)" opacity={0.85} />
+            <g key={i} onMouseEnter={() => setHoverLevel(i)} onMouseLeave={() => setHoverLevel(null)}
+              onTouchStart={() => setHoverLevel(p => p === i ? null : i)} style={{ cursor: 'pointer' }}>
+              {/* 圆角梯形主体 */}
+              <path d={`M${x1 + 6},${topY} L${x2 - 6},${topY} Q${x2},${topY} ${x2},${topY + 6} L${nx2},${botY - 6} Q${nx2},${botY} ${nx2 - 6},${botY} L${nx1 + 6},${botY} Q${nx1},${botY} ${nx1},${botY - 6} L${x1},${topY + 6} Q${x1},${topY} ${x1 + 6},${topY} Z`}
+                fill={`url(#fnGrad${i})`} stroke={l.color} strokeWidth={isH ? 2.5 : 1.5} strokeLinejoin="round"
+                filter={isH ? 'url(#fnGlow)' : undefined} opacity={isH ? 0.95 : 0.85}
+                style={{ transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
               {/* 标签 */}
-              <text x={cx2} y={topY + LEVEL_H / 2 - 6} textAnchor="middle" fontSize={12} fill="white" fontWeight="800"
+              <text x={cx2} y={topY + LEVEL_H / 2 - 6} textAnchor="middle" fontSize={13} fill="white" fontWeight="900"
                 style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>{l.label}</text>
-              <text x={cx2} y={topY + LEVEL_H / 2 + 10} textAnchor="middle" fontSize={10} fill="white" fontWeight="600"
+              <text x={cx2} y={topY + LEVEL_H / 2 + 10} textAnchor="middle" fontSize={10} fill="white" fontWeight="700"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
-                {l.value}{l.unit} ({l.pct}%)
+                {l.value}{l.unit}
               </text>
+              {/* 右侧进度条 */}
+              <rect x={cx2 + halfW + 12} y={topY + 8} width={60} height={8} rx={4}
+                fill="var(--ck-chart-grid)" opacity={0.3} />
+              <rect x={cx2 + halfW + 12} y={topY + 8}
+                width={Math.min(60, (l.pct / 150) * 60)} height={8} rx={4}
+                fill={l.color} opacity={isH ? 1 : 0.75}
+                style={{ transition: 'all 0.3s' }} />
+              <text x={cx2 + halfW + 76} y={topY + 15} fontSize={9} fill="var(--ck-chart-dim)" fontWeight="600">
+                {l.pct}%
+              </text>
+              {/* Hover 状态标签 */}
+              {isH && (
+                <g>
+                  <rect x={cx2 + halfW + 12} y={topY + 22} width={70} height={20} rx={6}
+                    fill={isOver ? 'rgba(239,68,68,0.9)' : isOnTarget ? 'rgba(34,197,94,0.9)' : 'rgba(59,130,246,0.9)'} />
+                  <text x={cx2 + halfW + 47} y={topY + 35} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">
+                    {isOver ? `超标 +${l.pct - 100}%` : isOnTarget ? '达标 ✓' : `达成 ${l.pct}%`}
+                  </text>
+                </g>
+              )}
               {/* 目标线 */}
-              <text x={cx2 + halfW + 4} y={topY + LEVEL_H / 2 + 3} fontSize={8} fill="var(--ck-chart-dim)">
+              <text x={cx2 + halfW + 12} y={topY + LEVEL_H - 4} fontSize={8} fill="var(--ck-chart-dim)">
                 目标 {l.max}{l.unit}
               </text>
             </g>

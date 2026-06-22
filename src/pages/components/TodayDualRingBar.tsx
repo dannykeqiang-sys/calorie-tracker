@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState } from 'react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { calcTargetCalories, calcMacroTargets, sumMacrosWithEstimate } from '../../utils/calculations';
 import { TrendingDown, Minus, TrendingUp } from 'lucide-react';
@@ -14,18 +14,18 @@ interface TodayDualRingBarProps {
 function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget, fat, fatTarget }: {
   intake: number; target: number; protein: number; proteinTarget: number; carbs: number; carbsTarget: number; fat: number; fatTarget: number;
 }) {
-  const cx = 100, cy = 100;
+  const [hoverRing, setHoverRing] = useState<number | null>(null);
+  const cx = 150, cy = 150;
   const rings = [
-    { r: 78, sw: 12, value: intake, max: target, color: '#f97316', bgColor: 'rgba(249,115,22,0.12)', label: '热量', unit: 'kcal', pct: Math.round(Math.min(intake / Math.max(target, 1), 1.5) * 100) },
-    { r: 62, sw: 12, value: protein, max: proteinTarget, color: '#3b82f6', bgColor: 'rgba(59,130,246,0.12)', label: '蛋白', unit: 'g', pct: Math.round(Math.min(protein / Math.max(proteinTarget, 1), 1.5) * 100) },
-    { r: 46, sw: 12, value: carbs, max: carbsTarget, color: '#22c55e', bgColor: 'rgba(34,197,94,0.12)', label: '碳水', unit: 'g', pct: Math.round(Math.min(carbs / Math.max(carbsTarget, 1), 1.5) * 100) },
+    { r: 88, sw: 18, value: intake, max: target, color: '#f97316', bgColor: 'rgba(249,115,22,0.15)', label: '热量', unit: 'kcal', pct: Math.round(Math.min(intake / Math.max(target, 1), 1.5) * 100) },
+    { r: 68, sw: 18, value: protein, max: proteinTarget, color: '#3b82f6', bgColor: 'rgba(59,130,246,0.15)', label: '蛋白', unit: 'g', pct: Math.round(Math.min(protein / Math.max(proteinTarget, 1), 1.5) * 100) },
+    { r: 48, sw: 18, value: carbs, max: carbsTarget, color: '#22c55e', bgColor: 'rgba(34,197,94,0.15)', label: '碳水', unit: 'g', pct: Math.round(Math.min(carbs / Math.max(carbsTarget, 1), 1.5) * 100) },
   ];
 
   function ringPath(r: number, sw: number, pct: number): string {
     const p = Math.min(pct / 100, 1);
     if (p <= 0) return '';
     if (p >= 1) {
-      // 完整圆
       return `M${cx},${cy - r} A${r},${r} 0 1 1 ${cx - 0.01},${cy - r} A${r},${r} 0 1 1 ${cx},${cy - r}`;
     }
     const angle = p * 2 * Math.PI - Math.PI / 2;
@@ -35,13 +35,15 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
     return `M${cx},${cy - r} A${r},${r} 0 ${largeArc} 1 ${x},${y}`;
   }
 
+  const overallPct = Math.round((intake / Math.max(target, 1)) * 100);
+
   return (
-    <div className="flex justify-center">
-      <svg viewBox="0 0 200 200" className="w-full h-auto" style={{ maxWidth: 220 }}>
+    <div className="flex justify-center w-full">
+      <svg viewBox="0 0 300 300" className="w-full h-auto" style={{ maxWidth: 500 }}>
         <defs>
           {rings.map((ring, i) => (
             <filter key={i} id={`ringGlow${i}`}>
-              <feGaussianBlur stdDeviation="2" />
+              <feGaussianBlur stdDeviation="3" />
               <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           ))}
@@ -55,27 +57,53 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
         {rings.map((ring, i) => {
           const p = Math.min(ring.pct, 150);
           const path = ringPath(ring.r, ring.sw, p);
+          const isH = hoverRing === i;
           return path ? (
-            <path key={`fg${i}`} d={path} fill="none"
-              stroke={ring.color} strokeWidth={ring.sw} strokeLinecap="round"
-              filter={`url(#ringGlow${i})`} opacity={0.9}
-              style={{ transition: 'all 0.6s var(--ease-spring)' }} />
+            <g key={`fg${i}`} onMouseEnter={() => setHoverRing(i)} onMouseLeave={() => setHoverRing(null)}
+              onTouchStart={() => setHoverRing(p => p === i ? null : i)} style={{ cursor: 'pointer' }}>
+              <path d={path} fill="none"
+                stroke={ring.color} strokeWidth={isH ? ring.sw + 2 : ring.sw} strokeLinecap="round"
+                filter={isH ? `url(#ringGlow${i})` : undefined} opacity={isH ? 1 : 0.92}
+                style={{ transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
+            </g>
           ) : null;
         })}
         {/* 中心文字 */}
-        <text x={cx} y={cy - 4} textAnchor="middle" fontSize={22} fontWeight="900" fill="var(--ck-dock-title)">{intake}</text>
-        <text x={cx} y={cy + 14} textAnchor="middle" fontSize={10} fill="var(--ck-dock-sub)">/ {target} kcal</text>
+        <text x={cx} y={cy - 8} textAnchor="middle" fontSize={32} fontWeight="900" fill="var(--ck-dock-title)">{intake}</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize={12} fill="var(--ck-dock-sub)">/ {target} kcal</text>
+        <text x={cx} y={cy + 28} textAnchor="middle" fontSize={10} fill="var(--ck-dock-sub)" fontWeight="700">{overallPct}%</text>
 
-        {/* 环标签 */}
+        {/* 环标签 — 右侧显示 */}
         {rings.map((ring, i) => {
-          const labelR = ring.r + 3;
+          const isH = hoverRing === i;
+          const labelX = cx + ring.r + 20;
+          const labelY = cy - 30 + i * 32;
           return (
-            <text key={`lbl${i}`} x={cx} y={cy - labelR - 2} textAnchor="middle" fontSize={9}
-              fill={ring.color} fontWeight="700">
-              {ring.label} {ring.pct}%
-            </text>
+            <g key={`lbl${i}`}>
+              <text x={labelX} y={labelY} fontSize={isH ? 12 : 11}
+                fill={ring.color} fontWeight={isH ? '800' : '600'}>
+                {ring.label} {ring.pct}%
+              </text>
+              <text x={labelX} y={labelY + 14} fontSize={9} fill="var(--ck-dock-sub)">
+                {ring.value}{ring.unit}
+              </text>
+            </g>
           );
         })}
+
+        {/* Hover tooltip */}
+        {hoverRing !== null && (
+          <g>
+            <rect x={cx - 60} y={cy + 50} width={120} height={36} rx={8}
+              fill="rgba(0,0,0,0.85)" opacity={0.95} />
+            <text x={cx} y={cy + 68} textAnchor="middle" fontSize={11} fill="white" fontWeight="700">
+              {rings[hoverRing].label}: {rings[hoverRing].value} / {rings[hoverRing].max}{rings[hoverRing].unit}
+            </text>
+            <text x={cx} y={cy + 82} textAnchor="middle" fontSize={10} fill="white" opacity={0.8}>
+              达成率 {rings[hoverRing].pct}%
+            </text>
+          </g>
+        )}
       </svg>
     </div>
   );
