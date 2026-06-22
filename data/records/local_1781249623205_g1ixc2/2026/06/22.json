@@ -37,6 +37,42 @@
         "carbs": 30,
         "fat": 18,
         "sodium": 500
+      },
+      {
+        "id": "3997c7fc-7346-4bda-8e1e-f77b37a5ddb7",
+        "name": "葡萄汁拿铁（杯）",
+        "calories": 200,
+        "protein": 5,
+        "carbs": 30,
+        "fat": 7,
+        "sodium": 100
+      },
+      {
+        "id": "7fccfb57-291f-425f-995a-27e18929ec45",
+        "name": "黄瓜×1",
+        "calories": 16,
+        "protein": 1,
+        "carbs": 3,
+        "fat": 0,
+        "sodium": 2
+      },
+      {
+        "id": "35510050-5864-4203-8e1b-b55f8e8446f9",
+        "name": "番茄×1",
+        "calories": 22,
+        "protein": 1,
+        "carbs": 5,
+        "fat": 0,
+        "sodium": 5
+      },
+      {
+        "id": "59ee6585-c845-4388-9972-e893928e6a19",
+        "name": "溏心蛋三明治×1",
+        "calories": 350,
+        "protein": 15,
+        "carbs": 30,
+        "fat": 18,
+        "sodium": 500
       }
     ],
     "lunch": [
@@ -52,6 +88,24 @@
       {
         "id": "0b9f72e8-dd5c-40c4-856b-398df4037520",
         "name": "茉莉花茶(500ml)",
+        "calories": 0,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 0,
+        "sodium": 0
+      },
+      {
+        "id": "7e3efbe4-63af-4b80-841e-e52ef9b5f561",
+        "name": "豌杂面（半碗）",
+        "calories": 300,
+        "protein": 10,
+        "carbs": 50,
+        "fat": 8,
+        "sodium": 600
+      },
+      {
+        "id": "37cbf61e-3454-4ce5-a4d4-76976397bd61",
+        "name": "茉莉花茶（500ml）",
         "calories": 0,
         "protein": 0,
         "carbs": 0,
