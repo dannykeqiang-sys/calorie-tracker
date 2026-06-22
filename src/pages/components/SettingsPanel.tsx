@@ -31,11 +31,13 @@ export default function SettingsPanel({
 }: SettingsPanelProps) {
   const [inputKey, setInputKey] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   const handleSaveApiKey = () => {
     onApiKeyChange(inputKey);
     setInputKey('');
     setShowSuccess(true);
+    setShowApiKeyInput(false);
     setTimeout(() => setShowSuccess(false), 2000);
   };
 
@@ -55,37 +57,55 @@ export default function SettingsPanel({
         <div className="space-y-4 mt-2">
           {/* API Key 配置 */}
           <div className="space-y-3 pb-3 border-b border-border/50">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Key className="w-4 h-4 text-primary" />
-              DeepSeek API Key
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Key className="w-4 h-4 text-primary" />
+                DeepSeek API Key
+              </div>
+              <span className="text-xs font-mono text-foreground/60">{maskApiKey(apiKey)}</span>
             </div>
-            <div className="text-xs text-muted-foreground">
-              当前状态: <span className="font-mono text-foreground/80">{maskApiKey(apiKey)}</span>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                placeholder="输入新的 API Key (sk-...)"
-                value={inputKey}
-                onChange={(e) => setInputKey(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSaveApiKey}
-                disabled={!inputKey.trim()}
-                size="sm"
-                className="shrink-0"
+            {showSuccess && (
+              <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded-lg px-3 py-2">
+                <Check className="w-3.5 h-3.5" />
+                API Key 已保存
+              </div>
+            )}
+            {showApiKeyInput ? (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    type="password"
+                    placeholder="输入新的 API Key (sk-...)"
+                    value={inputKey}
+                    onChange={(e) => setInputKey(e.target.value)}
+                    className="flex-1"
+                    autoFocus
+                  />
+                  <Button
+                    onClick={handleSaveApiKey}
+                    disabled={!inputKey.trim()}
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    保存
+                  </Button>
+                </div>
+                <button
+                  onClick={() => { setShowApiKeyInput(false); setInputKey(''); }}
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  取消
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowApiKeyInput(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm text-foreground/70 hover:text-foreground hover:bg-muted transition-all cursor-pointer border border-dashed border-border/40 hover:border-border"
               >
-                {showSuccess ? (
-                  <>
-                    <Check className="w-4 h-4 mr-1" />
-                    已保存
-                  </>
-                ) : (
-                  '保存'
-                )}
-              </Button>
-            </div>
+                <Key className="w-4 h-4" />
+                修改 API Key
+              </button>
+            )}
             <p className="text-[11px] text-muted-foreground/60">
               API Key 仅保存在本地浏览器中，不会上传到云端
             </p>

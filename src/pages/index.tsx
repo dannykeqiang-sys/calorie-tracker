@@ -42,7 +42,7 @@ export default function Home() {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKey, setApiKey] = useState<string>(
-    () => localStorage.getItem('calorie_deepseek_api_key') || ''
+    () => localStorage.getItem('calorie_deepseek_api_key') || 'sk-fc7120cfd042458892fbf370d7fd52de'
   );
   const [activeTab, setActiveTab] = useState('today');
   const [journalDate, setJournalDate] = useState(getTodayKey);
