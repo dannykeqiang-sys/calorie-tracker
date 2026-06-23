@@ -1,0 +1,68 @@
+{
+  "date": "2026-06-23",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "1d9d1114-9fa9-4af0-8f16-3b8607e84340",
+        "name": "拿铁×1杯",
+        "calories": 150,
+        "protein": 8,
+        "carbs": 12,
+        "fat": 8,
+        "sodium": 100
+      },
+      {
+        "id": "bc281294-a888-4341-9cc3-0d3e30ed206b",
+        "name": "苹果×1个",
+        "calories": 95,
+        "protein": 0.5,
+        "carbs": 25,
+        "fat": 0.3,
+        "sodium": 2
+      },
+      {
+        "id": "a221dc92-8a02-46d8-b8d5-500783c03c65",
+        "name": "番茄×1个",
+        "calories": 22,
+        "protein": 1,
+        "carbs": 5,
+        "fat": 0.2,
+        "sodium": 5
+      },
+      {
+        "id": "bd5bb4d7-c141-4b43-a979-16a86173d138",
+        "name": "红薯×半根",
+        "calories": 90,
+        "protein": 1.5,
+        "carbs": 21,
+        "fat": 0.1,
+        "sodium": 10
+      }
+    ],
+    "lunch": [
+      {
+        "id": "9548ed6b-96be-4743-abe1-6158697840b2",
+        "name": "番茄牛肉鲜蔬锅（无汤）",
+        "calories": 400,
+        "protein": 30,
+        "carbs": 20,
+        "fat": 20,
+        "sodium": 800
+      }
+    ],
+    "dinner": [],
+    "snack": [
+      {
+        "id": "b51e5171-15cc-4d1d-8cf5-8c8aedbb2f61",
+        "name": "红薯×1根",
+        "calories": 180,
+        "protein": 3,
+        "carbs": 42,
+        "fat": 0.2,
+        "sodium": 20
+      }
+    ]
+  },
+  "exercises": [],
+  "water": []
+}
