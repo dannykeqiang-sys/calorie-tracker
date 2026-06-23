@@ -55,7 +55,40 @@
         "calories": 22
       }
     ],
-    "dinner": [],
+    "dinner": [
+      {
+        "id": "a9c79460-b250-4e23-a028-93ae89cf81fe",
+        "name": "跷脚牛肉（一份）",
+        "calories": 250,
+        "protein": 20,
+        "carbs": 5,
+        "fat": 15
+      },
+      {
+        "id": "c40fbfe0-7266-4684-85e0-1870f4905ea6",
+        "name": "凉拌菜+牛肉（一份）",
+        "calories": 200,
+        "protein": 15,
+        "carbs": 10,
+        "fat": 10
+      },
+      {
+        "id": "f1e75c0a-4550-446c-9f4d-8e0ef68b0541",
+        "name": "腌菜炒肉（一份）",
+        "calories": 300,
+        "protein": 15,
+        "carbs": 10,
+        "fat": 20
+      },
+      {
+        "id": "68626899-def3-4dc7-b41b-0a5a55d899fa",
+        "name": "米饭（100克）",
+        "calories": 116,
+        "protein": 2.6,
+        "carbs": 25.9,
+        "fat": 0.3
+      }
+    ],
     "snack": [
       {
         "id": "b51e5171-15cc-4d1d-8cf5-8c8aedbb2f61",
@@ -84,6 +117,12 @@
     },
     {
       "id": "2b6c928a-4521-4e08-a8ad-0a10273c9a3b",
+      "amount": 500,
+      "note": "",
+      "time": "22:45"
+    },
+    {
+      "id": "c66f48f6-1bc3-49d5-973e-5ce8970f5a9c",
       "amount": 500,
       "note": "",
       "time": "22:45"
