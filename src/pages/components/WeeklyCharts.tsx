@@ -163,10 +163,18 @@ export function NutritionRadar({ stats, target, selectedDate }: { stats: DayStat
 interface SankeyNode { id: string; label: string; value: number; color: string; col: number; }
 interface SankeyLink { source: string; target: string; value: number; color: string; }
 
-export function MacroSankey({ stats }: { stats: DayStats[] }) {
+export function MacroSankey({ stats, selectedDate }: { stats: DayStats[]; selectedDate?: string }) {
+  const dayIdx = useMemo(() => {
+    if (selectedDate) {
+      const idx = stats.findIndex(s => s.date === selectedDate);
+      return idx >= 0 ? idx : stats.length - 1;
+    }
+    return stats.length - 1;
+  }, [stats, selectedDate]);
+
   const [hoverNode, setHoverNode] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
-  const today = stats[stats.length - 1];
+  const today = stats[dayIdx];
   if (!today || today.intake === 0) return null;
 
   const meals = [
@@ -185,7 +193,18 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
   // Calculate energy destinations
   const bmrEstimate = Math.round(today.intake * 0.6); // 60% for basal metabolism
   const exerciseBurn = today.burn || 0;
-  const remaining = Math.max(0, today.intake - bmrEstimate - exerciseBurn);
+  const totalBurn = bmrEstimate + exerciseBurn;
+  const balance = today.intake - totalBurn;
+
+  // Determine surplus or deficit
+  const isSurplus = balance > 0;
+  const balanceNode = {
+    id: 'balance',
+    label: isSurplus ? `热量盈余` : `热量缺口`,
+    value: Math.abs(balance),
+    color: isSurplus ? '#ef4444' : '#22c55e', // Red for surplus, green for deficit
+    col: 3
+  };
 
   const nodes: SankeyNode[] = [
     ...meals.map(m => ({ ...m, col: 0 })),
@@ -193,7 +212,7 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
     { id: 'energy', label: '总能量', value: today.intake, color: '#e2e8f0', col: 2 },
     { id: 'bmr', label: '基础代谢', value: bmrEstimate, color: '#10b981', col: 3 },
     { id: 'exercise', label: '运动消耗', value: exerciseBurn, color: '#f59e0b', col: 3 },
-    { id: 'remaining', label: '剩余热量', value: remaining, color: '#8b5cf6', col: 3 },
+    balanceNode,
   ];
 
   const macroTotal = macros.reduce((s, m) => s + m.value * m.calPerUnit, 0) || 1;
@@ -217,8 +236,10 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
 
   // Energy → Destinations
   if (bmrEstimate > 0) links.push({ source: 'energy', target: 'bmr', value: bmrEstimate, color: '#10b981' });
-  if (exerciseBurn > 0) links.push({ source: 'energy', target: 'exercise', value: exerciseBurn, color: '#f59e0b' });
-  if (remaining > 0) links.push({ source: 'energy', target: 'remaining', value: remaining, color: '#8b5cf6' });
+  // Always show exercise burn node (even if 0)
+  links.push({ source: 'energy', target: 'exercise', value: exerciseBurn, color: '#f59e0b' });
+  // Balance (surplus or deficit)
+  if (Math.abs(balance) > 0) links.push({ source: 'energy', target: 'balance', value: Math.abs(balance), color: balanceNode.color });
 
   const HH = 240, PAD_TOP = 32, PAD_BOT = 20;
   const cols = [20, 95, 170, 245];
@@ -230,7 +251,7 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
 
   const nodeLayout: Record<string, { y: number; h: number; x: number }> = {};
   for (let col = 0; col < 4; col++) {
-    const goods = colNodes[col].filter(n => n.value > 0 || col === 0); // Always show meals
+    const goods = colNodes[col].filter(n => n.value > 0 || col === 0 || n.id === 'exercise'); // Always show meals and exercise
     if (goods.length === 0) continue;
     const colTotal = goods.reduce((s, n) => s + Math.max(n.value, col === 0 ? 10 : 0), 0);
     const minH = col === 0 ? 12 : 18;
@@ -315,7 +336,10 @@ export function MacroSankey({ stats }: { stats: DayStats[] }) {
                 <text x={n.col === 3 ? lo.x + 14 : lo.x - 3} y={lo.y + lo.h / 2 + 4}
                   textAnchor={n.col === 3 ? 'start' : 'end'} fontSize={10}
                   fill="var(--ck-chart-card-text)" fontWeight={isH ? '900' : '700'} style={{ transition: 'font-weight 0.2s' }}>
-                  {n.label}
+                  {n.id === 'balance'
+                    ? `${n.label} ${isSurplus ? '+' : '-'}${n.value}kcal`
+                    : n.label
+                  }
                 </text>
               </g>
             );
@@ -860,10 +884,10 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
   const tFat = Math.round(target * 0.25 / 9);
 
   const levels = [
-    { label: '总热量', value: avgIntake, max: target, color: '#f97316', unit: 'kcal', pct: Math.round(avgIntake / target * 100) },
+    { label: '脂肪', value: avgFat, max: tFat, color: '#ef4444', unit: 'g', pct: Math.round(avgFat / Math.max(tFat, 1) * 100) },
     { label: '蛋白质', value: avgProtein, max: tProtein, color: '#3b82f6', unit: 'g', pct: Math.round(avgProtein / Math.max(tProtein, 1) * 100) },
     { label: '碳水', value: avgCarbs, max: tCarbs, color: '#f59e0b', unit: 'g', pct: Math.round(avgCarbs / Math.max(tCarbs, 1) * 100) },
-    { label: '脂肪', value: avgFat, max: tFat, color: '#ef4444', unit: 'g', pct: Math.round(avgFat / Math.max(tFat, 1) * 100) },
+    { label: '总热量', value: avgIntake, max: target, color: '#f97316', unit: 'kcal', pct: Math.round(avgIntake / target * 100) },
   ];
 
   const W = 300, H = 300;
@@ -894,10 +918,12 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
           </defs>
 
           {levels.map((l, i) => {
-            const y = startY + i * (layerH + gap);
+            // Reverse rendering: array[0] (脂肪) at bottom, array[3] (总热量) at top
+            const renderIndex = levels.length - 1 - i;
+            const y = startY + renderIndex * (layerH + gap);
 
-            // 金字塔效果：每层比上一层窄
-            const baseScale = 1 - i * 0.22; // 100%, 78%, 56%, 34%
+            // Pyramid: bottom layers wider, top layers narrower
+            const baseScale = 0.34 + renderIndex * 0.22; // top: 34%, bottom: 100%
             const pctScale = Math.min(l.pct / 100, 1.3); // 允许最高130%
 
             const halfW = (maxWidth / 2) * baseScale * pctScale;
@@ -1026,24 +1052,43 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
   );
 }
 
-/* ════════════════════ 8. 日K线图 — 每日热量蜡烛图 ════════════════════ */
+/* ════════════════════ 8. 日K线图 — 每日热量增减趋势 ════════════════════ */
 export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; targetCalories: number }) {
   const [hover, setHover] = useState<number | null>(null);
   const active = stats.filter(d => d.intake > 0);
   if (active.length < 3) return null;
 
-  const candles = active.map(d => {
+  // 7-day rolling average
+  const avgIntake = Math.round(active.reduce((sum, d) => sum + d.intake, 0) / active.length);
+
+  const candles = active.map((d, i) => {
     const meals = d.mealCals ?? [0, 0, 0, 0];
     const nonZero = meals.filter(c => c > 0);
-    const open = meals[0] || 0; // 早餐（第一餐）
-    const close = meals[2] || 0; // 晚餐（最后一餐）
-    const high = nonZero.length > 0 ? Math.max(...nonZero) : Math.max(open, close);
-    const low = nonZero.length > 0 ? Math.min(...nonZero) : Math.min(open, close);
-    const avg = nonZero.length > 0 ? Math.round(d.intake / nonZero.length) : d.intake;
-    return { date: d.date, label: d.label, open, close, high, low, avg };
+
+    // Opening: previous day's intake (or current day for first day → doji)
+    let open = d.intake;
+    if (i > 0) {
+      open = active[i - 1].intake;
+    } else {
+      // First active day: check full stats for previous day
+      const currentIndex = stats.findIndex(s => s.date === d.date);
+      if (currentIndex > 0 && stats[currentIndex - 1].intake > 0) {
+        open = stats[currentIndex - 1].intake;
+      }
+    }
+
+    const close = d.intake;
+    const maxMeal = nonZero.length > 0 ? Math.max(...nonZero) : Math.max(open, close);
+    const minMeal = nonZero.length > 0 ? Math.min(...nonZero) : Math.min(open, close);
+
+    // K-line high/low: ensure wicks always encompass body
+    const high = Math.max(maxMeal, open, close);
+    const low = Math.min(minMeal, open, close);
+
+    return { date: d.date, label: d.label, open, close, high, low, maxMeal, minMeal };
   });
 
-  const maxVal = Math.max(...candles.map(c => c.high), targetCalories, 50);
+  const maxVal = Math.max(...candles.map(c => c.high), targetCalories, avgIntake, 50);
   const candleW = 14, candleGap = 32;
   const PAD_L = 36, PAD_R = 16, CHART_H = 150, BOTTOM = 44;
   const W = PAD_L + candles.length * candleGap + PAD_R;
@@ -1053,7 +1098,7 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
   function valY(v: number) { return CHART_H - (v / maxVal) * CHART_H; }
 
   return (
-    <ChartCard icon={TrendingUp} title="日K线图" iconColor="#6366F1" kind="indigo" subtitle="早餐→晚餐热量走势">
+    <ChartCard icon={TrendingUp} title="日K线图" iconColor="#6366F1" kind="indigo" subtitle="每日热量增减趋势">
       <div className="relative overflow-x-auto no-scrollbar w-full">
         <svg width={W} viewBox={`0 0 ${W} ${H}`} style={{ height: H, minWidth: W, overflow: 'visible', width: '100%' }} preserveAspectRatio="xMidYMid meet">
           <defs>
@@ -1082,6 +1127,14 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
           <text x={W - PAD_R - 22} y={valY(targetCalories) + 3} textAnchor="middle" fontSize={8}
             fill="#F97316" fontWeight="700">目标</text>
 
+          {/* 7日均值线 */}
+          <line x1={PAD_L - 4} y1={valY(avgIntake)} x2={W - PAD_R} y2={valY(avgIntake)}
+            stroke="#818cf8" strokeWidth={1.2} strokeDasharray="4 3" opacity={0.5} />
+          <rect x={W - PAD_R - 50} y={valY(avgIntake) - 8} width={48} height={16} rx={8}
+            fill="rgba(129,140,248,0.12)" stroke="rgba(129,140,248,0.3)" strokeWidth={0.5} />
+          <text x={W - PAD_R - 26} y={valY(avgIntake) + 3} textAnchor="middle" fontSize={7.5}
+            fill="#818cf8" fontWeight="700">7日均</text>
+
           {/* K线 */}
           {candles.map((c, i) => {
             const x = px(i);
@@ -1089,14 +1142,16 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
             const closeY = valY(c.close);
             const highY = valY(c.high);
             const lowY = valY(c.low);
-            const avgY = valY(c.avg);
-            // 绿色 = close < open (晚餐比早餐少，控制得好), 红色 = close > open (越吃越多)
+            // 绿色 = close < open (今天比昨天吃得少，热量减少), 红色 = close > open (今天比昨天吃得多)
             const isGreen = c.close <= c.open;
-            const color = isGreen ? '#22c55e' : '#ef4444';
+            const isDoji = c.close === c.open;
+            const color = isDoji ? '#9ca3af' : isGreen ? '#22c55e' : '#ef4444';
             const bodyTop = Math.min(openY, closeY);
             const bodyH = Math.max(Math.abs(closeY - openY), 2);
             const isH = hover === i;
             const dimmed = hover !== null && !isH;
+            const change = c.close - c.open;
+            const changeSign = change > 0 ? '+' : '';
 
             return (
               <g key={i}
@@ -1108,12 +1163,10 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
                 <line x1={x} y1={highY} x2={x} y2={lowY} stroke={color} strokeWidth={2.5} opacity={0.75} />
                 {/* 实体 */}
                 <rect x={x - candleW / 2} y={bodyTop} width={candleW} height={bodyH} rx={3}
-                  fill={isGreen ? color : color} opacity={isH ? 1 : isGreen ? 0.8 : 0.9}
+                  fill={color} opacity={isH ? 1 : isGreen ? 0.8 : 0.9}
                   stroke={color} strokeWidth={isH ? 2 : 0.5}
                   filter={isH ? 'url(#klineGlow)' : undefined}
                   style={{ transition: 'all 0.2s' }} />
-                {/* 均价点 */}
-                <circle cx={x} cy={avgY} r={isH ? 4 : 2.5} fill="white" stroke="#818cf8" strokeWidth={isH ? 2.5 : 1.5} />
                 {/* 日期标签 — 旋转 -45° */}
                 <text x={x} y={CHART_H + 14} textAnchor="end" fontSize={7.5}
                   fill={isH ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
@@ -1124,7 +1177,7 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
                 {isH && (
                   <g>
                     {(() => {
-                      const ttW = 95, ttH = 65;
+                      const ttW = 105, ttH = 78;
                       let ttX = x - ttW / 2;
                       if (ttX < 2) ttX = 2;
                       if (ttX + ttW > W - 2) ttX = W - ttW - 2;
@@ -1135,20 +1188,27 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
                             fill="rgba(0,0,0,0.92)" opacity={0.95} />
                           <text x={ttX + ttW / 2} y={ttY + 13} textAnchor="middle" fontSize={9}
                             fill="white" fontWeight="800">{c.date.slice(5)}</text>
-                          <text x={ttX + 8} y={ttY + 28} fontSize={8} fill="#86efac" fontWeight="600">
-                            早餐 {c.open}
+                          <text x={ttX + 8} y={ttY + 28} fontSize={8} fill="#9ca3af" fontWeight="600">
+                            昨日 {c.open}
                           </text>
-                          <text x={ttX + ttW - 8} y={ttY + 28} textAnchor="end" fontSize={8} fill="#fca5a5" fontWeight="600">
-                            晚餐 {c.close}
+                          <text x={ttX + ttW - 8} y={ttY + 28} textAnchor="end" fontSize={8}
+                            fill={isGreen ? '#86efac' : '#fca5a5'} fontWeight="600">
+                            今日 {c.close}
                           </text>
                           <text x={ttX + 8} y={ttY + 42} fontSize={8} fill="#fbbf24" fontWeight="600">
-                            最高 {c.high}
+                            最高餐 {c.maxMeal}
                           </text>
                           <text x={ttX + ttW - 8} y={ttY + 42} textAnchor="end" fontSize={8} fill="#38bdf8" fontWeight="600">
-                            最低 {c.low}
+                            最低餐 {c.minMeal}
                           </text>
-                          <text x={ttX + ttW / 2} y={ttY + 56} textAnchor="middle" fontSize={8}
-                            fill="#818cf8" fontWeight="600">均餐 {c.avg}</text>
+                          <line x1={ttX + 8} y1={ttY + 50} x2={ttX + ttW - 8} y2={ttY + 50}
+                            stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
+                          <text x={ttX + ttW / 2} y={ttY + 62} textAnchor="middle" fontSize={8.5}
+                            fill={isDoji ? '#9ca3af' : isGreen ? '#86efac' : '#fca5a5'} fontWeight="700">
+                            {isDoji ? '持平' : `${changeSign}${change} kcal`}
+                          </text>
+                          <text x={ttX + ttW / 2} y={ttY + 73} textAnchor="middle" fontSize={7}
+                            fill="#818cf8" fontWeight="600">7日均 {avgIntake}</text>
                         </>
                       );
                     })()}
@@ -1161,11 +1221,11 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
           {/* 图例 */}
           <g transform={`translate(${PAD_L}, ${H - 6})`}>
             <rect x={0} y={0} width={10} height={7} rx={2} fill="#22c55e" opacity={0.8} />
-            <text x={14} y={6} fontSize={7} fill="var(--ck-chart-dim)">晚餐&lt;早餐</text>
+            <text x={14} y={6} fontSize={7} fill="var(--ck-chart-dim)">今日&lt;昨日</text>
             <rect x={70} y={0} width={10} height={7} rx={2} fill="#ef4444" opacity={0.9} />
-            <text x={84} y={6} fontSize={7} fill="var(--ck-chart-dim)">晚餐&gt;早餐</text>
-            <circle cx={144} cy={3.5} r={3} fill="white" stroke="#818cf8" strokeWidth={1.5} />
-            <text x={150} y={6} fontSize={7} fill="var(--ck-chart-dim)">均餐</text>
+            <text x={84} y={6} fontSize={7} fill="var(--ck-chart-dim)">今日&gt;昨日</text>
+            <rect x={140} y={2} width={10} height={2} rx={1} fill="#818cf8" opacity={0.7} />
+            <text x={154} y={6} fontSize={7} fill="var(--ck-chart-dim)">7日均值</text>
           </g>
         </svg>
       </div>
@@ -1205,7 +1265,7 @@ export default function WeeklyCharts({ stats, targetCalories, selectedDate }: We
 
       <MacroLineChart stats={stats} target={targetCalories} />
 
-      <MacroSankey stats={stats} />
+      <MacroSankey stats={stats} selectedDate={selectedDate} />
 
       <MealHeatmap stats={stats} />
     </div>
