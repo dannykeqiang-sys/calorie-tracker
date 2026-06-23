@@ -217,6 +217,7 @@ export default function WeeklyStatsModal({
               stats={stats} profile={profile}
               activeDaysCount={activeDaysCount} waterDays={waterDays}
               exerciseDays={exerciseDays} daysOnTarget={daysOnTarget}
+              targetCalories={targetCalories}
             />
 
             {/* 营养雷达 全宽 */}

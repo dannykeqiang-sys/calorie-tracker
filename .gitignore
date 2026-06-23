@@ -9,3 +9,9 @@ tsconfig.tsbuildinfo
 # Compiled JS artifacts (TypeScript project, .js files are build output)
 src/**/*.js
 src/**/*.js.map
+
+# Tencent Cloud EdgeOne
+.env
+.edgeone/*
+.tef_dist/*
+  
