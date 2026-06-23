@@ -69,5 +69,12 @@
     ]
   },
   "exercises": [],
-  "water": []
+  "water": [
+    {
+      "id": "7c5c6bb3-22e5-43d9-a1f9-4ca66e688094",
+      "amount": 500,
+      "note": "",
+      "time": "16:07"
+    }
+  ]
 }
