@@ -48,6 +48,11 @@
         "carbs": 20,
         "fat": 20,
         "sodium": 800
+      },
+      {
+        "id": "892fafc8-be79-4799-aeda-896b4db44f86",
+        "name": "番茄",
+        "calories": 22
       }
     ],
     "dinner": [],
