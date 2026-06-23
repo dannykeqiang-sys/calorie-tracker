@@ -7,7 +7,7 @@ import { sumMacrosWithEstimate } from '../../utils/calculations';
 import { loadWeightRecords } from './TodayWeightCard';
 import type { DayStats } from './AIHealingCard';
 import WeeklyStatsModal from './WeeklyStatsModal';
-import WeeklyCharts, { NutritionSunburst, NutritionFunnel } from './WeeklyCharts';
+import WeeklyCharts, { NutritionSunburst, NutritionFunnel, DailyKLineChart } from './WeeklyCharts';
 import TodayDualRingBar from './TodayDualRingBar';
 import InflammationIndexCard from './InflammationIndexCard';
 import SodiumAnalysisCard from './SodiumAnalysisCard';
@@ -201,6 +201,10 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
 
       {!loading && recentStats.length > 0 && (
         <WeeklyCharts stats={recentStats} targetCalories={targetCalories} selectedDate={journalDate} />
+      )}
+
+      {!loading && recentStats.length >= 3 && (
+        <DailyKLineChart stats={recentStats} targetCalories={targetCalories} />
       )}
 
       {!loading && recentStats.length > 0 && (

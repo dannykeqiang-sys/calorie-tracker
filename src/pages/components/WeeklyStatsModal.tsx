@@ -9,6 +9,7 @@ import {
   MacroSankey,
   MealHeatmap,
   ChartCard,
+  DailyKLineChart,
 } from './WeeklyCharts';
 
 interface WeeklyStatsModalProps {
@@ -118,98 +119,7 @@ function getSuggestions(stats: DayStats[], profile: UserProfile | null, targetCa
   return suggestions.sort((a, b) => a.priority - b.priority).slice(0, 3);
 }
 
-/* ─── 周K线图 ─── */
-function WeeklyKLineChart({ stats }: { stats: DayStats[] }) {
-  const activeDays = stats.filter(d => d.intake > 0);
-  if (activeDays.length < 5) return null;
-
-  // 按周聚合
-  const weeks: { label: string; open: number; close: number; high: number; low: number; avg: number; days: number }[] = [];
-  let weekStart = -1;
-
-  for (const d of stats) {
-    const date = new Date(d.date + 'T00:00:00');
-    const dayOfWeek = date.getDay();
-    const mondayDate = new Date(date);
-    mondayDate.setDate(date.getDate() - ((dayOfWeek + 6) % 7));
-    const weekKey = mondayDate.toISOString().split('T')[0];
-
-    if (d.intake === 0) continue;
-
-    if (weekStart === -1 || weeks.length === 0) {
-      weeks.push({ label: weekKey.slice(5), open: d.intake, close: d.intake, high: d.intake, low: d.intake, avg: d.intake, days: 1 });
-      weekStart = weeks.length - 1;
-    } else if (weeks[weeks.length - 1].label !== weekKey.slice(5)) {
-      weeks.push({ label: weekKey.slice(5), open: d.intake, close: d.intake, high: d.intake, low: d.intake, avg: d.intake, days: 1 });
-    } else {
-      const w = weeks[weeks.length - 1];
-      w.close = d.intake;
-      w.high = Math.max(w.high, d.intake);
-      w.low = Math.min(w.low, d.intake);
-      w.avg = Math.round((w.avg * w.days + d.intake) / (w.days + 1));
-      w.days++;
-    }
-  }
-
-  if (weeks.length < 2) return null;
-
-  const maxVal = Math.max(...weeks.map(w => w.high), 50);
-  const W = Math.max(300, weeks.length * 56);
-  const CH = 160, BH = 120, PAD = 40;
-  const candleW = 20, candleGap = 36;
-
-  function px(i: number) { return PAD + i * candleGap + candleW / 2; }
-
-  return (
-    <ChartCard icon={TrendingUp} title="周K线图" iconColor="#6366F1" kind="indigo" subtitle="每周热量开盘/收盘/最高/最低">
-      <div className="relative overflow-x-auto no-scrollbar w-full">
-        <svg width={W} viewBox={`0 0 ${W} ${CH}`} style={{ height: CH, minWidth: W, overflow: 'visible', width: '100%' }} preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <filter id="klGlow"><feGaussianBlur stdDeviation="1.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-          </defs>
-          {/* 网格 */}
-          {[0.25, 0.5, 0.75].map(pct => (
-            <line key={pct} x1={0} y1={BH * (1 - pct)} x2={W} y2={BH * (1 - pct)} stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" />
-          ))}
-          {/* K线 */}
-          {weeks.map((w, i) => {
-            const x = px(i);
-            const openY = BH - (w.open / maxVal) * BH;
-            const closeY = BH - (w.close / maxVal) * BH;
-            const highY = BH - (w.high / maxVal) * BH;
-            const lowY = BH - (w.low / maxVal) * BH;
-            const isGreen = w.close >= w.open;
-            const color = isGreen ? '#22c55e' : '#ef4444';
-            const bodyTop = Math.min(openY, closeY);
-            const bodyH = Math.max(Math.abs(closeY - openY), 1);
-
-            return (
-              <g key={i}>
-                {/* 影线 */}
-                <line x1={x} y1={highY} x2={x} y2={lowY} stroke={color} strokeWidth={1.5} opacity={0.7} />
-                {/* 实体 */}
-                <rect x={x - candleW / 2} y={bodyTop} width={candleW} height={bodyH} rx={2}
-                  fill={isGreen ? color : color} opacity={isGreen ? 0.75 : 0.85}
-                  stroke={color} strokeWidth={0.5} filter="url(#klGlow)" />
-                {/* 均价线 */}
-                <circle cx={x} cy={BH - (w.avg / maxVal) * BH} r={2} fill="white" stroke="#818cf8" strokeWidth={1.5} />
-                {/* 周标签 */}
-                <text x={x} y={BH + 16} textAnchor="middle" fontSize={7} fill="var(--ck-chart-label)">{w.label}</text>
-              </g>
-            );
-          })}
-          {/* 图例 */}
-          <g transform={`translate(${W - 120}, ${BH + 30})`}>
-            <rect x={0} y={0} width={10} height={6} rx={1} fill="#22c55e" opacity={0.75} />
-            <text x={14} y={5} fontSize={7} fill="var(--ck-chart-dim)">阳线(涨)</text>
-            <rect x={56} y={0} width={10} height={6} rx={1} fill="#ef4444" opacity={0.85} />
-            <text x={70} y={5} fontSize={7} fill="var(--ck-chart-dim)">阴线(跌)</text>
-          </g>
-        </svg>
-      </div>
-    </ChartCard>
-  );
-}
+/* ─── 周K线图已迁移为日K线图 — 使用 WeeklyCharts.tsx 中的 DailyKLineChart ─── */
 
 export default function WeeklyStatsModal({
   open, onClose, stats, profile,
@@ -328,7 +238,7 @@ export default function WeeklyStatsModal({
             <MealHeatmap stats={stats} />
 
             {/* 周K线图 */}
-            <WeeklyKLineChart stats={stats} />
+            <DailyKLineChart stats={stats} targetCalories={targetCalories} />
 
             {/* 全程趋势对比 */}
             {trendItems.length > 0 && (

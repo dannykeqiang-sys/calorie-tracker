@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { calcTargetCalories, calcMacroTargets, sumMacrosWithEstimate } from '../../utils/calculations';
 import { TrendingDown, Minus, TrendingUp } from 'lucide-react';
@@ -10,101 +10,289 @@ interface TodayDualRingBarProps {
   currentWeight?: number;
 }
 
-/* ───── 三环图 — Apple Watch 风格 ───── */
+/* ───── 三环图 — Apple Watch 风格（重设计） ───── */
 function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget, fat, fatTarget }: {
   intake: number; target: number; protein: number; proteinTarget: number; carbs: number; carbsTarget: number; fat: number; fatTarget: number;
 }) {
   const [hoverRing, setHoverRing] = useState<number | null>(null);
+  const [animated, setAnimated] = useState(false);
   const cx = 150, cy = 150;
+
   const rings = [
-    { r: 88, sw: 18, value: intake, max: target, color: '#f97316', bgColor: 'rgba(249,115,22,0.15)', label: '热量', unit: 'kcal', pct: Math.round(Math.min(intake / Math.max(target, 1), 1.5) * 100) },
-    { r: 68, sw: 18, value: protein, max: proteinTarget, color: '#3b82f6', bgColor: 'rgba(59,130,246,0.15)', label: '蛋白', unit: 'g', pct: Math.round(Math.min(protein / Math.max(proteinTarget, 1), 1.5) * 100) },
-    { r: 48, sw: 18, value: carbs, max: carbsTarget, color: '#22c55e', bgColor: 'rgba(34,197,94,0.15)', label: '碳水', unit: 'g', pct: Math.round(Math.min(carbs / Math.max(carbsTarget, 1), 1.5) * 100) },
+    {
+      r: 90, sw: 16, value: intake, max: target,
+      color: '#f97316', gradientId: 'grad-cal',
+      label: '热量', unit: 'kcal',
+      pct: Math.min(intake / Math.max(target, 1), 1.5) * 100
+    },
+    {
+      r: 70, sw: 16, value: protein, max: proteinTarget,
+      color: '#3b82f6', gradientId: 'grad-protein',
+      label: '蛋白质', unit: 'g',
+      pct: Math.min(protein / Math.max(proteinTarget, 1), 1.5) * 100
+    },
+    {
+      r: 50, sw: 16, value: carbs, max: carbsTarget,
+      color: '#22c55e', gradientId: 'grad-carbs',
+      label: '碳水', unit: 'g',
+      pct: Math.min(carbs / Math.max(carbsTarget, 1), 1.5) * 100
+    },
   ];
 
-  function ringPath(r: number, sw: number, pct: number): string {
-    const p = Math.min(pct / 100, 1);
-    if (p <= 0) return '';
-    if (p >= 1) {
-      return `M${cx},${cy - r} A${r},${r} 0 1 1 ${cx - 0.01},${cy - r} A${r},${r} 0 1 1 ${cx},${cy - r}`;
-    }
-    const angle = p * 2 * Math.PI - Math.PI / 2;
-    const x = cx + r * Math.cos(angle);
-    const y = cy + r * Math.sin(angle);
-    const largeArc = p > 0.5 ? 1 : 0;
-    return `M${cx},${cy - r} A${r},${r} 0 ${largeArc} 1 ${x},${y}`;
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  function getEndPoint(r: number, pct: number): { x: number; y: number } | null {
+    if (pct <= 0) return null;
+    const clampedPct = Math.min(pct, 100);
+    const angle = (clampedPct / 100) * 2 * Math.PI - Math.PI / 2;
+    return {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+    };
   }
 
   const overallPct = Math.round((intake / Math.max(target, 1)) * 100);
+  const isOver = intake > target;
+  const overallColor = isOver ? '#ef4444' : '#22c55e';
 
   return (
-    <div className="flex justify-center w-full">
+    <div className="flex flex-col items-center w-full">
+      {/* SVG 三环 */}
       <svg viewBox="0 0 300 300" className="w-full h-auto" style={{ maxWidth: 500 }}>
         <defs>
+          {/* 渐变色 */}
+          <linearGradient id="grad-cal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f97316" />
+            <stop offset="100%" stopColor="#fb923c" />
+          </linearGradient>
+          <linearGradient id="grad-protein" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#60a5fa" />
+          </linearGradient>
+          <linearGradient id="grad-carbs" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#22c55e" />
+            <stop offset="100%" stopColor="#4ade80" />
+          </linearGradient>
+          <linearGradient id="grad-over" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ef4444" />
+            <stop offset="100%" stopColor="#f87171" />
+          </linearGradient>
+
+          {/* 发光滤镜 */}
           {rings.map((ring, i) => (
-            <filter key={i} id={`ringGlow${i}`}>
-              <feGaussianBlur stdDeviation="3" />
-              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+            <filter key={i} id={`glow${i}`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
             </filter>
           ))}
         </defs>
-        {/* 背景圆环 */}
-        {rings.map((ring, i) => (
-          <circle key={`bg${i}`} cx={cx} cy={cy} r={ring.r} fill="none"
-            stroke={ring.bgColor} strokeWidth={ring.sw} />
-        ))}
-        {/* 进度圆环 */}
-        {rings.map((ring, i) => {
-          const p = Math.min(ring.pct, 150);
-          const path = ringPath(ring.r, ring.sw, p);
-          const isH = hoverRing === i;
-          return path ? (
-            <g key={`fg${i}`} onMouseEnter={() => setHoverRing(i)} onMouseLeave={() => setHoverRing(null)}
-              onTouchStart={() => setHoverRing(p => p === i ? null : i)} style={{ cursor: 'pointer' }}>
-              <path d={path} fill="none"
-                stroke={ring.color} strokeWidth={isH ? ring.sw + 2 : ring.sw} strokeLinecap="round"
-                filter={isH ? `url(#ringGlow${i})` : undefined} opacity={isH ? 1 : 0.92}
-                style={{ transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
-            </g>
-          ) : null;
-        })}
-        {/* 中心文字 */}
-        <text x={cx} y={cy - 8} textAnchor="middle" fontSize={32} fontWeight="900" fill="var(--ck-dock-title)">{intake}</text>
-        <text x={cx} y={cy + 12} textAnchor="middle" fontSize={12} fill="var(--ck-dock-sub)">/ {target} kcal</text>
-        <text x={cx} y={cy + 28} textAnchor="middle" fontSize={10} fill="var(--ck-dock-sub)" fontWeight="700">{overallPct}%</text>
 
-        {/* 环标签 — 右侧显示 */}
+        {/* 背景环 */}
+        {rings.map((ring, i) => (
+          <circle
+            key={`bg${i}`}
+            cx={cx}
+            cy={cy}
+            r={ring.r}
+            fill="none"
+            stroke={ring.color}
+            strokeWidth={ring.sw}
+            opacity={hoverRing !== null && hoverRing !== i ? 0.08 : 0.08}
+            style={{ transition: 'opacity 0.3s ease' }}
+          />
+        ))}
+
+        {/* 进度环 */}
         {rings.map((ring, i) => {
           const isH = hoverRing === i;
-          const labelX = cx + ring.r + 20;
-          const labelY = cy - 30 + i * 32;
+          const circumference = 2 * Math.PI * ring.r;
+          const pct = animated ? Math.min(ring.pct, 150) : 0;
+          const dashoffset = circumference - (pct / 100) * circumference;
+          const isOver = pct > 100;
+
           return (
-            <g key={`lbl${i}`}>
-              <text x={labelX} y={labelY} fontSize={isH ? 12 : 11}
-                fill={ring.color} fontWeight={isH ? '800' : '600'}>
-                {ring.label} {ring.pct}%
-              </text>
-              <text x={labelX} y={labelY + 14} fontSize={9} fill="var(--ck-dock-sub)">
-                {ring.value}{ring.unit}
-              </text>
+            <g key={`ring${i}`}>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={ring.r}
+                fill="none"
+                stroke={`url(#${isOver ? 'grad-over' : ring.gradientId})`}
+                strokeWidth={isH ? ring.sw + 3 : ring.sw}
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashoffset}
+                opacity={hoverRing !== null && !isH ? 0.4 : 1}
+                filter={isH ? `url(#glow${i})` : undefined}
+                style={{
+                  transform: `rotate(-90deg)`,
+                  transformOrigin: `${cx}px ${cy}px`,
+                  transition: 'stroke-dashoffset 0.8s ease-out, stroke-width 0.3s ease, opacity 0.3s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={() => setHoverRing(i)}
+                onMouseLeave={() => setHoverRing(null)}
+                onTouchStart={() => setHoverRing(hoverRing === i ? null : i)}
+              />
+
+              {/* 端点装饰 */}
+              {pct > 0 && (() => {
+                const endPoint = getEndPoint(ring.r, pct);
+                if (!endPoint) return null;
+                return (
+                  <circle
+                    cx={endPoint.x}
+                    cy={endPoint.y}
+                    r={isH ? (ring.sw + 3) / 2 : ring.sw / 2}
+                    fill={isOver ? '#ef4444' : ring.color}
+                    opacity={hoverRing !== null && !isH ? 0.4 : 1}
+                    style={{
+                      transition: 'all 0.3s ease',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                );
+              })()}
             </g>
           );
         })}
 
-        {/* Hover tooltip */}
-        {hoverRing !== null && (
-          <g>
-            <rect x={cx - 60} y={cy + 50} width={120} height={36} rx={8}
-              fill="rgba(0,0,0,0.85)" opacity={0.95} />
-            <text x={cx} y={cy + 68} textAnchor="middle" fontSize={11} fill="white" fontWeight="700">
-              {rings[hoverRing].label}: {rings[hoverRing].value} / {rings[hoverRing].max}{rings[hoverRing].unit}
+        {/* 中心文字 */}
+        {hoverRing === null ? (
+          <>
+            <text
+              x={cx}
+              y={cy - 10}
+              textAnchor="middle"
+              fontSize={30}
+              fontWeight="900"
+              fill="var(--ck-dock-title)"
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              {intake}
             </text>
-            <text x={cx} y={cy + 82} textAnchor="middle" fontSize={10} fill="white" opacity={0.8}>
-              达成率 {rings[hoverRing].pct}%
+            <text
+              x={cx}
+              y={cy + 10}
+              textAnchor="middle"
+              fontSize={12}
+              fill="var(--ck-dock-sub)"
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              / {target} kcal
             </text>
-          </g>
+            <text
+              x={cx}
+              y={cy + 28}
+              textAnchor="middle"
+              fontSize={11}
+              fontWeight="700"
+              fill={overallColor}
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              {overallPct}%
+            </text>
+          </>
+        ) : (
+          <>
+            <text
+              x={cx}
+              y={cy - 12}
+              textAnchor="middle"
+              fontSize={13}
+              fontWeight="700"
+              fill={rings[hoverRing].color}
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              {rings[hoverRing].label}
+            </text>
+            <text
+              x={cx}
+              y={cy + 8}
+              textAnchor="middle"
+              fontSize={26}
+              fontWeight="900"
+              fill="var(--ck-dock-title)"
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              {rings[hoverRing].value}
+            </text>
+            <text
+              x={cx}
+              y={cy + 24}
+              textAnchor="middle"
+              fontSize={11}
+              fill="var(--ck-dock-sub)"
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              / {rings[hoverRing].max} {rings[hoverRing].unit}
+            </text>
+            <text
+              x={cx}
+              y={cy + 40}
+              textAnchor="middle"
+              fontSize={10}
+              fontWeight="700"
+              fill={rings[hoverRing].pct > 100 ? '#ef4444' : rings[hoverRing].color}
+              style={{ transition: 'all 0.3s ease' }}
+            >
+              {Math.round(rings[hoverRing].pct)}%
+            </text>
+          </>
         )}
       </svg>
+
+      {/* 底部指标卡片 */}
+      <div className="flex gap-3 mt-4 w-full max-w-md justify-center">
+        {rings.map((ring, i) => {
+          const isH = hoverRing === i;
+          const pct = Math.round(ring.pct);
+          const isOver = pct > 100;
+
+          return (
+            <div
+              key={i}
+              className="flex-1 px-3 py-2 rounded-xl transition-all duration-300 cursor-pointer"
+              style={{
+                background: isH ? `${ring.color}15` : 'rgba(0,0,0,0.02)',
+                border: `1.5px solid ${isH ? ring.color : 'rgba(0,0,0,0.08)'}`,
+                transform: isH ? 'translateY(-2px)' : 'translateY(0)',
+                boxShadow: isH ? `0 4px 12px ${ring.color}30` : 'none',
+              }}
+              onMouseEnter={() => setHoverRing(i)}
+              onMouseLeave={() => setHoverRing(null)}
+              onTouchStart={() => setHoverRing(hoverRing === i ? null : i)}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: isOver ? '#ef4444' : ring.color }}
+                />
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--ck-dock-sub)' }}>
+                  {ring.label}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--ck-dock-title)' }}>
+                  {ring.value}
+                </span>
+                <span className="text-[10px]" style={{ color: 'var(--ck-dock-sub)' }}>
+                  / {ring.max}{ring.unit}
+                </span>
+              </div>
+              <div className="text-[10px] font-bold mt-0.5" style={{ color: isOver ? '#ef4444' : ring.color }}>
+                {pct}%
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

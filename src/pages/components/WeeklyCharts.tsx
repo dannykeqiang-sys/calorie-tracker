@@ -797,6 +797,150 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
   );
 }
 
+/* ════════════════════ 8. 日K线图 — 每日热量蜡烛图 ════════════════════ */
+export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; targetCalories: number }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const active = stats.filter(d => d.intake > 0);
+  if (active.length < 3) return null;
+
+  const candles = active.map(d => {
+    const meals = d.mealCals ?? [0, 0, 0, 0];
+    const nonZero = meals.filter(c => c > 0);
+    const open = meals[0] || 0; // 早餐
+    const close = d.intake;      // 全天总热量
+    const high = nonZero.length > 0 ? Math.max(...nonZero) : close;
+    const low = nonZero.length > 0 ? Math.min(...nonZero) : open;
+    const avg = Math.round((open + close + high + low) / 4);
+    return { date: d.date, label: d.label, open, close, high, low, avg };
+  });
+
+  const maxVal = Math.max(...candles.map(c => c.high), targetCalories, 50);
+  const candleW = 14, candleGap = 32;
+  const PAD_L = 36, PAD_R = 16, CHART_H = 150, BOTTOM = 44;
+  const W = PAD_L + candles.length * candleGap + PAD_R;
+  const H = CHART_H + BOTTOM;
+
+  function px(i: number) { return PAD_L + i * candleGap + candleW / 2; }
+  function valY(v: number) { return CHART_H - (v / maxVal) * CHART_H; }
+
+  return (
+    <ChartCard icon={TrendingUp} title="日K线图" iconColor="#6366F1" kind="indigo" subtitle="每日热量开盘/收盘">
+      <div className="relative overflow-x-auto no-scrollbar w-full">
+        <svg width={W} viewBox={`0 0 ${W} ${H}`} style={{ height: H, minWidth: W, overflow: 'visible', width: '100%' }} preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <filter id="klGlow"><feGaussianBlur stdDeviation="1.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          </defs>
+
+          {/* 网格 */}
+          {[0.25, 0.5, 0.75, 1].map(pct => (
+            <line key={pct} x1={PAD_L - 4} y1={CHART_H * (1 - pct)} x2={W - PAD_R} y2={CHART_H * (1 - pct)}
+              stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" opacity={0.35} />
+          ))}
+          {/* Y轴标签 */}
+          {[0.25, 0.5, 0.75, 1].map(pct => (
+            <text key={pct} x={PAD_L - 8} y={CHART_H * (1 - pct) + 3} textAnchor="end" fontSize={7}
+              fill="var(--ck-chart-dim)">{Math.round(maxVal * pct)}</text>
+          ))}
+
+          {/* 目标线 */}
+          <line x1={PAD_L - 4} y1={valY(targetCalories)} x2={W - PAD_R} y2={valY(targetCalories)}
+            stroke="#F97316" strokeWidth={1.2} strokeDasharray="5 3" opacity={0.55} />
+          <rect x={W - PAD_R - 36} y={valY(targetCalories) - 7} width={34} height={14} rx={7}
+            fill="rgba(249,115,22,0.1)" stroke="rgba(249,115,22,0.2)" strokeWidth={0.5} />
+          <text x={W - PAD_R - 19} y={valY(targetCalories) + 3} textAnchor="middle" fontSize={7}
+            fill="#F97316" fontWeight="700">目标</text>
+
+          {/* K线 */}
+          {candles.map((c, i) => {
+            const x = px(i);
+            const openY = valY(c.open);
+            const closeY = valY(c.close);
+            const highY = valY(c.high);
+            const lowY = valY(c.low);
+            const avgY = valY(c.avg);
+            // 绿色 = close < open (控制得好), 红色 = close > open
+            const isGreen = c.close <= c.open;
+            const color = isGreen ? '#22c55e' : '#ef4444';
+            const bodyTop = Math.min(openY, closeY);
+            const bodyH = Math.max(Math.abs(closeY - openY), 2);
+            const isH = hover === i;
+            const dimmed = hover !== null && !isH;
+
+            return (
+              <g key={i}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+                onTouchStart={() => setHover(p => p === i ? null : i)}
+                style={{ cursor: 'pointer', transition: 'opacity 0.25s', opacity: dimmed ? 0.3 : 1 }}>
+                {/* 影线 */}
+                <line x1={x} y1={highY} x2={x} y2={lowY} stroke={color} strokeWidth={2} opacity={0.7} />
+                {/* 实体 */}
+                <rect x={x - candleW / 2} y={bodyTop} width={candleW} height={bodyH} rx={3}
+                  fill={isGreen ? color : color} opacity={isH ? 1 : isGreen ? 0.75 : 0.85}
+                  stroke={color} strokeWidth={isH ? 1.5 : 0.5}
+                  filter={isH ? 'url(#klGlow)' : undefined}
+                  style={{ transition: 'all 0.2s' }} />
+                {/* 均价点 */}
+                <circle cx={x} cy={avgY} r={isH ? 3 : 2} fill="white" stroke="#818cf8" strokeWidth={isH ? 2 : 1.5} />
+                {/* 日期标签 — 旋转 -45° */}
+                <text x={x} y={CHART_H + 14} textAnchor="end" fontSize={7.5}
+                  fill={isH ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
+                  fontWeight={isH ? '700' : '500'}
+                  transform={`rotate(-45, ${x}, ${CHART_H + 14})`}>{c.label}</text>
+
+                {/* Tooltip */}
+                {isH && (
+                  <g>
+                    {(() => {
+                      const ttW = 92, ttH = 62;
+                      let ttX = x - ttW / 2;
+                      if (ttX < 2) ttX = 2;
+                      if (ttX + ttW > W - 2) ttX = W - ttW - 2;
+                      const ttY = Math.max(2, highY - ttH - 8);
+                      return (
+                        <>
+                          <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={8}
+                            fill="rgba(0,0,0,0.9)" opacity={0.95} />
+                          <text x={ttX + ttW / 2} y={ttY + 12} textAnchor="middle" fontSize={9}
+                            fill="white" fontWeight="800">{c.date.slice(5)}</text>
+                          <text x={ttX + 6} y={ttY + 26} fontSize={8} fill="#86efac" fontWeight="600">
+                            开盘 {c.open}
+                          </text>
+                          <text x={ttX + ttW - 6} y={ttY + 26} textAnchor="end" fontSize={8} fill="#fca5a5" fontWeight="600">
+                            收盘 {c.close}
+                          </text>
+                          <text x={ttX + 6} y={ttY + 40} fontSize={8} fill="#fbbf24" fontWeight="600">
+                            最高 {c.high}
+                          </text>
+                          <text x={ttX + ttW - 6} y={ttY + 40} textAnchor="end" fontSize={8} fill="#38bdf8" fontWeight="600">
+                            最低 {c.low}
+                          </text>
+                          <text x={ttX + ttW / 2} y={ttY + 54} textAnchor="middle" fontSize={8}
+                            fill="#818cf8" fontWeight="600">均价 {c.avg}</text>
+                        </>
+                      );
+                    })()}
+                  </g>
+                )}
+              </g>
+            );
+          })}
+
+          {/* 图例 */}
+          <g transform={`translate(${PAD_L}, ${H - 6})`}>
+            <rect x={0} y={0} width={10} height={7} rx={2} fill="#22c55e" opacity={0.75} />
+            <text x={14} y={6} fontSize={7} fill="var(--ck-chart-dim)">控制得好</text>
+            <rect x={70} y={0} width={10} height={7} rx={2} fill="#ef4444" opacity={0.85} />
+            <text x={84} y={6} fontSize={7} fill="var(--ck-chart-dim)">热量增长</text>
+            <circle cx={144} cy={3.5} r={2.5} fill="white" stroke="#818cf8" strokeWidth={1.5} />
+            <text x={150} y={6} fontSize={7} fill="var(--ck-chart-dim)">均价</text>
+          </g>
+        </svg>
+      </div>
+    </ChartCard>
+  );
+}
+
 /* ════════════════════ 主入口 ════════════════════ */
 export default function WeeklyCharts({ stats, targetCalories, selectedDate }: WeeklyChartsProps) {
   if (!stats.length) return null;
