@@ -35,10 +35,50 @@
         "fat": 5
       }
     ],
-    "lunch": [],
+    "lunch": [
+      {
+        "id": "6f0df01d-34f4-40bd-9e7b-b62f4a300fa9",
+        "name": "汉堡（无酱）",
+        "calories": 350,
+        "protein": 20,
+        "carbs": 40,
+        "fat": 10
+      },
+      {
+        "id": "39fde0d0-f439-4f46-b5ed-7487412881f4",
+        "name": "无糖豆浆500ml",
+        "calories": 160,
+        "protein": 12,
+        "carbs": 12,
+        "fat": 6
+      },
+      {
+        "id": "b1ea56f1-9cb8-475c-9c48-d45e6ed80d4b",
+        "name": "三文鱼100g",
+        "calories": 208,
+        "protein": 20,
+        "carbs": 0,
+        "fat": 13
+      },
+      {
+        "id": "5c3b15ba-b492-460b-8f99-eb73345f3544",
+        "name": "沙拉120g",
+        "calories": 60,
+        "protein": 3,
+        "carbs": 10,
+        "fat": 1
+      }
+    ],
     "dinner": [],
     "snack": []
   },
   "exercises": [],
-  "water": []
+  "water": [
+    {
+      "id": "f4081b6a-2383-481f-9c69-e610ede9441f",
+      "amount": 200,
+      "note": "抹茶拿铁",
+      "time": "11:19"
+    }
+  ]
 }
