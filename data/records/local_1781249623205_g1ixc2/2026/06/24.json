@@ -80,7 +80,7 @@
       },
       {
         "id": "d96c4345-ff33-4aa8-b6a6-45efdaed948a",
-        "name": "碗杂",
+        "name": "豌杂面",
         "calories": 350,
         "protein": 12,
         "carbs": 50,
@@ -113,6 +113,18 @@
     },
     {
       "id": "1659d141-9b89-4c1f-af8a-be8d07a2db93",
+      "amount": 500,
+      "note": "",
+      "time": "23:19"
+    },
+    {
+      "id": "64d59567-e5d4-4b0e-ada4-b5090493675a",
+      "amount": 500,
+      "note": "",
+      "time": "23:19"
+    },
+    {
+      "id": "57b7b374-2ac6-4aeb-ac09-7f95ce8f58d2",
       "amount": 500,
       "note": "",
       "time": "23:19"
