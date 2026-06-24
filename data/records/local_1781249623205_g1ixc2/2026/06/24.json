@@ -85,6 +85,14 @@
         "protein": 12,
         "carbs": 50,
         "fat": 10
+      },
+      {
+        "id": "ef6c8c44-5c19-496a-b568-86de1af7ef27",
+        "name": "卤牛腱子",
+        "calories": 180,
+        "protein": 24,
+        "carbs": 2,
+        "fat": 8
       }
     ],
     "snack": []
