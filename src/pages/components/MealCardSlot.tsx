@@ -209,7 +209,7 @@ function MacroOverlay({ macroKey, items, macroTarget, onClose }: MacroOverlayPro
       <div
         className="rounded-t-3xl px-5 pt-5 pb-6 space-y-4"
         style={{
-          background: 'rgba(255,255,255,0.97)',
+          background: 'var(--card)',
           animation: 'sheetSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         }}
         onClick={e => e.stopPropagation()}
@@ -318,7 +318,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
       <div
         className="rounded-t-3xl px-5 pt-5 pb-6 space-y-4"
         style={{
-          background: 'rgba(255,255,255,0.97)',
+          background: 'var(--card)',
           animation: 'sheetSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)',
         }}
         onClick={e => e.stopPropagation()}

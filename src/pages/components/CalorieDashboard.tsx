@@ -81,7 +81,7 @@ export default function CalorieDashboard({ profile, record, dateLabel = '今日'
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white border border-border p-6 shadow-sm">
+      <div className="rounded-2xl bg-card border border-border p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="relative flex-shrink-0">
             <RingChart value={totalIntake} max={dynamicTarget} color="#A3B899" size={140} />

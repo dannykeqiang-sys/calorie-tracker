@@ -25,7 +25,7 @@ export default function ActivityBurnCard({ stats }: ActivityBurnCardProps) {
   if (stats.length === 0) return null;
 
   return (
-    <div className="rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+    <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
       <div className="p-4 pb-3">
         <div className="flex items-center gap-2 mb-4">
           <div
@@ -86,7 +86,7 @@ export default function ActivityBurnCard({ stats }: ActivityBurnCardProps) {
                 <span
                   className="text-[10px] font-medium leading-none"
                   style={{
-                    color: isToday ? '#16A34A' : isSelected ? '#374151' : '#9CA3AF',
+                    color: isToday ? '#16A34A' : isSelected ? 'var(--foreground)' : '#9CA3AF',
                     fontWeight: isToday ? 700 : 500,
                   }}
                 >

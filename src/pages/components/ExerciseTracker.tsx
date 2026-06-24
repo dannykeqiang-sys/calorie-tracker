@@ -165,7 +165,7 @@ export default function ExerciseTracker({ record, onChange }: ExerciseTrackerPro
               ) : (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg bg-white/70 border border-border/50 group"
+                  className="flex items-center justify-between py-2 px-3 rounded-lg bg-card/70 border border-border/50 group"
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Dumbbell className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
@@ -207,14 +207,14 @@ export default function ExerciseTracker({ record, onChange }: ExerciseTrackerPro
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="运动名称"
-            className="bg-white/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm col-span-1"
+            className="bg-card/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm col-span-1"
           />
           <Input
             type="number"
             value={duration}
             onChange={e => setDuration(e.target.value)}
             placeholder="时长(分)"
-            className="bg-white/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm"
+            className="bg-card/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm"
           />
           <div className="flex gap-1">
             <Input
@@ -222,7 +222,7 @@ export default function ExerciseTracker({ record, onChange }: ExerciseTrackerPro
               value={calories}
               onChange={e => setCalories(e.target.value)}
               placeholder="kcal"
-              className="bg-white/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm"
+              className="bg-card/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm"
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
             />
             <Button
@@ -245,7 +245,7 @@ export default function ExerciseTracker({ record, onChange }: ExerciseTrackerPro
           {showQuick && (
             <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
               {QUICK_EXERCISES.map(ex => (
-                <div key={ex.name} className="rounded-xl bg-white border border-border p-3 space-y-2">
+                <div key={ex.name} className="rounded-xl bg-card border border-border p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-foreground">{ex.name}</span>
                     <span className="text-xs text-muted-foreground">{ex.caloriesPerMin}kcal/分</span>

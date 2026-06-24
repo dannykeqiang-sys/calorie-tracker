@@ -58,7 +58,7 @@ export default function BMICard({ profile }: BMICardProps) {
   const target = calcTargetCalories(profile);
 
   return (
-    <div className="rounded-2xl border border-border bg-white p-5 space-y-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Scale className="w-4 h-4 text-primary" />

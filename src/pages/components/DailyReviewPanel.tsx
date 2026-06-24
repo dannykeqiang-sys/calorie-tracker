@@ -169,7 +169,7 @@ export default function DailyReviewPanel({ profile, record, apiKey, isComplete }
     return (
       <div className="rounded-2xl border border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex flex-col items-center justify-center text-center gap-4 min-h-[260px]">
         <div className="relative">
-          <div className="w-20 h-16 rounded-xl border-2 border-primary/40 bg-white flex items-center justify-center shadow-sm">
+          <div className="w-20 h-16 rounded-xl border-2 border-primary/40 bg-card flex items-center justify-center shadow-sm">
             <Mail className="w-8 h-8 text-primary/50" />
           </div>
           <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-secondary/40 border border-secondary/30" />
@@ -190,7 +190,7 @@ export default function DailyReviewPanel({ profile, record, apiKey, isComplete }
     return (
       <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex flex-col items-center justify-center text-center gap-5 min-h-[260px]">
         <div className="relative">
-          <div className="w-20 h-16 rounded-xl border-2 border-primary/50 bg-white flex items-center justify-center shadow-md">
+          <div className="w-20 h-16 rounded-xl border-2 border-primary/50 bg-card flex items-center justify-center shadow-md">
             <Mail className="w-8 h-8 text-primary" />
           </div>
           <Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-secondary animate-pulse" />
@@ -260,7 +260,7 @@ export default function DailyReviewPanel({ profile, record, apiKey, isComplete }
   }
 
   return (
-    <div className="rounded-2xl border border-primary/20 bg-white p-6 space-y-4 shadow-sm">
+    <div className="rounded-2xl border border-primary/20 bg-card p-6 space-y-4 shadow-sm">
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
           <Sparkles className="w-4 h-4 text-primary" />

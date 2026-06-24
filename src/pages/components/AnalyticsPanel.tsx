@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, ChevronRight, Calendar, Flame, Dumbbell } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Sparkles, ChevronRight, Calendar, Flame, Dumbbell, X } from 'lucide-react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { idbGetAllRecords } from '../../utils/indexedDB';
 import { loadAllRecords } from '../../utils/storage';
@@ -7,7 +7,7 @@ import { sumMacrosWithEstimate } from '../../utils/calculations';
 import { loadWeightRecords } from './TodayWeightCard';
 import type { DayStats } from './AIHealingCard';
 import WeeklyStatsModal from './WeeklyStatsModal';
-import WeeklyCharts, { NutritionSunburst, NutritionFunnel, DailyKLineChart } from './WeeklyCharts';
+import WeeklyCharts, { NutritionStackedArea, NutritionFunnel, DailyKLineChart } from './WeeklyCharts';
 import TodayDualRingBar from './TodayDualRingBar';
 import InflammationIndexCard from './InflammationIndexCard';
 import SodiumAnalysisCard from './SodiumAnalysisCard';
@@ -17,6 +17,7 @@ interface AnalyticsPanelProps {
   profile: UserProfile | null;
   record: DailyRecord;
   journalDate?: string;
+  onClose?: () => void;
 }
 
 const ACTIVITY_FACTOR: Record<string, number> = {
@@ -70,7 +71,7 @@ function fmtDate(date: string): string {
   return `${d.getFullYear() !== new Date().getFullYear() ? d.getFullYear() + '年' : ''}${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-export default function AnalyticsPanel({ profile, record, journalDate }: AnalyticsPanelProps) {
+export default function AnalyticsPanel({ profile, record, journalDate, onClose }: AnalyticsPanelProps) {
   const dateLabel = makeDateLabel(journalDate);
   const [stats, setStats] = useState<DayStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,11 +188,22 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
     { label: '运动天', value: exerciseDays, icon: Dumbbell, color: '#22C55E' },
   ];
 
-  // 时光机主页仅展示最近 7 天
-  const recentStats = useMemo(() => stats.slice(-7), [stats]);
+  // 全程档案：使用所有历史数据
+  const displayStats = stats;
 
   return (
     <div className="space-y-4 stagger-in">
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+        >
+          <span className="w-8 h-8 rounded-full flex items-center justify-center border border-border/60 bg-background/80 group-hover:bg-muted/60 transition-colors shadow-sm">
+            <X className="w-4 h-4" />
+          </span>
+          <span>返回今日</span>
+        </button>
+      )}
       <TodayDualRingBar
         profile={profile}
         record={record}
@@ -199,19 +211,19 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
         currentWeight={currentDayWeight}
       />
 
-      {!loading && recentStats.length > 0 && (
-        <WeeklyCharts stats={recentStats} targetCalories={targetCalories} selectedDate={journalDate} />
+      {!loading && displayStats.length > 0 && (
+        <WeeklyCharts stats={displayStats} targetCalories={targetCalories} selectedDate={journalDate} profile={profile} />
       )}
 
-      {!loading && recentStats.length >= 3 && (
-        <DailyKLineChart stats={recentStats} targetCalories={targetCalories} />
+      {!loading && displayStats.length >= 3 && (
+        <DailyKLineChart stats={displayStats} targetCalories={targetCalories} />
       )}
 
-      {!loading && recentStats.length > 0 && (
-        <ActivityBurnCard stats={recentStats} />
+      {!loading && displayStats.length > 0 && (
+        <ActivityBurnCard stats={displayStats} />
       )}
 
-      {!loading && recentStats.length > 0 && (
+      {!loading && displayStats.length > 0 && (
         <div className="space-y-3">
           <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
             style={{
@@ -228,11 +240,11 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
                   }}>
                   <Flame className="w-4 h-4" style={{ color: '#F97316' }} />
                 </div>
-                <p className="text-sm font-bold text-foreground">近 7 天营养明细</p>
+                <p className="text-sm font-bold text-foreground">全程营养明细</p>
               </div>
-              <span className="text-[10px] text-muted-foreground/50">旭日图</span>
+              <span className="text-[10px] text-muted-foreground/50">堆叠图</span>
             </div>
-            <NutritionSunburst stats={recentStats} />
+            <NutritionStackedArea stats={displayStats} />
           </div>
 
           <div className="rounded-2xl border shadow-sm p-4 relative overflow-hidden"
@@ -251,7 +263,7 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
               </div>
               <p className="text-sm font-bold text-foreground">营养节律漏斗</p>
             </div>
-            <NutritionFunnel stats={recentStats} targetCalories={targetCalories} />
+            <NutritionFunnel stats={displayStats} targetCalories={targetCalories} />
           </div>
         </div>
       )}
@@ -259,6 +271,7 @@ export default function AnalyticsPanel({ profile, record, journalDate }: Analyti
       <InflammationIndexCard
         profile={profile}
         record={record}
+        waterAmount={0}
       />
 
       <SodiumAnalysisCard profile={profile} record={record} />

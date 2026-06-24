@@ -126,7 +126,7 @@ function genAdvices(profile: UserProfile, record: DailyRecord): Advice[] {
 export default function AdvicePanel({ profile, record }: AdvicePanelProps) {
   if (!profile) {
     return (
-      <div className="rounded-2xl border border-border bg-white p-8 text-center">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
         <Lightbulb className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
         <p className="text-foreground font-semibold">填写个人信息后获取专属建议</p>
         <p className="text-sm text-muted-foreground mt-1">点击右上角「设置个人信息」开始你的健康旅程</p>

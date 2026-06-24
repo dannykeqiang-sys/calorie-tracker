@@ -296,7 +296,7 @@ export default function Home() {
               >
                 <div className="px-6 py-5 space-y-5">
                   {activeTab === 'analytics' && (
-                    <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} />
+                    <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} onClose={() => setActiveTab('today')} />
                   )}
                   {activeTab === 'ai' && (
                     <SmartAdvicePanel profile={profile} record={activeRecord} apiKey={apiKey} isViewingToday={isViewingToday} />
@@ -365,9 +365,9 @@ export default function Home() {
               {activeTab === 'analytics' && (
                 <div className="flex items-center gap-2.5">
                   <div className="w-1 h-4 rounded-full flex-shrink-0" style={{ background: 'var(--primary)', opacity: 0.5 }} />
-                  <span className="text-sm font-bold text-foreground">对比时光机</span>
+                  <span className="text-sm font-bold text-foreground">全程档案</span>
                   <span className="text-xs text-muted-foreground/45 hidden sm:inline">
-                    {isViewingToday ? '近7天健康趋势' : `${formatDateLabel(journalDate)} · 近7天`}
+                    所有历史数据趋势
                   </span>
                 </div>
               )}
@@ -414,7 +414,7 @@ export default function Home() {
 
           {activeTab === 'analytics' && (
             <div className="flex-1 overflow-y-auto pb-20 px-4 sm:px-6">
-              <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} />
+              <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} onClose={() => setActiveTab('today')} />
             </div>
           )}
 

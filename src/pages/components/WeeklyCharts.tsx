@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calendar, Radar, ArrowRight, TrendingUp } from 'lucide-react';
+import { Calendar, ArrowRight, TrendingUp } from 'lucide-react';
 import type { DayStats } from './AIHealingCard';
+import type { UserProfile } from '../../types';
 
 interface WeeklyChartsProps {
   stats: DayStats[];
   targetCalories: number;
   selectedDate?: string;
+  profile?: UserProfile | null;
 }
 
 /* ─── 工具 ─── */
@@ -52,118 +54,11 @@ export function ChartCard({ icon: Icon, title, iconColor, kind = 'indigo', child
   );
 }
 
-/* ════════════════════ 1. 营养雷达 — 4轴 与日期联动 ════════════════════ */
-export function NutritionRadar({ stats, target, selectedDate }: { stats: DayStats[]; target: number; selectedDate?: string }) {
-  const dayIdx = useMemo(() => {
-    if (selectedDate) {
-      const idx = stats.findIndex(s => s.date === selectedDate);
-      return idx >= 0 ? idx : stats.length - 1;
-    }
-    return stats.length - 1;
-  }, [stats, selectedDate]);
-
-  const [hoverAxis, setHoverAxis] = useState<number | null>(null);
-  const [animated, setAnimated] = useState(false);
-  const today = stats[dayIdx];
-  if (!today || !today.intake) return null;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimated(true), 150);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const axes = [
-    { key: 'protein' as const, label: '蛋白质', max: 150, color: '#fb923c', unit: 'g' },
-    { key: 'carbs' as const, label: '碳水', max: 300, color: '#818cf8', unit: 'g' },
-    { key: 'fat' as const, label: '脂肪', max: 80, color: '#38bdf8', unit: 'g' },
-    { key: 'water' as const, label: '饮水', max: 2500, color: '#0ea5e9', unit: 'ml' },
-  ];
-
-  const R = 85, CX = 120, CY = 110, N = axes.length, step = (2 * Math.PI) / N;
-  function pt(idx: number, value: number, max: number) {
-    const r = R * Math.min(value / Math.max(max, 1), 1);
-    const a = -Math.PI / 2 + idx * step;
-    return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
-  }
-
-  const actualPts = axes.map((a, i) => pt(i, animated ? (today[a.key] as number) : 0, a.max));
-  const path = actualPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z';
-
-  return (
-    <ChartCard icon={Radar} title="营养雷达" iconColor="#8B5CF6" kind="purple" subtitle={`${today.label} 数据`}>
-      <div className="flex justify-center w-full">
-        <svg viewBox="0 0 240 220" className="w-full h-auto" style={{ maxWidth: 500 }}>
-          <defs>
-            <radialGradient id="radarArea" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c084fc" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#ec4899" stopOpacity="0.3" />
-            </radialGradient>
-            <linearGradient id="radarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#a855f7" />
-              <stop offset="100%" stopColor="#ec4899" />
-            </linearGradient>
-            <filter id="radarGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          {/* 网格线 */}
-          {[0.25, 0.5, 0.75, 1].map(pct => {
-            const pts = axes.map((_, i) => `${pt(i, axes[i].max * pct, axes[i].max).x},${pt(i, axes[i].max * pct, axes[i].max).y}`).join(' ');
-            return <polygon key={pct} points={pts} fill="none" stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 2" opacity={0.4} />;
-          })}
-          {/* 轴线 */}
-          {axes.map((a, i) => {
-            const p = pt(i, a.max, a.max);
-            return <line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y} stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 2" opacity={0.3} />;
-          })}
-          {/* 双层填充面积 + 轮廓线 */}
-          <polygon points={path} fill="url(#radarArea)" stroke="none" />
-          <polygon points={path} fill="none" stroke="url(#radarStroke)" strokeWidth={2.5} strokeLinejoin="round" filter="url(#radarGlow)" opacity={0.95} style={{ transition: 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
-          {/* 数据点 */}
-          {axes.map((a, i) => {
-            const p = pt(i, today[a.key] as number, a.max);
-            const isH = hoverAxis === i;
-            const pct = Math.round((today[a.key] as number) / a.max * 100);
-            return (
-              <g key={i} style={{ cursor: 'pointer' }} onMouseEnter={() => setHoverAxis(i)} onMouseLeave={() => setHoverAxis(null)}
-                onTouchStart={() => setHoverAxis(prev => prev === i ? null : i)}>
-                <circle cx={p.x} cy={p.y} r={isH ? 8 : 4} fill="white" stroke={a.color} strokeWidth={isH ? 3 : 2}
-                  filter={isH ? 'url(#radarGlow)' : undefined} style={{ transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
-                {isH && (
-                  <g>
-                    <rect x={p.x - 36} y={p.y - 42} width={72} height={30} rx={10} fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                    <text x={p.x} y={p.y - 26} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">{today[a.key]}{a.unit}</text>
-                    <text x={p.x} y={p.y - 14} textAnchor="middle" fontSize={9} fill={pct >= 95 ? '#86efac' : pct >= 70 ? '#fbbf24' : '#fca5a5'}>
-                      {pct}%
-                    </text>
-                  </g>
-                )}
-              </g>
-            );
-          })}
-          {/* 轴标签 */}
-          {axes.map((a, i) => {
-            const p = pt(i, a.max * 1.22, a.max);
-            const isH = hoverAxis === i;
-            return (
-              <g key={i}>
-                <text x={p.x} y={p.y - 2} textAnchor="middle" fontSize={10} fill="var(--ck-chart-text)" fontWeight={isH ? "900" : "700"} style={{ transition: 'font-weight 0.2s' }}>{a.label}</text>
-                <text x={p.x} y={p.y + 11} textAnchor="middle" fontSize={8} fill={a.color} fontWeight="700">{today[a.key]}{a.unit}</text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-    </ChartCard>
-  );
-}
-
 /* ════════════════════ 2. 桑基图 — 横版铺满 ════════════════════ */
 interface SankeyNode { id: string; label: string; value: number; color: string; col: number; }
 interface SankeyLink { source: string; target: string; value: number; color: string; }
 
-export function MacroSankey({ stats, selectedDate }: { stats: DayStats[]; selectedDate?: string }) {
+export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[]; selectedDate?: string; profile?: UserProfile | null }) {
   const dayIdx = useMemo(() => {
     if (selectedDate) {
       const idx = stats.findIndex(s => s.date === selectedDate);
@@ -173,6 +68,7 @@ export function MacroSankey({ stats, selectedDate }: { stats: DayStats[]; select
   }, [stats, selectedDate]);
 
   const [hoverNode, setHoverNode] = useState<string | null>(null);
+  const [hoverLink, setHoverLink] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const today = stats[dayIdx];
   if (!today || today.intake === 0) return null;
@@ -190,8 +86,17 @@ export function MacroSankey({ stats, selectedDate }: { stats: DayStats[]; select
     { id: 'fat', label: '脂肪', value: today.fat, color: '#38bdf8', calPerUnit: 9 },
   ].filter(m => m.value > 0);
 
-  // Calculate energy destinations
-  const bmrEstimate = Math.round(today.intake * 0.6); // 60% for basal metabolism
+  // Calculate BMR using Mifflin-St Jeor formula
+  let bmrEstimate: number;
+  if (profile) {
+    const bmr = profile.gender === 'male'
+      ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
+      : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+    bmrEstimate = Math.round(bmr);
+  } else {
+    // Fallback: estimate based on typical values
+    bmrEstimate = 1500;
+  }
   const exerciseBurn = today.burn || 0;
   const totalBurn = bmrEstimate + exerciseBurn;
   const balance = today.intake - totalBurn;
@@ -304,13 +209,23 @@ export function MacroSankey({ stats, selectedDate }: { stats: DayStats[]; select
             const s = nodeLayout[l.source], t = nodeLayout[l.target];
             if (!s || !t) return null;
             const sx = s.x + 8, sy = s.y + s.h / 2, tx = t.x, ty = t.y + t.h / 2;
-            const isH = hoverNode && (adjacents.has(l.source) || adjacents.has(l.target));
+            const isNodeH = hoverNode && (adjacents.has(l.source) || adjacents.has(l.target));
+            const isLinkH = hoverLink === i;
+            const isH = isNodeH || isLinkH;
             const w = Math.max(3, Math.min(20, (l.value / Math.max(totalV, 1)) * 24));
             return (
               <path key={i} d={`M${sx},${sy} C${sx + (tx - sx) * 0.4},${sy} ${sx + (tx - sx) * 0.6},${ty} ${tx},${ty}`}
                 fill="none" stroke={`url(#skLink${i})`} strokeWidth={isH ? w + 6 : w}
                 opacity={hoverNode && !isH ? 0.1 : 0.85} strokeLinecap="round"
-                filter={isH ? 'url(#sankeyGlow)' : undefined} style={{ transition: 'all 0.3s ease' }} />
+                filter={isH ? 'url(#sankeyGlow)' : undefined}
+                style={{ transition: 'all 0.3s ease', cursor: 'pointer' }}
+                onMouseEnter={(e) => {
+                  setHoverLink(i);
+                  const rect = e.currentTarget.closest('svg')?.getBoundingClientRect();
+                  if (rect) setTooltipPos({ x: clamp(e.clientX - rect.left, 50, 270), y: clamp(e.clientY - rect.top, 30, HH - 30) });
+                }}
+                onMouseLeave={() => { setHoverLink(null); setTooltipPos(null); }}
+              />
             );
           })}
 
@@ -346,19 +261,40 @@ export function MacroSankey({ stats, selectedDate }: { stats: DayStats[]; select
           })}
 
           {/* Tooltip */}
-          {hoverNode && tooltipPos && (() => {
-            const node = nodes.find(n => n.id === hoverNode);
-            if (!node) return null;
-            const unit = node.col === 0 ? 'kcal' : node.col === 1 ? 'g' : 'kcal';
-            return (
-              <g>
-                <rect x={tooltipPos.x - 50} y={tooltipPos.y - 28} width={100} height={26} rx={8}
-                  fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                <text x={tooltipPos.x} y={tooltipPos.y - 14} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">
-                  {node.label}: {node.value}{unit}
-                </text>
-              </g>
-            );
+          {((hoverNode || hoverLink !== null) && tooltipPos) && (() => {
+            if (hoverNode) {
+              const node = nodes.find(n => n.id === hoverNode);
+              if (!node) return null;
+              const unit = node.col === 0 ? 'kcal' : node.col === 1 ? 'g' : 'kcal';
+              return (
+                <g>
+                  <rect x={tooltipPos.x - 50} y={tooltipPos.y - 28} width={100} height={26} rx={8}
+                    fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                  <text x={tooltipPos.x} y={tooltipPos.y - 14} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">
+                    {node.label}: {node.value}{unit}
+                  </text>
+                </g>
+              );
+            } else if (hoverLink !== null) {
+              const link = links[hoverLink];
+              if (!link) return null;
+              const sourceNode = nodes.find(n => n.id === link.source);
+              const targetNode = nodes.find(n => n.id === link.target);
+              if (!sourceNode || !targetNode) return null;
+              return (
+                <g>
+                  <rect x={tooltipPos.x - 60} y={tooltipPos.y - 34} width={120} height={38} rx={8}
+                    fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                  <text x={tooltipPos.x} y={tooltipPos.y - 20} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
+                    {sourceNode.label} → {targetNode.label}
+                  </text>
+                  <text x={tooltipPos.x} y={tooltipPos.y - 6} textAnchor="middle" fontSize={10} fill={link.color} fontWeight="800">
+                    {link.value} kcal
+                  </text>
+                </g>
+              );
+            }
+            return null;
           })()}
 
           {/* 列标题 */}
@@ -722,145 +658,172 @@ export function CalorieTrendChart({ stats, target }: { stats: DayStats[]; target
   );
 }
 
-/* ════════════════════ 6. 旭日图 Sunburst — 近7天营养明细 ════════════════════ */
-export function NutritionSunburst({ stats }: { stats: DayStats[] }) {
-  const days = stats.slice(-7);
-  const totalCal = days.reduce((s, d) => s + d.intake, 0);
-  const avgCal = days.length > 0 ? Math.round(totalCal / days.length) : 0;
-  if (totalCal === 0) return null;
-
+/* ════════════════════ 6. 堆叠面积图 StackedArea — 近7天用餐构成 ════════════════════ */
+export function NutritionStackedArea({ stats }: { stats: DayStats[] }) {
+  const [hover, setHover] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
-  const cx = 150, cy = 150, innerR = 45, midR = 85, outerR = 130;
-
-  // 内环（天）使用柔和渐变色系
-  const DAY_COLORS = [
-    '#a5b4fc', // 柔和靛蓝
-    '#c4b5fd', // 柔和紫
-    '#ddd6fe', // 淡紫
-    '#f0abfc', // 柔和粉紫
-    '#f9a8d4', // 柔和粉
-    '#fda4af', // 柔和玫瑰
-    '#fdba74', // 柔和橙
-  ];
+  const days = stats.slice(-7);
+  const hasData = days.some(d => d.intake > 0);
+  if (!hasData) return null;
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimated(true), 200);
     return () => clearTimeout(timer);
   }, []);
 
-  let angle = -Math.PI / 2;
-  const arcs: { startAngle: number; endAngle: number; innerR: number; outerR: number; color: string; label: string; value: number; dayLabel?: string; isMeal: boolean }[] = [];
-
-  days.forEach((day, di) => {
-    if (day.intake === 0) return;
-    const dayAngle = (day.intake / totalCal) * 2 * Math.PI;
-    const dayColor = DAY_COLORS[di % DAY_COLORS.length];
-    arcs.push({ startAngle: angle, endAngle: angle + dayAngle, innerR, outerR: midR, color: dayColor, label: day.label, value: day.intake, dayLabel: day.label, isMeal: false });
-
-    const meals = day.mealCals ?? [0, 0, 0, 0];
-    let mealAngle = angle;
-    for (let mi = 0; mi < 4; mi++) {
-      if (meals[mi] === 0) continue;
-      const mAngle = (meals[mi] / day.intake) * dayAngle;
-      const mealColor = mi === 0 ? '#fbbf24' : mi === 1 ? '#fb923c' : mi === 2 ? '#ef4444' : '#a78bfa';
-      arcs.push({ startAngle: mealAngle, endAngle: mealAngle + mAngle, innerR: midR + 2, outerR: outerR, color: mealColor, label: MEAL_LABELS[mi], value: meals[mi], dayLabel: day.label, isMeal: true });
-      mealAngle += mAngle;
-    }
-    angle += dayAngle;
+  // 累积数据：每层从底部向上堆叠
+  const layers = days.map(d => {
+    const meals = d.mealCals ?? [0, 0, 0, 0];
+    const cum = [0, 0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) cum[i + 1] = cum[i] + meals[i];
+    return { date: d.date, label: d.label, meals, cum, total: cum[4] };
   });
 
-  function arcPath(startAngle: number, endAngle: number, innerR: number, outerR: number): string {
-    const x1 = cx + innerR * Math.cos(startAngle), y1 = cy + innerR * Math.sin(startAngle);
-    const x2 = cx + outerR * Math.cos(startAngle), y2 = cy + outerR * Math.sin(startAngle);
-    const x3 = cx + outerR * Math.cos(endAngle), y3 = cy + outerR * Math.sin(endAngle);
-    const x4 = cx + innerR * Math.cos(endAngle), y4 = cy + innerR * Math.sin(endAngle);
-    const large = endAngle - startAngle > Math.PI ? 1 : 0;
-    return `M${x1},${y1} L${x2},${y2} A${outerR},${outerR} 0 ${large} 1 ${x3},${y3} L${x4},${y4} A${innerR},${innerR} 0 ${large} 0 ${x1},${y1} Z`;
-  }
+  const maxY = Math.max(...layers.map(l => l.total), 50) * 1.1;
+  const w = svgW(days.length);
+  const CHART_AREA_H = 90;
+  const PAD_TOP = 10, PAD_BOT = 22;
+  const svgH = PAD_TOP + CHART_AREA_H + PAD_BOT;
 
-  const [hoverArc, setHoverArc] = useState<number | null>(null);
+  function valY(v: number) { return PAD_TOP + CHART_AREA_H - (v / maxY) * CHART_AREA_H; }
+
+  // 为每层生成闭合面积路径（上边界曲线 + 下边界曲线反向）
+  const layerPaths = MEAL_LABELS.map((_, mi) => {
+    const topPts = layers.map((l, i) => ({ x: px(i), y: valY(l.cum[mi + 1]) }));
+    const botPts = layers.map((l, i) => ({ x: px(i), y: valY(l.cum[mi]) }));
+    if (topPts.length < 2) return { fill: '', visible: false };
+    const topLine = smoothLine(topPts, 0.4);
+    const botLine = smoothLine([...botPts].reverse(), 0.4);
+    const fill = `${topLine} L${botPts[botPts.length - 1].x},${botPts[botPts.length - 1].y} ` +
+      `${botLine} L${topPts[0].x},${topPts[0].y} Z`;
+    return { fill, visible: true };
+  });
+
+  const totalCal = days.reduce((s, d) => s + d.intake, 0);
+  const avgCal = Math.round(totalCal / days.length);
 
   return (
-    <ChartCard icon={Calendar} title="营养旭日图" iconColor="#8B5CF6" kind="purple" subtitle="近7天用餐明细">
-      <div className="flex justify-center w-full">
-        <svg viewBox="0 0 300 320" className="w-full h-auto" style={{ maxWidth: 500, transform: animated ? 'rotate(0deg)' : 'rotate(-180deg)', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+    <ChartCard icon={Calendar} title="营养堆叠" iconColor="#8B5CF6" kind="purple" subtitle="近7天用餐构成">
+      <div className="relative overflow-x-auto no-scrollbar w-full">
+        <svg width={w} viewBox={`0 0 ${w} ${svgH}`} style={{ height: svgH, minWidth: w, overflow: 'visible', width: '100%' }} preserveAspectRatio="xMidYMid meet">
           <defs>
-            <filter id="sunburstGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            {DAY_COLORS.map((color, i) => (
-              <linearGradient key={i} id={`dayGrad${i}`} x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.9" />
-                <stop offset="100%" stopColor={color} stopOpacity="0.6" />
+            {MEAL_COLORS.map((color, i) => (
+              <linearGradient key={i} id={`stackGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity="0.85" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.5" />
               </linearGradient>
             ))}
+            <filter id="stackGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
 
-          {/* 中心圆 */}
-          <circle cx={cx} cy={cy} r={innerR - 3} fill="var(--ck-chart-tooltip-bg)" stroke="var(--ck-chart-grid)" strokeWidth={0.8} />
-          <text x={cx} y={cy - 10} textAnchor="middle" fontSize={9} fill="var(--ck-chart-dim)" fontWeight="600">7天总计</text>
-          <text x={cx} y={cy + 4} textAnchor="middle" fontSize={14} fill="var(--ck-chart-card-text)" fontWeight="900">{totalCal}</text>
-          <text x={cx} y={cy + 16} textAnchor="middle" fontSize={8} fill="var(--ck-chart-dim)">kcal</text>
-          <text x={cx} y={cy + 28} textAnchor="middle" fontSize={9} fill="var(--ck-chart-label)" fontWeight="700">均日 {avgCal}</text>
+          {/* 网格线 */}
+          {[0.25, 0.5, 0.75, 1].map(pct => (
+            <line key={pct} x1={0} y1={valY(maxY * pct)} x2={w} y2={valY(maxY * pct)}
+              stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" opacity={0.35} />
+          ))}
+          {/* Y轴标签 */}
+          {[0.25, 0.5, 0.75, 1].map(pct => (
+            <text key={pct} x={4} y={valY(maxY * pct) - 2} fontSize={7}
+              fill="var(--ck-chart-dim)">{Math.round(maxY * pct)}</text>
+          ))}
 
-          {arcs.map((a, i) => {
-            const isH = hoverArc === i;
-            const expand = isH ? 8 : 0;
-            const midAngle = (a.startAngle + a.endAngle) / 2;
-            const dx = expand * Math.cos(midAngle);
-            const dy = expand * Math.sin(midAngle);
-            const pct = Math.round((a.value / totalCal) * 100);
+          {/* 堆叠面积（加餐在底，早餐在顶） */}
+          {MEAL_LABELS.map((_, mi) => {
+            const renderIdx = 3 - mi;
+            const { fill, visible } = layerPaths[renderIdx];
+            if (!visible) return null;
+            const isDimmed = hover !== null;
             return (
-              <g key={i} onMouseEnter={() => setHoverArc(i)} onMouseLeave={() => setHoverArc(null)}
-                onTouchStart={() => setHoverArc(prev => prev === i ? null : i)} style={{ cursor: 'pointer' }}
-                transform={`translate(${dx},${dy})`}>
-                <path d={arcPath(a.startAngle, a.endAngle, a.innerR, a.outerR)}
-                  fill={a.isMeal ? a.color : `url(#dayGrad${days.findIndex(d => d.label === a.dayLabel) % DAY_COLORS.length})`}
-                  opacity={isH ? 1 : a.isMeal ? 0.9 : 0.75}
-                  stroke="var(--ck-chart-tooltip-bg)" strokeWidth={isH ? 3 : 1}
-                  filter={isH ? 'url(#sunburstGlow)' : undefined}
-                  style={{ transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
-                {a.label && (a.endAngle - a.startAngle) > 0.18 && !isH && (
-                  <text
-                    x={cx + (a.innerR + a.outerR) / 2 * Math.cos((a.startAngle + a.endAngle) / 2)}
-                    y={cy + (a.innerR + a.outerR) / 2 * Math.sin((a.startAngle + a.endAngle) / 2) + 3}
-                    textAnchor="middle" fontSize={a.isMeal ? 8 : 9} fill="white" fontWeight={a.isMeal ? "700" : "800"}
-                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{a.label}</text>
-                )}
+              <path key={renderIdx} d={fill}
+                fill={`url(#stackGrad${renderIdx})`}
+                opacity={animated ? (isDimmed ? 0.5 : 0.75) : 0}
+                style={{ transition: 'opacity 0.6s ease-out' }} />
+            );
+          })}
+
+          {/* 顶层描边线 */}
+          {(() => {
+            const topPts = layers.map((l, i) => ({ x: px(i), y: valY(l.cum[4]) }));
+            if (topPts.length < 2) return null;
+            return <path d={smoothLine(topPts, 0.4)} fill="none" stroke="var(--ck-chart-grid)"
+              strokeWidth={1} opacity={0.4} />;
+          })()}
+
+          {/* 交互层 */}
+          {days.map((d, i) => {
+            const isH = hover === i;
+            const x = px(i);
+            return (
+              <g key={d.date}
+                onMouseEnter={() => d.intake > 0 && setHover(i)}
+                onMouseLeave={() => setHover(null)}
+                onTouchStart={() => d.intake > 0 && setHover(prev => prev === i ? null : i)}
+                style={{ cursor: d.intake > 0 ? 'pointer' : 'default' }}>
+                <rect x={x - 18} y={PAD_TOP} width={36} height={CHART_AREA_H} fill="transparent" />
+
                 {isH && (
-                  <g>
-                    <rect x={cx - 60} y={cy + outerR + 15} width={120} height={44} rx={10}
-                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                    <text x={cx} y={cy + outerR + 30} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">
-                      {a.dayLabel} · {a.label}
-                    </text>
-                    <text x={cx} y={cy + outerR + 44} textAnchor="middle" fontSize={9} fill="white" opacity={0.9}>
-                      {a.value} kcal
-                    </text>
-                    <text x={cx} y={cy + outerR + 55} textAnchor="middle" fontSize={8} fill={pct > 20 ? '#86efac' : '#fbbf24'}>
-                      占比 {pct}%
-                    </text>
-                  </g>
+                  <line x1={x} y1={PAD_TOP} x2={x} y2={PAD_TOP + CHART_AREA_H}
+                    stroke="var(--ck-chart-grid)" strokeWidth={1} strokeDasharray="2 2" opacity={0.5} />
+                )}
+
+                <text x={x} y={svgH - 6} textAnchor="middle" fontSize={8.5}
+                  fill={isH ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
+                  fontWeight={isH ? '700' : '500'}>{d.label}</text>
+
+                {isH && (() => {
+                  const meals = d.mealCals ?? [0, 0, 0, 0];
+                  const ttW = 110, ttH = 76;
+                  let ttX = x - ttW / 2;
+                  if (ttX < 2) ttX = 2;
+                  if (ttX + ttW > w - 2) ttX = w - ttW - 2;
+                  const ttY = Math.max(2, valY(d.intake) - ttH - 10);
+                  return (
+                    <g>
+                      <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={9}
+                        fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                      <text x={ttX + ttW / 2} y={ttY + 13} textAnchor="middle" fontSize={9}
+                        fill="white" fontWeight="800">{d.label}</text>
+                      {MEAL_LABELS.map((l, mi) => (
+                        <text key={mi} x={ttX + 10} y={ttY + 26 + mi * 12} fontSize={8}
+                          fill={MEAL_COLORS[mi]} fontWeight="600">
+                          {l} {meals[mi]}
+                          <tspan fill="rgba(255,255,255,0.5)" fontSize={7}> kcal</tspan>
+                        </text>
+                      ))}
+                      <line x1={ttX + 8} y1={ttY + 63} x2={ttX + ttW - 8} y2={ttY + 63}
+                        stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
+                      <text x={ttX + ttW / 2} y={ttY + 74} textAnchor="middle" fontSize={8.5}
+                        fill="white" fontWeight="700">总计 {d.intake} kcal</text>
+                    </g>
+                  );
+                })()}
+
+                {d.intake > 0 && (
+                  <circle cx={x} cy={valY(d.intake)} r={isH ? 4.5 : 2.5}
+                    fill="white" stroke="#8B5CF6" strokeWidth={isH ? 2.5 : 1.5}
+                    filter={isH ? 'url(#stackGlow)' : undefined}
+                    style={{ transition: 'all 0.2s' }} />
                 )}
               </g>
             );
           })}
-
-          {/* 图例 - 横向排列 */}
-          <g transform={`translate(30, ${cy + outerR + 75})`}>
-            {MEAL_LABELS.map((l, i) => {
-              const colors = ['#fbbf24', '#fb923c', '#ef4444', '#a78bfa'];
-              const x = i * 60;
-              return (
-                <g key={l} transform={`translate(${x}, 0)`}>
-                  <circle cx={4} cy={4} r={4} fill={colors[i]} opacity={0.9} />
-                  <text x={12} y={7} fontSize={9} fill="var(--ck-chart-label)" fontWeight="600">{l}</text>
-                </g>
-              );
-            })}
-          </g>
         </svg>
+      </div>
+
+      <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+        <div className="flex items-center gap-3 flex-wrap opacity-70">
+          {MEAL_LABELS.map((l, i) => (
+            <span key={l} className="inline-flex items-center gap-1 text-[10px]" style={{ color: 'var(--ck-chart-label)' }}>
+              <span className="w-2.5 h-2 rounded-sm" style={{ background: MEAL_COLORS[i] }} />{l}
+            </span>
+          ))}
+        </div>
+        <span className="text-[10px] font-semibold" style={{ color: 'var(--ck-chart-dim)' }}>
+          7日均 {avgCal} kcal
+        </span>
       </div>
     </ChartCard>
   );
@@ -1234,12 +1197,11 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
 }
 
 /* ════════════════════ 主入口 ════════════════════ */
-export default function WeeklyCharts({ stats, targetCalories, selectedDate }: WeeklyChartsProps) {
+export default function WeeklyCharts({ stats, targetCalories, selectedDate, profile }: WeeklyChartsProps) {
   if (!stats.length) return null;
 
   return (
     <div className="space-y-3 animate-in fade-in duration-500 w-full">
-      <NutritionRadar stats={stats} target={targetCalories} selectedDate={selectedDate} />
 
       <ChartCard icon={TrendingUp} title="热量趋势" iconColor="#F97316" kind="orange">
         <CalorieTrendChart stats={stats} target={targetCalories} />
@@ -1265,7 +1227,7 @@ export default function WeeklyCharts({ stats, targetCalories, selectedDate }: We
 
       <MacroLineChart stats={stats} target={targetCalories} />
 
-      <MacroSankey stats={stats} selectedDate={selectedDate} />
+      <MacroSankey stats={stats} selectedDate={selectedDate} profile={profile} />
 
       <MealHeatmap stats={stats} />
     </div>

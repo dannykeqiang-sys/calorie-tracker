@@ -207,7 +207,7 @@ export default function ExerciseCardSlot({
             ) : (
               <div
                 key={item.id}
-                className="group flex items-center justify-between py-2.5 px-3 rounded-full bg-white/52 border border-white/58 hover:bg-white/68 transition-colors"
+                className="group flex items-center justify-between py-2.5 px-3 rounded-full bg-card/52 border border-border/58 hover:bg-card/68 transition-colors"
                 style={{ animation: `exerciseItemIn 0.38s cubic-bezier(0.4,0,0.2,1) ${index * 0.06}s both` }}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -262,7 +262,7 @@ export default function ExerciseCardSlot({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="运动名称"
-              className="flex-1 bg-white/72 border-white/60 text-sm h-10 rounded-full min-w-0"
+              className="flex-1 bg-card/72 border-border/60 text-sm h-10 rounded-full min-w-0"
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
             />
             <Input
@@ -270,7 +270,7 @@ export default function ExerciseCardSlot({
               value={duration}
               onChange={e => setDuration(e.target.value)}
               placeholder="分钟"
-              className="w-16 bg-white/72 border-white/60 text-sm h-10 rounded-full flex-shrink-0"
+              className="w-16 bg-card/72 border-border/60 text-sm h-10 rounded-full flex-shrink-0"
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
             />
             <Input
@@ -278,7 +278,7 @@ export default function ExerciseCardSlot({
               value={calories}
               onChange={e => setCalories(e.target.value)}
               placeholder="kcal"
-              className="w-16 bg-white/72 border-white/60 text-sm h-10 rounded-full flex-shrink-0"
+              className="w-16 bg-card/72 border-border/60 text-sm h-10 rounded-full flex-shrink-0"
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
             />
             <button

@@ -1,11 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Radar } from 'lucide-react';
+import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import AIHealingCard, { type DayStats } from './AIHealingCard';
 import {
   CalorieTrendChart,
   MacroLineChart,
-  NutritionRadar,
   MacroSankey,
   MealHeatmap,
   ChartCard,
@@ -220,20 +219,16 @@ export default function WeeklyStatsModal({
               targetCalories={targetCalories}
             />
 
-            {/* 营养雷达 全宽 */}
-            <NutritionRadar stats={stats} target={targetCalories} />
-
             {/* 三大宏量全周期趋势 */}
             <MacroLineChart stats={stats} target={targetCalories} />
 
             {/* 热量全周期趋势 */}
-            <ChartCard icon={Flame} title="全周期热量趋势" iconColor="#F97316"
-              bg="linear-gradient(135deg, rgba(255,248,240,0.65), rgba(255,242,235,0.5))">
+            <ChartCard icon={Flame} title="全周期热量趋势" iconColor="#F97316" kind="orange">
               <CalorieTrendChart stats={stats} target={targetCalories} />
             </ChartCard>
 
             {/* 宏量流向 全宽 */}
-            <MacroSankey stats={stats} />
+            <MacroSankey stats={stats} profile={profile} />
 
             {/* 全周期用餐热力图 */}
             <MealHeatmap stats={stats} />

@@ -83,7 +83,7 @@ export default function AIRecognitionCelebration({ foodName, calories, onDismiss
         <div
           className="relative rounded-2xl px-6 py-5 flex flex-col items-center pointer-events-auto cursor-pointer"
           style={{
-            background: 'rgba(255,255,255,0.97)',
+            background: 'var(--card)',
             boxShadow: '0 20px 52px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.09)',
             backdropFilter: 'blur(18px)',
             minWidth: '196px',
@@ -94,23 +94,23 @@ export default function AIRecognitionCelebration({ foodName, calories, onDismiss
           onClick={() => { setPhase('leave'); setTimeout(onDismiss, 400); }}
         >
           <div className="flex items-center gap-1.5 mb-2">
-            <Sparkles className="w-3.5 h-3.5" style={{ color: '#A3B899' }} />
-            <p className="text-[11px] font-semibold" style={{ color: '#9CA3AF' }}>AI 识别成功</p>
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <p className="text-[11px] font-semibold text-muted-foreground">AI 识别成功</p>
           </div>
 
           <p
-            className="text-base font-bold text-center mb-1.5 leading-snug"
-            style={{ color: '#1F2937', maxWidth: '180px', wordBreak: 'break-all' }}
+            className="text-base font-bold text-center mb-1.5 leading-snug text-foreground"
+            style={{ maxWidth: '180px', wordBreak: 'break-all' }}
           >
             {foodName}
           </p>
 
           <p className="text-3xl font-black tabular-nums" style={{ color: '#F97316' }}>
             {calories}
-            <span className="text-sm font-bold ml-1" style={{ color: '#9CA3AF' }}>kcal</span>
+            <span className="text-sm font-bold ml-1 text-muted-foreground">kcal</span>
           </p>
 
-          <p className="text-[10px] mt-2 text-center leading-snug" style={{ color: '#9CA3AF' }}>
+          <p className="text-[10px] mt-2 text-center leading-snug text-muted-foreground">
             {praise}
           </p>
         </div>

@@ -175,7 +175,7 @@ export default function HistoryDayEditor({
         />
       ))}
 
-      <div className="rounded-2xl border border-border bg-white/70 overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card/70 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 bg-blue-50/60">
           <div className="flex items-center gap-1.5">
             <Dumbbell className="w-3.5 h-3.5 text-blue-400" />
@@ -208,7 +208,7 @@ export default function HistoryDayEditor({
               onChange={e => setExerciseInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && exerciseCal && handleExerciseAdd()}
               placeholder="运动名称"
-              className="flex-1 h-8 rounded-xl border border-border bg-white/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none"
+              className="flex-1 h-8 rounded-xl border border-border bg-card/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none"
             />
             <input
               type="number"
@@ -217,7 +217,7 @@ export default function HistoryDayEditor({
               onChange={e => setExerciseCal(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleExerciseAdd()}
               placeholder="kcal"
-              className="w-16 h-8 rounded-xl border border-border bg-white/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none text-right"
+              className="w-16 h-8 rounded-xl border border-border bg-card/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none text-right"
             />
             <button
               onClick={handleExerciseAdd}
@@ -230,7 +230,7 @@ export default function HistoryDayEditor({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-white/70 overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card/70 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 bg-sky-50/60">
           <div className="flex items-center gap-1.5">
             <Droplets className="w-3.5 h-3.5 text-sky-400" />
@@ -263,7 +263,7 @@ export default function HistoryDayEditor({
               onChange={e => setWaterInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleWaterAdd()}
               placeholder="输入水量 ml"
-              className="flex-1 h-8 rounded-xl border border-border bg-white/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none"
+              className="flex-1 h-8 rounded-xl border border-border bg-card/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none"
             />
             <button
               onClick={handleWaterAdd}

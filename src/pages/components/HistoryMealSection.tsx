@@ -50,7 +50,7 @@ export default function HistoryMealSection({
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-white/70 overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card/70 overflow-hidden">
       <div
         className="flex items-center justify-between px-4 py-2.5"
         style={{ backgroundColor: `${accent}12` }}
@@ -92,7 +92,7 @@ export default function HistoryMealSection({
             onKeyDown={handleKeyDown}
             placeholder={apiKey ? `添加${label}，AI估算热量` : `添加${label}食物名称`}
             disabled={loading}
-            className="flex-1 h-8 rounded-xl border border-border bg-white/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 disabled:opacity-50"
+            className="flex-1 h-8 rounded-xl border border-border bg-card/80 px-2.5 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 disabled:opacity-50"
             style={{ '--tw-ring-color': `${accent}40` } as React.CSSProperties}
           />
           <button

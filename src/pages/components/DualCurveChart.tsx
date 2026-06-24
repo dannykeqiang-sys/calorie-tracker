@@ -60,8 +60,8 @@ function ChartTooltip({ tip }: { tip: TooltipState }) {
       }}
     >
       <div
-        className="rounded-2xl border border-white/70 shadow-xl text-xs min-w-[148px] overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)' }}
+        className="rounded-2xl border border-border shadow-xl text-xs min-w-[148px] overflow-hidden"
+        style={{ background: 'var(--card)', backdropFilter: 'blur(14px)' }}
       >
         <div className="px-3 py-2 border-b border-black/5">
           <p className="font-bold text-foreground text-[11px] text-center">
@@ -116,8 +116,8 @@ function ChartTooltip({ tip }: { tip: TooltipState }) {
         </div>
       </div>
       <div
-        className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b border-white/60"
-        style={{ bottom: -6, background: 'rgba(255,255,255,0.94)' }}
+        className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b border-border"
+        style={{ bottom: -6, background: 'var(--card)' }}
       />
     </div>
   );
@@ -142,8 +142,8 @@ function CaloriePool({ stats, tdee }: { stats: DayStats[]; tdee: number }) {
 
   return (
     <div
-      className="rounded-2xl p-3.5 mt-3 border border-white/40"
-      style={{ background: 'rgba(255,255,255,0.30)' }}
+      className="rounded-2xl p-3.5 mt-3 border border-border"
+      style={{ background: 'var(--card)' }}
     >
       <p className="text-[10px] font-semibold text-muted-foreground mb-2 tracking-widest uppercase">
         热量余额池
@@ -243,9 +243,9 @@ export default function DualCurveChart({ stats, tdee, targetCalories }: DualCurv
 
   return (
     <div
-      className="rounded-3xl p-4 border border-white/50"
+      className="rounded-3xl p-4 border border-border"
       style={{
-        background: 'rgba(255,255,255,0.42)',
+        background: 'var(--card)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}

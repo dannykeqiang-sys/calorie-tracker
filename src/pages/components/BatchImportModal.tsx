@@ -300,8 +300,8 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
                   const waterCount = entry.water_logs?.length ?? 0;
                   const isExisting = existingDates.has(entry.date);
                   return (
-                    <div key={entry.date} className="flex items-start gap-3 p-3 rounded-2xl border bg-white/60"
-                      style={{ borderColor: isExisting ? 'rgba(249,115,22,0.2)' : 'rgba(0,0,0,0.06)' }}>
+                    <div key={entry.date} className="flex items-start gap-3 p-3 rounded-2xl border bg-card/60 dark:bg-card"
+                      style={{ borderColor: isExisting ? 'rgba(249,115,22,0.2)' : 'var(--border)' }}>
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
                         style={{ background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}>
                         <CalendarDays className="w-4 h-4 text-white" />
@@ -347,7 +347,7 @@ export default function BatchImportModal({ open, onClose, apiKey, onImport, onIm
                   const exCount = r.exercises?.length ?? 0;
                   const waterCount = r.water?.length ?? 0;
                   return (
-                    <div key={r.date} className="flex items-start gap-3 p-3 rounded-2xl border bg-white/60" style={{ borderColor: 'rgba(139,92,246,0.15)' }}>
+                    <div key={r.date} className="flex items-start gap-3 p-3 rounded-2xl border bg-card/60 dark:bg-card" style={{ borderColor: 'rgba(139,92,246,0.15)' }}>
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)' }}>
                         <CalendarDays className="w-4 h-4 text-white" />
                       </div>

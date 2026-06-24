@@ -76,7 +76,7 @@ export default function AIRecordCelebration({ onDismiss }: AIRecordCelebrationPr
       <div
         className="relative rounded-2xl px-7 py-6 flex flex-col items-center text-center pointer-events-auto cursor-pointer mx-8"
         style={{
-          background: 'rgba(255,255,255,0.90)',
+          background: 'var(--card)',
           boxShadow: '0 24px 60px rgba(0,0,0,0.20), 0 6px 20px rgba(0,0,0,0.10)',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
@@ -97,9 +97,9 @@ export default function AIRecordCelebration({ onDismiss }: AIRecordCelebrationPr
           <Sparkles className="w-6 h-6" style={{ color: msg.color }} />
         </div>
 
-        <p className="text-sm font-bold mb-1.5" style={{ color: '#1F2937' }}>{msg.title}</p>
-        <p className="text-xs leading-relaxed" style={{ color: '#6B7280', maxWidth: '200px' }}>{msg.sub}</p>
-        <p className="text-[10px] mt-4" style={{ color: '#D1D5DB' }}>轻触关闭</p>
+        <p className="text-sm font-bold mb-1.5 text-foreground">{msg.title}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground" style={{ maxWidth: '200px' }}>{msg.sub}</p>
+        <p className="text-[10px] mt-4 text-muted-foreground/60">轻触关闭</p>
       </div>
 
       <style>{`
