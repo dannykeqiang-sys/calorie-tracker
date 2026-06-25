@@ -35,7 +35,16 @@
         "fat": 8
       }
     ],
-    "lunch": [],
+    "lunch": [
+      {
+        "id": "95abf26d-47bb-4d6e-a3a8-bc241c427c39",
+        "name": "牛腩超级碗",
+        "calories": 300,
+        "protein": 20,
+        "carbs": 30,
+        "fat": 10
+      }
+    ],
     "dinner": [],
     "snack": [
       {
