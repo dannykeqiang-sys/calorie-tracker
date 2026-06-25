@@ -54,6 +54,14 @@
         "protein": 2.5,
         "carbs": 20,
         "fat": 1
+      },
+      {
+        "id": "5551a094-895d-4e72-b6cf-60c879c4fa62",
+        "name": "玉米×半根",
+        "calories": 100,
+        "protein": 2.5,
+        "carbs": 20,
+        "fat": 1
       }
     ]
   },
