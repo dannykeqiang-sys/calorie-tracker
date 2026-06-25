@@ -347,7 +347,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
                 if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSave();
                 if (e.key === 'Escape') onClose();
               }}
-              className="w-full text-sm bg-white border rounded-xl px-3.5 py-2.5 outline-none transition-shadow"
+              className="w-full text-sm bg-card border rounded-xl px-3.5 py-2.5 outline-none transition-shadow"
               style={{ borderColor: error && !editName.trim() ? '#EF4444' : `${accent}35` }}
               onFocus={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}30`; }}
               onBlur={e => { e.currentTarget.style.boxShadow = 'none'; }}
@@ -365,7 +365,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
                 if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSave();
                 if (e.key === 'Escape') onClose();
               }}
-              className="w-full text-sm bg-white border rounded-xl px-3.5 py-2.5 outline-none transition-shadow"
+              className="w-full text-sm bg-card border rounded-xl px-3.5 py-2.5 outline-none transition-shadow"
               style={{ borderColor: error && (isNaN(Number(editCalories)) || Number(editCalories) <= 0) ? '#EF4444' : `${accent}35` }}
               onFocus={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}30`; }}
               onBlur={e => { e.currentTarget.style.boxShadow = 'none'; }}
@@ -658,7 +658,7 @@ export default function MealCardSlot({
               {showRecommendation && recommendation ? (
                 <button
                   onClick={onOpenAIInput}
-                  className="w-full text-left rounded-2xl p-3.5 transition-all active:scale-[0.98] cursor-pointer hover:bg-white/25"
+                  className="w-full text-left rounded-2xl p-3.5 transition-all active:scale-[0.98] cursor-pointer hover:bg-card/25"
                   style={{
                     background: 'rgba(255,255,255,0.18)',
                     border: '1px solid rgba(255,255,255,0.3)',
@@ -683,7 +683,7 @@ export default function MealCardSlot({
               ) : (
                 <button
                   onClick={onOpenAIInput}
-                  className="w-full cursor-pointer hover:bg-white/10 transition-colors rounded-xl py-2 px-3"
+                  className="w-full cursor-pointer hover:bg-card/10 transition-colors rounded-xl py-2 px-3"
                 >
                   <p className="text-[10px] text-muted-foreground/50 tracking-wide text-center mb-1">还没有{config.label}记录</p>
                   <div className="flex items-center justify-center gap-1.5">
@@ -723,7 +723,7 @@ export default function MealCardSlot({
             return (
               <div
                 key={group.name}
-                className="rounded-2xl bg-white/52 border border-white/58 overflow-hidden transition-colors hover:bg-white/68"
+                className="rounded-2xl bg-card/52 border border-card/58 overflow-hidden transition-colors hover:bg-card/68"
                 style={{ animation: `mealItemIn 0.38s cubic-bezier(0.4,0,0.2,1) ${groupIdx * 0.06}s both` }}
               >
                 <div className="flex items-center justify-between py-2 px-3">
@@ -831,7 +831,7 @@ export default function MealCardSlot({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder={config.placeholder}
-              className="flex-1 bg-white/72 border-white/60 text-sm h-10 rounded-full min-w-0"
+              className="flex-1 bg-card/72 border-card/60 text-sm h-10 rounded-full min-w-0"
               onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAdd(); }}
             />
             <Input
@@ -839,7 +839,7 @@ export default function MealCardSlot({
               value={calories}
               onChange={e => setCalories(e.target.value)}
               placeholder="kcal"
-              className="w-16 bg-white/72 border-white/60 text-sm h-10 rounded-full flex-shrink-0"
+              className="w-16 bg-card/72 border-card/60 text-sm h-10 rounded-full flex-shrink-0"
               onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAdd(); }}
             />
             <button

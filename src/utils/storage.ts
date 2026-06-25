@@ -98,17 +98,82 @@ export function getTodayKey(): string {
 
 // ─── Profile ─────────────────────────────────────────────
 
+const PROFILE_BACKUP_KEY = 'calorie_user_profile_backup';
+const PROFILE_UPDATED_AT_KEY = 'calorie_profile_updated_at';
+
+/** 调试日志 */
+function profileLog(tag: string, ...args: any[]) {
+  const ts = new Date().toISOString().slice(11, 23);
+  console.log(`%c[storage:${tag}] ${ts}`, 'color:#7CB9E8;font-weight:bold', ...args);
+}
+
 export function loadProfile(): UserProfile | null {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) {
+      profileLog('load', '本地无 profile');
+      return null;
+    }
+    const profile = JSON.parse(raw) as UserProfile;
+    const updatedAt = localStorage.getItem(PROFILE_UPDATED_AT_KEY);
+    profileLog('load', '✓ 加载本地 profile', {
+      name: profile.name,
+      weight: profile.weight,
+      updatedAt: updatedAt ? new Date(Number(updatedAt)).toISOString() : 'N/A',
+    });
+    return profile;
   } catch {
     return null;
   }
 }
 
 export function saveProfile(profile: UserProfile): void {
+  const now = Date.now();
+  const prev = localStorage.getItem(PROFILE_KEY);
+
+  // 备份旧数据（仅在有变化时）
+  if (prev && prev !== JSON.stringify(profile)) {
+    try {
+      localStorage.setItem(PROFILE_BACKUP_KEY, prev);
+      profileLog('save', '已备份旧 profile');
+    } catch { /* quota exceeded — ignore */ }
+  }
+
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  localStorage.setItem(PROFILE_UPDATED_AT_KEY, String(now));
+  profileLog('save', '✓ 保存 profile', {
+    name: profile.name,
+    weight: profile.weight,
+    height: profile.height,
+    age: profile.age,
+    goal: profile.goal,
+    activityLevel: profile.activityLevel,
+    updatedAt: new Date(now).toISOString(),
+  });
+}
+
+/** 返回本地 profile 的最后保存时间戳（ms），无记录时返回 0 */
+export function getProfileUpdatedAt(): number {
+  const raw = localStorage.getItem(PROFILE_UPDATED_AT_KEY);
+  return raw ? Number(raw) || 0 : 0;
+}
+
+/** 从备份恢复 profile（调试/回滚用） */
+export function restoreProfileFromBackup(): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_BACKUP_KEY);
+    if (!raw) {
+      profileLog('restore', '无备份可恢复');
+      return null;
+    }
+    const profile = JSON.parse(raw) as UserProfile;
+    saveProfile(profile);
+    profileLog('restore', '✓ 从备份恢复 profile', { name: profile.name });
+    return profile;
+  } catch {
+    profileLog('restore', '✗ 恢复失败');
+    return null;
+  }
 }
 
 // ─── 单日记录读写 ────────────────────────────────────────

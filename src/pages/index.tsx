@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Copy } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import UserProfilePanel from './components/UserProfilePanel';
 import SettingsPanel from './components/SettingsPanel';
@@ -19,15 +20,19 @@ import DesktopRightPanel from './components/DesktopRightPanel';
 import DesktopParallaxSlider from './components/DesktopParallaxSlider';
 import ExportDataModal from './components/ExportDataModal';
 import BatchImportModal from './components/BatchImportModal';
-import { loadProfile, saveProfile } from '../utils/storage';
+import { loadProfile, saveProfile, getProfileUpdatedAt } from '../utils/storage';
 import { syncProfileToCloud, loadProfileFromCloud } from '../utils/githubDB';
-import { getSession } from '../utils/auth';
+import { getSession, clearSession } from '../utils/auth';
 import { getTodayKey, makeEmptyRecord } from '../utils/recordHelpers';
 import { useRecordSync } from '../hooks/useRecordSync';
 import { useHistoryRecord } from '../hooks/useHistoryRecord';
 import { useRecordHandlers } from '../hooks/useRecordHandlers';
 import { useBatchImport } from '../hooks/useBatchImport';
+import { useDeviceCapability } from '../hooks/useDeviceCapability';
+import { calcTargetCalories } from '../utils/calculations';
 import type { UserProfile, FoodItem, MealType } from '../types';
+
+const ParticleBackground = lazy(() => import('../components/three/ParticleBackground'));
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -108,20 +113,62 @@ export default function Home() {
     document.title = '燃烧我的卡路里 - 科学管理你的热量';
 
     const localProfile = loadProfile();
-    if (localProfile) {
-      setProfile(localProfile);
-    } else {
-      loadProfileFromCloud()
-        .then(cloudProfile => {
-          if (cloudProfile) {
-            setProfile(cloudProfile);
-            saveProfile(cloudProfile);
+    const localUpdatedAt = getProfileUpdatedAt();
+
+    // 无论本地是否有 profile，都异步检查云端（处理多设备场景）
+    loadProfileFromCloud()
+      .then(cloudResult => {
+        if (!cloudResult) {
+          // 云端无数据
+          if (localProfile) {
+            console.log('[profile:init] 使用本地 profile（云端无数据）', { name: localProfile.name });
+            setProfile(localProfile);
           } else {
+            console.log('[profile:init] 本地和云端均无 profile，显示 Onboarding');
             setShowOnboarding(true);
           }
-        })
-        .catch(() => { setShowOnboarding(true); });
-    }
+          return;
+        }
+
+        const { profile: cloudProfile, updatedAt: cloudUpdatedAt } = cloudResult;
+
+        if (!localProfile) {
+          // 本地无数据 → 采用云端
+          console.log('[profile:init] 本地无 profile，使用云端数据', {
+            name: cloudProfile.name,
+            cloudUpdatedAt: new Date(cloudUpdatedAt).toISOString(),
+          });
+          setProfile(cloudProfile);
+          saveProfile(cloudProfile);
+          return;
+        }
+
+        // 两端均有数据 → 比较时间戳，last-write-wins
+        if (cloudUpdatedAt > localUpdatedAt) {
+          console.log('[profile:init] 云端更新，覆盖本地', {
+            localUpdatedAt: new Date(localUpdatedAt).toISOString(),
+            cloudUpdatedAt: new Date(cloudUpdatedAt).toISOString(),
+          });
+          setProfile(cloudProfile);
+          saveProfile(cloudProfile);
+        } else {
+          console.log('[profile:init] 本地更新或相同，保持本地', {
+            localUpdatedAt: new Date(localUpdatedAt).toISOString(),
+            cloudUpdatedAt: new Date(cloudUpdatedAt).toISOString(),
+          });
+          setProfile(localProfile);
+        }
+      })
+      .catch(() => {
+        // 云端请求失败 → 降级到本地数据
+        if (localProfile) {
+          console.log('[profile:init] 云端请求失败，降级使用本地 profile');
+          setProfile(localProfile);
+        } else {
+          console.log('[profile:init] 云端请求失败且无本地数据，显示 Onboarding');
+          setShowOnboarding(true);
+        }
+      });
   }, []);
 
   // ── 回调函数 ──────────────────────────────────────────
@@ -143,7 +190,18 @@ export default function Home() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    localStorage.clear();
+    // 保留 workid，避免数据关联断裂；仅清除会话和本地缓存
+    const workid = localStorage.getItem('calorie_workid');
+    clearSession();
+    // 清除 AI 缓存、记录缓存等临时数据（不清除 workid）
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('calorie_ai_cache_') ||
+          key.startsWith('calorie_advice_') ||
+          key.startsWith('calorie_review_')) {
+        localStorage.removeItem(key);
+      }
+    }
+    console.log('[profile:logout] 已登出，保留 workid:', workid);
     navigate('/login');
   }, [navigate]);
 
@@ -238,8 +296,29 @@ export default function Home() {
     />
   );
 
+  // ── 3D 能力检测 ──────────────────────────────────────
+  const { canUse3D } = useDeviceCapability();
+
+  // ── 计算热量百分比（用于粒子背景颜色） ─────────────────
+  const caloriePercent = useMemo(() => {
+    if (!record || !profile) return 0;
+    const allFoods = Object.values(record.meals).flat();
+    const intake = allFoods.reduce((sum, f) => sum + f.calories, 0);
+    const targetCalories = calcTargetCalories(profile);
+    return Math.round((intake / Math.max(targetCalories, 1)) * 100);
+  }, [record, profile]);
+
   return (
     <>
+      {/* ── 粒子背景（仅在 Today tab + 桌面端显示） ──────── */}
+      {canUse3D && activeTab === 'today' && (
+        <div className="hidden lg:block fixed inset-0 pointer-events-none z-0">
+          <Suspense fallback={null}>
+            <ParticleBackground caloriePercent={caloriePercent} />
+          </Suspense>
+        </div>
+      )}
+
       {/* ── 桌面端全屏布局 ──────────────────────────────── */}
       <div
         className="hidden lg:flex flex-col overflow-hidden"
@@ -294,14 +373,23 @@ export default function Home() {
                 className="flex-1 overflow-y-auto"
                 style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.1) transparent' }}
               >
-                <div className="px-6 py-5 space-y-5">
-                  {activeTab === 'analytics' && (
-                    <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} onClose={() => setActiveTab('today')} />
-                  )}
-                  {activeTab === 'ai' && (
-                    <SmartAdvicePanel profile={profile} record={activeRecord} apiKey={apiKey} isViewingToday={isViewingToday} />
-                  )}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="px-6 py-5 space-y-5"
+                  >
+                    {activeTab === 'analytics' && (
+                      <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} onClose={() => setActiveTab('today')} />
+                    )}
+                    {activeTab === 'ai' && (
+                      <SmartAdvicePanel profile={profile} record={activeRecord} apiKey={apiKey} isViewingToday={isViewingToday} />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </main>
             {desktopRightPanel}

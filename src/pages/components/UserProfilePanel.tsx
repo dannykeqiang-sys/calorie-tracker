@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
@@ -42,6 +42,21 @@ export default function UserProfilePanel({ open, profile, onClose, onSave }: Use
     goal: profile?.goal ?? 'maintain',
     activityLevel: profile?.activityLevel ?? 'moderate',
   });
+
+  // 当 profile prop 变化时同步更新表单（例如从云端同步后）
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        name: profile.name,
+        height: profile.height,
+        weight: profile.weight,
+        age: profile.age,
+        gender: profile.gender,
+        goal: profile.goal,
+        activityLevel: profile.activityLevel,
+      });
+    }
+  }, [profile]);
 
   const bmi = calcBMI(form.weight, form.height);
   const bmr = calcBMR(form);

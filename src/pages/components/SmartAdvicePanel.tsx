@@ -304,7 +304,7 @@ export default function SmartAdvicePanel({ profile, record, apiKey, isViewingTod
   return (
     <div className="w-full h-auto flex flex-col space-y-4">
       {isViewingToday && (
-        <div className="rounded-2xl border border-border bg-white/60 p-4 space-y-2.5">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 space-y-2.5">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center">
               <Dumbbell className="w-3.5 h-3.5 text-violet-500" />
@@ -374,10 +374,10 @@ export default function SmartAdvicePanel({ profile, record, apiKey, isViewingTod
       {status === 'ready' && (
         <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5 p-8 flex flex-col items-center justify-center text-center gap-5 min-h-[220px]">
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-white border border-primary/30 flex items-center justify-center shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-card border border-primary/30 flex items-center justify-center shadow-sm">
               <Sparkles className="w-7 h-7 text-primary" />
             </div>
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-secondary border-2 border-white" />
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-secondary border-2 border-card" />
           </div>
           <div>
             <p className="font-semibold text-foreground text-base">{emptyHint}</p>
@@ -421,7 +421,7 @@ export default function SmartAdvicePanel({ profile, record, apiKey, isViewingTod
       )}
 
       {status === 'revealed' && result && (
-        <div className="w-full h-auto flex flex-col space-y-3 bg-white rounded-2xl border border-primary/20 p-5 shadow-sm" style={{ animation: 'smart-fade-in 0.4s ease both' }}>
+        <div className="w-full h-auto flex flex-col space-y-3 bg-card rounded-2xl border border-primary/20 p-5 shadow-sm" style={{ animation: 'smart-fade-in 0.4s ease both' }}>
           <div className="flex items-center justify-between pb-2.5 border-b border-border">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: isNextMeal ? 'rgba(163,184,153,0.2)' : 'rgba(139,92,246,0.15)' }}>
@@ -521,7 +521,7 @@ export default function SmartAdvicePanel({ profile, record, apiKey, isViewingTod
 
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setConfirmOpen(false)}>
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()} style={{ animation: 'smart-slide-up 0.3s cubic-bezier(0.4,0,0.2,1) both' }}>
+          <div className="w-full max-w-sm rounded-3xl bg-card p-6 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()} style={{ animation: 'smart-slide-up 0.3s cubic-bezier(0.4,0,0.2,1) both' }}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-secondary/15 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-secondary" />

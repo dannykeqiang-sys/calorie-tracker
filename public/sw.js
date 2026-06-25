@@ -1,15 +1,20 @@
-// Service Worker - Network First 策略
-const CACHE_NAME = 'calorie-tracker-v1';
+// Service Worker - 动态 base 路径 + 导航请求 no-cache
+const CACHE_NAME = 'calorie-tracker-v2';
+
+// 从 SW 的 scope 动态计算 base 路径（适配 GitHub Pages 子目录部署）
+// 例如 scope = https://user.github.io/calorie-tracker/ → base = /calorie-tracker/
+const BASE_PATH = new URL(self.registration?.scope || self.location.origin + '/').pathname;
+
+// 静态资源列表（使用相对路径，相对于 SW 所在位置）
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg',
-  '/favicon.svg'
+  './',
+  './manifest.json',
+  './icon-192.svg',
+  './icon-512.svg',
+  './favicon.svg'
 ];
 
-// 安装阶段：预缓存静态资源
+// 安装阶段：预缓存静态资源（不包含 index.html，确保每次都获取最新版）
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
   event.waitUntil(
@@ -39,11 +44,29 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 请求拦截：Network First 策略
+// 请求拦截：导航请求 no-cache，其他资源 Network First
 self.addEventListener('fetch', (event) => {
   // 跳过非 GET 请求
   if (event.request.method !== 'GET') return;
 
+  // 导航请求：强制从网络获取（不缓存 index.html，确保用户总是获取最新版）
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        // 网络失败时，返回已缓存的 index.html 作为离线回退
+        return caches.match('./index.html').then((cached) => {
+          return cached || new Response('Offline - 燃烧我的卡路里', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+        });
+      })
+    );
+    return;
+  }
+
+  // 其他资源：Network First 策略
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -68,15 +91,7 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
 
-        // 4. 缓存也没有，对于导航请求返回 index.html（SPA fallback）
-        if (event.request.mode === 'navigate') {
-          const fallbackResponse = await cache.match('/index.html');
-          if (fallbackResponse) {
-            return fallbackResponse;
-          }
-        }
-
-        // 5. 最终失败
+        // 4. 最终失败
         return new Response('Offline', {
           status: 503,
           statusText: 'Service Unavailable'

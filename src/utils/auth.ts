@@ -25,4 +25,5 @@ export function setSession(workid: string, name: string): void {
 export function clearSession(): void {
   localStorage.removeItem(SESSION_KEY);
   localStorage.removeItem('calorie_user_profile');
+  localStorage.removeItem('calorie_profile_updated_at');
 }

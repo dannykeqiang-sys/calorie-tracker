@@ -172,14 +172,14 @@ function MealSection({
                 <span className="text-xs text-muted-foreground flex-shrink-0">kcal</span>
                 <button
                   onClick={saveEdit}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/60 active:scale-90 transition-all cursor-pointer flex-shrink-0"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-card/60 active:scale-90 transition-all cursor-pointer flex-shrink-0"
                   style={{ color: config.color }}
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/60 active:scale-90 transition-all cursor-pointer flex-shrink-0 text-muted-foreground"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-card/60 active:scale-90 transition-all cursor-pointer flex-shrink-0 text-muted-foreground"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -187,7 +187,7 @@ function MealSection({
             ) : (
               <div
                 key={item.id}
-                className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/70 border border-border/50 group"
+                className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-card/70 border border-border/50 group"
               >
                 <span className="text-sm text-foreground flex-1 min-w-0 truncate mr-2">{item.name}</span>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -227,7 +227,7 @@ function MealSection({
             onChange={e => { setName(e.target.value); setAiMacros(null); }}
             onBlur={handleNameBlur}
             placeholder={config.placeholder}
-            className="bg-white/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm flex-1 min-w-0"
+            className="bg-card/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm flex-1 min-w-0"
             onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAdd(); }}
           />
           <button
@@ -237,7 +237,7 @@ function MealSection({
             className={`w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center transition-all cursor-pointer border ${
               canEstimate
                 ? 'border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary'
-                : 'border-border/40 bg-white/50 text-muted-foreground/40 cursor-not-allowed'
+                : 'border-border/40 bg-card/50 text-muted-foreground/40 cursor-not-allowed'
             }`}
           >
             {estimating ? (
@@ -251,7 +251,7 @@ function MealSection({
             value={calories}
             onChange={e => setCalories(e.target.value)}
             placeholder="kcal"
-            className="bg-white/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm w-16 flex-shrink-0"
+            className="bg-card/80 border-border/70 text-foreground placeholder:text-muted-foreground text-sm w-16 flex-shrink-0"
             onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleAdd(); }}
           />
           <Button
@@ -286,7 +286,7 @@ function MealSection({
               <button
                 key={food.name}
                 onClick={() => handleQuickAdd(food)}
-                className="px-2 py-1 text-xs rounded-lg bg-white border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-colors cursor-pointer"
+                className="px-2 py-1 text-xs rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-colors cursor-pointer"
               >
                 {food.name} ({food.calories})
               </button>

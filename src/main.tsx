@@ -31,11 +31,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// 注册 Service Worker
+// 注册 Service Worker（使用 BASE_URL 适配子目录部署）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(`${import.meta.env.BASE_URL}sw.js`)
       .then((registration) => {
         console.log('[SW] Registered successfully:', registration.scope);
       })

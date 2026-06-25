@@ -60,8 +60,8 @@ function ChartTooltip({ tip }: { tip: TooltipState }) {
       }}
     >
       <div
-        className="rounded-2xl border border-border shadow-xl text-xs min-w-[148px] overflow-hidden"
-        style={{ background: 'var(--card)', backdropFilter: 'blur(14px)' }}
+        className="border border-border shadow-xl text-xs min-w-[148px] overflow-hidden"
+        style={{ background: 'var(--card)', backdropFilter: 'blur(14px)', borderRadius: 'var(--radius-card)' }}
       >
         <div className="px-3 py-2 border-b border-black/5">
           <p className="font-bold text-foreground text-[11px] text-center">
@@ -142,8 +142,8 @@ function CaloriePool({ stats, tdee }: { stats: DayStats[]; tdee: number }) {
 
   return (
     <div
-      className="rounded-2xl p-3.5 mt-3 border border-border"
-      style={{ background: 'var(--card)' }}
+      className="p-3.5 mt-3 border border-border"
+      style={{ background: 'var(--card)', borderRadius: 'var(--radius-card)' }}
     >
       <p className="text-[10px] font-semibold text-muted-foreground mb-2 tracking-widest uppercase">
         热量余额池
@@ -243,10 +243,11 @@ export default function DualCurveChart({ stats, tdee, targetCalories }: DualCurv
 
   return (
     <div
-      className="rounded-3xl p-4 border border-border"
+      className="p-4 border border-border"
       style={{
         background: 'var(--card)',
         backdropFilter: 'blur(20px)',
+        borderRadius: 'var(--radius-card)',
         WebkitBackdropFilter: 'blur(20px)',
       }}
     >

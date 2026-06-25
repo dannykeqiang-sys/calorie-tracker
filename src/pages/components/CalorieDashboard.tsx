@@ -81,7 +81,7 @@ export default function CalorieDashboard({ profile, record, dateLabel = '今日'
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-card border border-border p-6 shadow-sm">
+      <div className="bg-card border border-border p-6 shadow-sm" style={{ borderRadius: 'var(--radius-card)' }}>
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="relative flex-shrink-0">
             <RingChart value={totalIntake} max={dynamicTarget} color="#A3B899" size={140} />
@@ -150,8 +150,8 @@ export default function CalorieDashboard({ profile, record, dateLabel = '今日'
         </div>
       </div>
 
-      <div className={`rounded-2xl border border-border p-4 flex items-start gap-3 ${surplusInfo.bg}`}>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${surplusInfo.color}20` }}>
+      <div className={`border border-border p-4 flex items-start gap-3 ${surplusInfo.bg}`} style={{ borderRadius: 'var(--radius-card)' }}>
+        <div className="w-9 h-9 flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${surplusInfo.color}20`, borderRadius: 'var(--radius-button)' }}>
           <SurplusIcon className="w-4 h-4" style={{ color: surplusInfo.color }} />
         </div>
         <div>

@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { calcTargetCalories, calcMacroTargets, sumMacrosWithEstimate } from '../../utils/calculations';
 import { TrendingDown, Minus, TrendingUp } from 'lucide-react';
+import { useDeviceCapability } from '../../hooks/useDeviceCapability';
+import AnimatedNumber from '../../components/AnimatedNumber';
+
+const ThreeRings3D = lazy(() => import('../../components/three/ThreeRings3D'));
 
 interface TodayDualRingBarProps {
   profile: UserProfile | null;
@@ -298,6 +302,7 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
 }
 
 export default function TodayDualRingBar({ profile, record, dateLabel = '今日', currentWeight }: TodayDualRingBarProps) {
+  const { canUse3D } = useDeviceCapability();
   const allFoods = Object.values(record.meals).flat();
   const intake = allFoods.reduce((sum, f) => sum + f.calories, 0);
   const totalBurn = record.exercises.reduce((sum, e) => sum + e.calories, 0);
@@ -325,10 +330,11 @@ export default function TodayDualRingBar({ profile, record, dateLabel = '今日'
   const StatusIcon = statusIcon;
 
   return (
-    <div className="rounded-2xl overflow-hidden shadow-sm"
+    <div className="overflow-hidden shadow-sm"
       style={{
         background: 'var(--ck-dock-bg)',
         border: `1px solid var(--ck-dock-border)`,
+        borderRadius: 'var(--radius-card)',
       }}>
       {/* 顶栏 */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -352,12 +358,30 @@ export default function TodayDualRingBar({ profile, record, dateLabel = '今日'
 
       {/* 三环图 */}
       <div className="px-4 pb-3">
-        <ThreeRings
-          intake={intake} target={targetCalories}
-          protein={protein} proteinTarget={proteinTarget}
-          carbs={carbs} carbsTarget={carbsTarget}
-          fat={fat} fatTarget={fatTarget}
-        />
+        {canUse3D ? (
+          <Suspense fallback={
+            <ThreeRings
+              intake={intake} target={targetCalories}
+              protein={protein} proteinTarget={proteinTarget}
+              carbs={carbs} carbsTarget={carbsTarget}
+              fat={fat} fatTarget={fatTarget}
+            />
+          }>
+            <ThreeRings3D
+              intake={intake} target={targetCalories}
+              protein={protein} proteinTarget={proteinTarget}
+              carbs={carbs} carbsTarget={carbsTarget}
+              fat={fat} fatTarget={fatTarget}
+            />
+          </Suspense>
+        ) : (
+          <ThreeRings
+            intake={intake} target={targetCalories}
+            protein={protein} proteinTarget={proteinTarget}
+            carbs={carbs} carbsTarget={carbsTarget}
+            fat={fat} fatTarget={fatTarget}
+          />
+        )}
       </div>
 
       {/* 底部三栏数据 */}
@@ -370,7 +394,11 @@ export default function TodayDualRingBar({ profile, record, dateLabel = '今日'
           <div key={i} className="flex flex-col items-center py-1.5 rounded-lg"
             style={{ background: i === 2 ? (isOver ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)') : 'transparent' }}>
             <span className="text-[9px]" style={{ color: 'var(--ck-dock-metric-label)' }}>{item.label}</span>
-            <span className="text-xs font-bold tabular-nums mt-0.5" style={{ color: item.color }}>{item.value}</span>
+            <AnimatedNumber
+              value={item.value}
+              className="text-xs font-bold tabular-nums mt-0.5"
+              style={{ color: item.color }}
+            />
           </div>
         ))}
       </div>

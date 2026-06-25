@@ -58,6 +58,10 @@
 
 :root {
   --radius: 0.875rem;
+  --radius-card: 1rem;      /* 16px — card containers */
+  --radius-button: 0.75rem; /* 12px — buttons */
+  --radius-input: 0.5rem;   /* 8px — inputs */
+  --radius-badge: 0.375rem; /* 6px — badges */
   --background: #FAF8F5;
   --foreground: #3A3A3A;
   --card: #FFFFFF;
@@ -208,6 +212,72 @@
   --ck-modal-card: rgba(30,30,42,0.92);
 }
 
+/* ═══ Surface / panel colors (for cards with transparency) ═══ */
+:root {
+  --ck-surface-subtle: rgba(255,255,255,0.6);
+  --ck-surface-medium: rgba(255,255,255,0.7);
+  --ck-surface-strong: rgba(255,255,255,0.88);
+  --ck-surface-overlay: rgba(255,255,255,0.95);
+}
+.dark {
+  --ck-surface-subtle: rgba(30,30,42,0.4);
+  --ck-surface-medium: rgba(30,30,42,0.6);
+  --ck-surface-strong: rgba(30,30,42,0.88);
+  --ck-surface-overlay: rgba(30,30,42,0.95);
+}
+
+/* ═══ Text contrast helpers ═══ */
+:root {
+  --ck-text-high: rgba(0,0,0,0.88);
+  --ck-text-medium: rgba(0,0,0,0.65);
+  --ck-text-low: rgba(0,0,0,0.45);
+  --ck-text-subtle: rgba(0,0,0,0.3);
+}
+.dark {
+  --ck-text-high: rgba(255,255,255,0.92);
+  --ck-text-medium: rgba(255,255,255,0.7);
+  --ck-text-low: rgba(255,255,255,0.5);
+  --ck-text-subtle: rgba(255,255,255,0.35);
+}
+
+/* ═══ Border / divider colors ═══ */
+:root {
+  --ck-border-subtle: rgba(0,0,0,0.06);
+  --ck-border-medium: rgba(0,0,0,0.12);
+  --ck-border-strong: rgba(0,0,0,0.2);
+}
+.dark {
+  --ck-border-subtle: rgba(255,255,255,0.08);
+  --ck-border-medium: rgba(255,255,255,0.15);
+  --ck-border-strong: rgba(255,255,255,0.25);
+}
+
+/* ═══ Interactive states ═══ */
+:root {
+  --ck-hover: rgba(0,0,0,0.04);
+  --ck-active: rgba(0,0,0,0.08);
+  --ck-disabled: rgba(0,0,0,0.3);
+}
+.dark {
+  --ck-hover: rgba(255,255,255,0.06);
+  --ck-active: rgba(255,255,255,0.1);
+  --ck-disabled: rgba(255,255,255,0.35);
+}
+
+/* ═══ Shadow system ═══ */
+:root {
+  --ck-shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --ck-shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --ck-shadow-lg: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+  --ck-shadow-xl: 0 20px 40px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06);
+}
+.dark {
+  --ck-shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --ck-shadow-md: 0 4px 12px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3);
+  --ck-shadow-lg: 0 10px 25px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.4);
+  --ck-shadow-xl: 0 20px 40px rgba(0,0,0,0.6), 0 8px 16px rgba(0,0,0,0.5);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -246,8 +316,8 @@
 }
 
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes fadeSlideRight {
@@ -280,14 +350,14 @@
   opacity: 0;
   animation: fadeSlideUp 0.5s var(--ease-spring) forwards;
 }
-.stagger-in > *:nth-child(1) { animation-delay: 0.04s; }
-.stagger-in > *:nth-child(2) { animation-delay: 0.08s; }
-.stagger-in > *:nth-child(3) { animation-delay: 0.12s; }
-.stagger-in > *:nth-child(4) { animation-delay: 0.16s; }
-.stagger-in > *:nth-child(5) { animation-delay: 0.20s; }
-.stagger-in > *:nth-child(6) { animation-delay: 0.24s; }
-.stagger-in > *:nth-child(7) { animation-delay: 0.28s; }
-.stagger-in > *:nth-child(8) { animation-delay: 0.32s; }
+.stagger-in > *:nth-child(1) { animation-delay: 0.06s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.12s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.18s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.24s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.30s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.36s; }
+.stagger-in > *:nth-child(7) { animation-delay: 0.42s; }
+.stagger-in > *:nth-child(8) { animation-delay: 0.48s; }
 
 /* Animate-in utility classes */
 .animate-in {

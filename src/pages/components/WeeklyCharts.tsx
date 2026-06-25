@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Calendar, ArrowRight, TrendingUp } from 'lucide-react';
 import type { DayStats } from './AIHealingCard';
 import type { UserProfile } from '../../types';
@@ -58,7 +58,7 @@ export function ChartCard({ icon: Icon, title, iconColor, kind = 'indigo', child
 interface SankeyNode { id: string; label: string; value: number; color: string; col: number; }
 interface SankeyLink { source: string; target: string; value: number; color: string; }
 
-export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[]; selectedDate?: string; profile?: UserProfile | null }) {
+export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { stats: DayStats[]; selectedDate?: string; profile?: UserProfile | null; onDateChange?: (date: string) => void }) {
   const dayIdx = useMemo(() => {
     if (selectedDate) {
       const idx = stats.findIndex(s => s.date === selectedDate);
@@ -69,7 +69,40 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
 
   const [hoverNode, setHoverNode] = useState<string | null>(null);
   const [hoverLink, setHoverLink] = useState<number | null>(null);
+  const [expandedNode, setExpandedNode] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null || !onDateChange) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      const newIdx = diff > 0
+        ? Math.min(dayIdx + 1, stats.length - 1)
+        : Math.max(dayIdx - 1, 0);
+      onDateChange(stats[newIdx].date);
+    }
+    setTouchStart(null);
+  };
+
   const today = stats[dayIdx];
   if (!today || today.intake === 0) return null;
 
@@ -94,20 +127,18 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
       : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
     bmrEstimate = Math.round(bmr);
   } else {
-    // Fallback: estimate based on typical values
     bmrEstimate = 1500;
   }
   const exerciseBurn = today.burn || 0;
   const totalBurn = bmrEstimate + exerciseBurn;
   const balance = today.intake - totalBurn;
 
-  // Determine surplus or deficit
   const isSurplus = balance > 0;
   const balanceNode = {
     id: 'balance',
     label: isSurplus ? `热量盈余` : `热量缺口`,
     value: Math.abs(balance),
-    color: isSurplus ? '#ef4444' : '#22c55e', // Red for surplus, green for deficit
+    color: isSurplus ? '#ef4444' : '#22c55e',
     col: 3
   };
 
@@ -123,7 +154,6 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
   const macroTotal = macros.reduce((s, m) => s + m.value * m.calPerUnit, 0) || 1;
   const links: SankeyLink[] = [];
 
-  // Meals → Macros (only for non-zero meals)
   for (const meal of meals) {
     if (meal.value === 0) continue;
     for (const macro of macros) {
@@ -133,22 +163,23 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
     }
   }
 
-  // Macros → Energy
   for (const macro of macros) {
     const cal = macro.value * macro.calPerUnit;
     if (cal > 0) links.push({ source: macro.id, target: 'energy', value: cal, color: macro.color });
   }
 
-  // Energy → Destinations
   if (bmrEstimate > 0) links.push({ source: 'energy', target: 'bmr', value: bmrEstimate, color: '#10b981' });
-  // Always show exercise burn node (even if 0)
   links.push({ source: 'energy', target: 'exercise', value: exerciseBurn, color: '#f59e0b' });
-  // Balance (surplus or deficit)
   if (Math.abs(balance) > 0) links.push({ source: 'energy', target: 'balance', value: Math.abs(balance), color: balanceNode.color });
 
-  const HH = 240, PAD_TOP = 32, PAD_BOT = 20;
-  const cols = [20, 95, 170, 245];
+  // Mobile-aware layout
+  const SVG_W = isMobile ? 340 : 320;
+  const HH = isMobile ? 280 : 240;
+  const PAD_TOP = isMobile ? 48 : 32;
+  const PAD_BOT = isMobile ? 60 : 20;
+  const cols = isMobile ? [25, 110, 195, 280] : [20, 95, 170, 245];
   const usableH = HH - PAD_TOP - PAD_BOT;
+  const nodeGap = isMobile ? 10 : 8;
   const totalV = nodes.reduce((s, n) => s + (n.col === 2 || n.col === 3 ? n.value * 0.5 : n.value), 0) || 1;
 
   const colNodes: SankeyNode[][] = [[], [], [], []];
@@ -156,16 +187,16 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
 
   const nodeLayout: Record<string, { y: number; h: number; x: number }> = {};
   for (let col = 0; col < 4; col++) {
-    const goods = colNodes[col].filter(n => n.value > 0 || col === 0 || n.id === 'exercise'); // Always show meals and exercise
+    const goods = colNodes[col].filter(n => n.value > 0 || col === 0 || n.id === 'exercise');
     if (goods.length === 0) continue;
     const colTotal = goods.reduce((s, n) => s + Math.max(n.value, col === 0 ? 10 : 0), 0);
-    const minH = col === 0 ? 12 : 18;
+    const minH = col === 0 ? (isMobile ? 14 : 12) : (isMobile ? 22 : 18);
     let curY = PAD_TOP;
     for (const n of goods) {
       const displayValue = Math.max(n.value, col === 0 ? 10 : 0);
       const h = Math.max(minH, Math.min(usableH * 0.6, (displayValue / colTotal) * usableH * 0.85));
       nodeLayout[n.id] = { y: curY, h, x: 0 };
-      curY += h + 8;
+      curY += h + nodeGap;
     }
     for (const n of goods) {
       nodeLayout[n.id].x = cols[col];
@@ -173,18 +204,36 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
   }
 
   const adjacents = new Set<string>();
-  if (hoverNode) {
-    adjacents.add(hoverNode);
+  const activeNode = hoverNode || expandedNode;
+  if (activeNode) {
+    adjacents.add(activeNode);
     for (const link of links) {
-      if (link.source === hoverNode) { adjacents.add(link.target); for (const l2 of links) { if (l2.target === link.target && l2.source !== hoverNode) adjacents.add(l2.source); if (l2.source === link.target) adjacents.add(l2.target); } }
-      if (link.target === hoverNode) { adjacents.add(link.source); for (const l2 of links) { if (l2.source === link.source && l2.target !== hoverNode) adjacents.add(l2.target); } }
+      if (link.source === activeNode) { adjacents.add(link.target); for (const l2 of links) { if (l2.target === link.target && l2.source !== activeNode) adjacents.add(l2.source); if (l2.source === link.target) adjacents.add(l2.target); } }
+      if (link.target === activeNode) { adjacents.add(link.source); for (const l2 of links) { if (l2.source === link.source && l2.target !== activeNode) adjacents.add(l2.target); } }
     }
   }
 
+  // Get inflow/outflow for expanded node
+  const getNodeFlows = (nodeId: string) => {
+    const inflows = links.filter(l => l.target === nodeId);
+    const outflows = links.filter(l => l.source === nodeId);
+    return { inflows, outflows };
+  };
+
   return (
     <ChartCard icon={ArrowRight} title="能量流向" iconColor="#a78bfa" kind="indigo">
-      <div className="flex justify-center w-full">
-        <svg viewBox={`0 0 320 ${HH}`} className="w-full h-auto" style={{ maxWidth: 650, overflow: 'visible' }} preserveAspectRatio="xMidYMid meet">
+      <div
+        ref={containerRef}
+        className="flex justify-center w-full relative"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {isMobile && (
+          <div className="absolute top-0 left-0 right-0 text-center text-[10px] text-muted-foreground pointer-events-none">
+            ← 左右滑动切换日期 →
+          </div>
+        )}
+        <svg viewBox={`0 0 ${SVG_W} ${HH}`} className="w-full h-auto" style={{ maxWidth: 650, overflow: 'visible' }} preserveAspectRatio="xMidYMid meet">
           <defs>
             {nodes.map((n, i) => (
               <linearGradient key={`node${i}`} id={`skNode${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -202,29 +251,37 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
               <feGaussianBlur stdDeviation="3" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
+            {isMobile && (
+              <filter id="balanceGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            )}
           </defs>
 
           {/* 流线 */}
           {links.map((l, i) => {
             const s = nodeLayout[l.source], t = nodeLayout[l.target];
             if (!s || !t) return null;
-            const sx = s.x + 8, sy = s.y + s.h / 2, tx = t.x, ty = t.y + t.h / 2;
-            const isNodeH = hoverNode && (adjacents.has(l.source) || adjacents.has(l.target));
+            const sx = s.x + 10, sy = s.y + s.h / 2, tx = t.x, ty = t.y + t.h / 2;
+            const isNodeH = activeNode && (adjacents.has(l.source) || adjacents.has(l.target));
             const isLinkH = hoverLink === i;
             const isH = isNodeH || isLinkH;
-            const w = Math.max(3, Math.min(20, (l.value / Math.max(totalV, 1)) * 24));
+            const baseW = Math.max(isMobile ? 4 : 3, Math.min(20, (l.value / Math.max(totalV, 1)) * (isMobile ? 28 : 24)));
+            const w = isMobile ? baseW * 1.2 : baseW;
             return (
               <path key={i} d={`M${sx},${sy} C${sx + (tx - sx) * 0.4},${sy} ${sx + (tx - sx) * 0.6},${ty} ${tx},${ty}`}
                 fill="none" stroke={`url(#skLink${i})`} strokeWidth={isH ? w + 6 : w}
-                opacity={hoverNode && !isH ? 0.1 : 0.85} strokeLinecap="round"
+                opacity={activeNode && !isH ? 0.1 : 0.85} strokeLinecap="round"
                 filter={isH ? 'url(#sankeyGlow)' : undefined}
                 style={{ transition: 'all 0.3s ease', cursor: 'pointer' }}
                 onMouseEnter={(e) => {
                   setHoverLink(i);
                   const rect = e.currentTarget.closest('svg')?.getBoundingClientRect();
-                  if (rect) setTooltipPos({ x: clamp(e.clientX - rect.left, 50, 270), y: clamp(e.clientY - rect.top, 30, HH - 30) });
+                  if (rect) setTooltipPos({ x: clamp(e.clientX - rect.left, 50, SVG_W - 50), y: clamp(e.clientY - rect.top, 30, HH - 30) });
                 }}
                 onMouseLeave={() => { setHoverLink(null); setTooltipPos(null); }}
+                onTouchStart={() => setHoverLink(prev => prev === i ? null : i)}
               />
             );
           })}
@@ -233,73 +290,148 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
           {nodes.map((n, i) => {
             const lo = nodeLayout[n.id];
             if (!lo) return null;
-            const isH = hoverNode === n.id;
-            const isAdj = hoverNode && adjacents.has(n.id) && hoverNode !== n.id;
-            const alpha = hoverNode && !isH && !isAdj ? 0.3 : 1;
+            const isH = activeNode === n.id;
+            const isAdj = activeNode && adjacents.has(n.id) && activeNode !== n.id;
+            const alpha = activeNode && !isH && !isAdj ? 0.3 : 1;
+            const isBalance = n.id === 'balance';
+            const isExpanded = expandedNode === n.id;
+            const showLabel = !isMobile || isH || isExpanded || isBalance;
+            const fontSize = isMobile ? (isBalance ? 11 : 9) : (isBalance ? 12 : 10);
+            const nodeWidth = isMobile ? (isBalance ? 14 : 10) : 10;
+
             return (
               <g key={n.id} style={{ cursor: 'pointer', transition: 'opacity 0.3s', opacity: alpha }}
                 onMouseEnter={(e) => {
                   setHoverNode(n.id);
                   const rect = e.currentTarget.closest('svg')?.getBoundingClientRect();
-                  if (rect) setTooltipPos({ x: clamp(e.clientX - rect.left, 50, 270), y: clamp(e.clientY - rect.top, 30, HH - 30) });
+                  if (rect) setTooltipPos({ x: clamp(e.clientX - rect.left, 50, SVG_W - 50), y: clamp(e.clientY - rect.top, 30, HH - 30) });
                 }}
                 onMouseLeave={() => { setHoverNode(null); setTooltipPos(null); }}
-                onTouchStart={() => setHoverNode(prev => prev === n.id ? null : n.id)}>
-                <rect x={lo.x} y={lo.y} width={10} height={lo.h} rx={5}
-                  fill={`url(#skNode${i})`} opacity={isH ? 1 : 0.88}
-                  filter={isH ? 'url(#sankeyGlow)' : undefined} style={{ transition: 'all 0.2s' }} />
-                <text x={n.col === 3 ? lo.x + 14 : lo.x - 3} y={lo.y + lo.h / 2 + 4}
-                  textAnchor={n.col === 3 ? 'start' : 'end'} fontSize={10}
-                  fill="var(--ck-chart-card-text)" fontWeight={isH ? '900' : '700'} style={{ transition: 'font-weight 0.2s' }}>
-                  {n.id === 'balance'
-                    ? `${n.label} ${isSurplus ? '+' : '-'}${n.value}kcal`
-                    : n.label
+                onClick={() => {
+                  if (isMobile) {
+                    setExpandedNode(prev => prev === n.id ? null : n.id);
                   }
-                </text>
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  if (isMobile) {
+                    setExpandedNode(prev => prev === n.id ? null : n.id);
+                  } else {
+                    setHoverNode(prev => prev === n.id ? null : n.id);
+                  }
+                }}>
+                <rect x={lo.x} y={lo.y} width={nodeWidth} height={lo.h} rx={nodeWidth / 2}
+                  fill={`url(#skNode${i})`} opacity={isH ? 1 : 0.88}
+                  filter={isH ? (isBalance && isMobile ? 'url(#balanceGlow)' : 'url(#sankeyGlow)') : undefined}
+                  style={{ transition: 'all 0.2s' }} />
+                {showLabel && (
+                  <text x={n.col === 3 ? lo.x + nodeWidth + 4 : lo.x - 3} y={lo.y + lo.h / 2 + 4}
+                    textAnchor={n.col === 3 ? 'start' : 'end'} fontSize={fontSize}
+                    fill="var(--ck-chart-card-text)" fontWeight={isH ? '900' : '700'} style={{ transition: 'font-weight 0.2s' }}>
+                    {n.id === 'balance'
+                      ? `${n.label} ${isSurplus ? '+' : '-'}${n.value}kcal`
+                      : n.label
+                    }
+                  </text>
+                )}
+                {isBalance && isMobile && (
+                  <circle cx={lo.x + nodeWidth / 2} cy={lo.y + lo.h / 2} r={3} fill={n.color} opacity={0.8}>
+                    <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                )}
               </g>
             );
           })}
 
-          {/* Tooltip */}
-          {((hoverNode || hoverLink !== null) && tooltipPos) && (() => {
-            if (hoverNode) {
-              const node = nodes.find(n => n.id === hoverNode);
+          {/* Tooltip - fixed at bottom on mobile */}
+          {((hoverNode || hoverLink !== null || expandedNode) && (isMobile ? true : tooltipPos)) && (() => {
+            const nodeId = hoverNode || expandedNode;
+            if (nodeId) {
+              const node = nodes.find(n => n.id === nodeId);
               if (!node) return null;
               const unit = node.col === 0 ? 'kcal' : node.col === 1 ? 'g' : 'kcal';
-              return (
-                <g>
-                  <rect x={tooltipPos.x - 50} y={tooltipPos.y - 28} width={100} height={26} rx={8}
-                    fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                  <text x={tooltipPos.x} y={tooltipPos.y - 14} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">
-                    {node.label}: {node.value}{unit}
-                  </text>
-                </g>
-              );
+              const flows = getNodeFlows(nodeId);
+              const isExpandedView = expandedNode === nodeId && isMobile;
+
+              if (isMobile) {
+                // Fixed bottom tooltip on mobile
+                return (
+                  <g>
+                    <rect x={SVG_W / 2 - 100} y={HH - PAD_BOT + 8} width={200} height={isExpandedView ? 50 : 26} rx={8}
+                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                    <text x={SVG_W / 2} y={HH - PAD_BOT + 22} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">
+                      {node.label}: {node.value}{unit}
+                    </text>
+                    {isExpandedView && (
+                      <>
+                        {flows.inflows.length > 0 && (
+                          <text x={SVG_W / 2 - 90} y={HH - PAD_BOT + 36} fontSize={9} fill="#9ca3af" fontWeight="600">
+                            ← {flows.inflows.map(l => nodes.find(n => n.id === l.source)?.label).join(', ')}
+                          </text>
+                        )}
+                        {flows.outflows.length > 0 && (
+                          <text x={SVG_W / 2 + 90} y={HH - PAD_BOT + 36} textAnchor="end" fontSize={9} fill="#9ca3af" fontWeight="600">
+                            {flows.outflows.map(l => nodes.find(n => n.id === l.target)?.label).join(', ')} →
+                          </text>
+                        )}
+                      </>
+                    )}
+                  </g>
+                );
+              } else if (tooltipPos) {
+                // Desktop tooltip at cursor
+                return (
+                  <g>
+                    <rect x={tooltipPos.x - 50} y={tooltipPos.y - 28} width={100} height={26} rx={8}
+                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                    <text x={tooltipPos.x} y={tooltipPos.y - 14} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">
+                      {node.label}: {node.value}{unit}
+                    </text>
+                  </g>
+                );
+              }
             } else if (hoverLink !== null) {
               const link = links[hoverLink];
               if (!link) return null;
               const sourceNode = nodes.find(n => n.id === link.source);
               const targetNode = nodes.find(n => n.id === link.target);
               if (!sourceNode || !targetNode) return null;
-              return (
-                <g>
-                  <rect x={tooltipPos.x - 60} y={tooltipPos.y - 34} width={120} height={38} rx={8}
-                    fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                  <text x={tooltipPos.x} y={tooltipPos.y - 20} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
-                    {sourceNode.label} → {targetNode.label}
-                  </text>
-                  <text x={tooltipPos.x} y={tooltipPos.y - 6} textAnchor="middle" fontSize={10} fill={link.color} fontWeight="800">
-                    {link.value} kcal
-                  </text>
-                </g>
-              );
+
+              if (isMobile) {
+                return (
+                  <g>
+                    <rect x={SVG_W / 2 - 80} y={HH - PAD_BOT + 8} width={160} height={38} rx={8}
+                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                    <text x={SVG_W / 2} y={HH - PAD_BOT + 22} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
+                      {sourceNode.label} → {targetNode.label}
+                    </text>
+                    <text x={SVG_W / 2} y={HH - PAD_BOT + 36} textAnchor="middle" fontSize={10} fill={link.color} fontWeight="800">
+                      {link.value} kcal
+                    </text>
+                  </g>
+                );
+              } else if (tooltipPos) {
+                return (
+                  <g>
+                    <rect x={tooltipPos.x - 60} y={tooltipPos.y - 34} width={120} height={38} rx={8}
+                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                    <text x={tooltipPos.x} y={tooltipPos.y - 20} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
+                      {sourceNode.label} → {targetNode.label}
+                    </text>
+                    <text x={tooltipPos.x} y={tooltipPos.y - 6} textAnchor="middle" fontSize={10} fill={link.color} fontWeight="800">
+                      {link.value} kcal
+                    </text>
+                  </g>
+                );
+              }
             }
             return null;
           })()}
 
           {/* 列标题 */}
           {['三餐', '宏量营养素', '总能量', '能量去向'].map((l, i) => (
-            <text key={l} x={cols[i] + 5} y={PAD_TOP - 14} textAnchor="middle" fontSize={10} fill="var(--ck-chart-text)" fontWeight="800">{l}</text>
+            <text key={l} x={cols[i] + 5} y={PAD_TOP - (isMobile ? 18 : 14)} textAnchor="middle" fontSize={isMobile ? 9 : 10} fill="var(--ck-chart-text)" fontWeight="800">{l}</text>
           ))}
         </svg>
       </div>
@@ -307,7 +439,6 @@ export function MacroSankey({ stats, selectedDate, profile }: { stats: DayStats[
   );
 }
 
-/* ════════════════════ 3. 宏量趋势 — 柱状图 + 平滑折线 + 日期标签 ════════════════════ */
 export function MacroLineChart({ stats, target }: { stats: DayStats[]; target: number }) {
   const [hover, setHover] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
@@ -881,15 +1012,17 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
           </defs>
 
           {levels.map((l, i) => {
-            // Reverse rendering: array[0] (脂肪) at bottom, array[3] (总热量) at top
-            const renderIndex = levels.length - 1 - i;
+            // i=0 (脂肪) → top/narrowest, i=3 (总热量) → bottom/widest
+            const renderIndex = i;
             const y = startY + renderIndex * (layerH + gap);
 
-            // Pyramid: bottom layers wider, top layers narrower
-            const baseScale = 0.34 + renderIndex * 0.22; // top: 34%, bottom: 100%
-            const pctScale = Math.min(l.pct / 100, 1.3); // 允许最高130%
+            // 宽度由达成百分比驱动，位置因子保证金尼字形
+            const pctRatio = Math.min(l.pct / 100, 1.3);
+            const positionFactor = 1 + renderIndex * 0.08;
+            const minScale = 0.28 + renderIndex * 0.16;
+            const scale = Math.max(pctRatio * positionFactor, minScale);
 
-            const halfW = (maxWidth / 2) * baseScale * pctScale;
+            const halfW = (maxWidth / 2) * scale;
 
             // 梯形：顶部略窄于底部
             const topHalfW = halfW * 0.92;
@@ -1018,177 +1151,252 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
 /* ════════════════════ 8. 日K线图 — 每日热量增减趋势 ════════════════════ */
 export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; targetCalories: number }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [animated, setAnimated] = useState(false);
   const active = stats.filter(d => d.intake > 0);
   if (active.length < 3) return null;
 
-  // 7-day rolling average
-  const avgIntake = Math.round(active.reduce((sum, d) => sum + d.intake, 0) / active.length);
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimated(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const candles = active.map((d, i) => {
-    const meals = d.mealCals ?? [0, 0, 0, 0];
-    const nonZero = meals.filter(c => c > 0);
+  const target = targetCalories > 0 ? targetCalories : 2000;
 
-    // Opening: previous day's intake (or current day for first day → doji)
-    let open = d.intake;
-    if (i > 0) {
-      open = active[i - 1].intake;
-    } else {
-      // First active day: check full stats for previous day
-      const currentIndex = stats.findIndex(s => s.date === d.date);
-      if (currentIndex > 0 && stats[currentIndex - 1].intake > 0) {
-        open = stats[currentIndex - 1].intake;
-      }
-    }
-
-    const close = d.intake;
-    const maxMeal = nonZero.length > 0 ? Math.max(...nonZero) : Math.max(open, close);
-    const minMeal = nonZero.length > 0 ? Math.min(...nonZero) : Math.min(open, close);
-
-    // K-line high/low: ensure wicks always encompass body
-    const high = Math.max(maxMeal, open, close);
-    const low = Math.min(minMeal, open, close);
-
-    return { date: d.date, label: d.label, open, close, high, low, maxMeal, minMeal };
+  // 7-day rolling moving average (per-point)
+  const movingAvg = active.map((_, i) => {
+    const windowSize = Math.min(7, i + 1);
+    const window = active.slice(Math.max(0, i - windowSize + 1), i + 1);
+    return Math.round(window.reduce((s, d) => s + d.intake, 0) / window.length);
   });
 
-  const maxVal = Math.max(...candles.map(c => c.high), targetCalories, avgIntake, 50);
-  const candleW = 14, candleGap = 32;
-  const PAD_L = 36, PAD_R = 16, CHART_H = 150, BOTTOM = 44;
-  const W = PAD_L + candles.length * candleGap + PAD_R;
-  const H = CHART_H + BOTTOM;
+  // Data points
+  const points = active.map((d, i) => ({
+    date: d.date,
+    label: d.label,
+    intake: d.intake,
+    meals: d.mealCals ?? [0, 0, 0, 0],
+    avg: movingAvg[i],
+    overTarget: d.intake > target,
+  }));
 
-  function px(i: number) { return PAD_L + i * candleGap + candleW / 2; }
-  function valY(v: number) { return CHART_H - (v / maxVal) * CHART_H; }
+  // Trend detection: last 3 points
+  const last3 = points.slice(-3);
+  const trendUp = last3.length >= 3 && last3[1].intake > last3[0].intake && last3[2].intake > last3[1].intake;
+  const trendDown = last3.length >= 3 && last3[1].intake < last3[0].intake && last3[2].intake < last3[1].intake;
+
+  // Layout
+  const maxVal = Math.max(...points.map(p => Math.max(p.intake, p.avg)), target, 50) * 1.15;
+  const PAD_L = 36, PAD_R = 20, CHART_H = 140, BOTTOM = 36, TOP = 8;
+  const gap = Math.max(32, Math.min(48, 340 / points.length));
+  const W = PAD_L + points.length * gap + PAD_R;
+  const H = TOP + CHART_H + BOTTOM;
+
+  function px(i: number) { return PAD_L + i * gap + gap / 2; }
+  function valY(v: number) { return TOP + CHART_H - (v / maxVal) * CHART_H; }
+
+  // Build line and area paths
+  const linePts = points.map((p, i) => ({ x: px(i), y: valY(p.intake) }));
+  const avgPts = points.map((p, i) => ({ x: px(i), y: valY(p.avg) }));
+  const linePath = smoothLine(linePts, 0.4);
+  const avgPath = smoothLine(avgPts, 0.4);
+  // Area: line path + close to bottom
+  const areaPath = linePts.length > 1
+    ? `${smoothLine(linePts, 0.4)} L${linePts[linePts.length - 1].x},${TOP + CHART_H} L${linePts[0].x},${TOP + CHART_H} Z`
+    : '';
+
+  // Adaptive X labels: skip if too dense
+  const labelSkip = gap < 36 ? (gap < 28 ? 3 : 2) : 1;
+
+  // Unique IDs for gradients/filters to avoid collisions
+  const uid = 'kline';
 
   return (
-    <ChartCard icon={TrendingUp} title="日K线图" iconColor="#6366F1" kind="indigo" subtitle="每日热量增减趋势">
+    <ChartCard icon={TrendingUp} title="热量趋势" iconColor="#6366F1" kind="indigo" subtitle="每日摄入 · 7日均值 · 目标线">
       <div className="relative overflow-x-auto no-scrollbar w-full">
         <svg width={W} viewBox={`0 0 ${W} ${H}`} style={{ height: H, minWidth: W, overflow: 'visible', width: '100%' }} preserveAspectRatio="xMidYMid meet">
           <defs>
-            <filter id="klineGlow" x="-50%" y="-50%" width="200%" height="200%">
+            {/* Green gradient (below target) */}
+            <linearGradient id={`${uid}GreenArea`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#22c55e" stopOpacity="0.05" />
+            </linearGradient>
+            {/* Red gradient (above target) */}
+            <linearGradient id={`${uid}RedArea`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.08" />
+            </linearGradient>
+            {/* Line gradient */}
+            <linearGradient id={`${uid}Line`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#818cf8" />
+              <stop offset="50%" stopColor="#a78bfa" />
+              <stop offset="100%" stopColor="#6366f1" />
+            </linearGradient>
+            {/* Clip paths for green/red zones */}
+            <clipPath id={`${uid}GreenClip`}>
+              <rect x={0} y={valY(target)} width={W} height={TOP + CHART_H - valY(target)} />
+            </clipPath>
+            <clipPath id={`${uid}RedClip`}>
+              <rect x={0} y={TOP} width={W} height={Math.max(0, valY(target) - TOP)} />
+            </clipPath>
+            <filter id={`${uid}Glow`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id={`${uid}SoftGlow`} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
 
-          {/* 网格 */}
+          {/* Grid lines */}
           {[0.25, 0.5, 0.75, 1].map(pct => (
-            <line key={pct} x1={PAD_L - 4} y1={CHART_H * (1 - pct)} x2={W - PAD_R} y2={CHART_H * (1 - pct)}
-              stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" opacity={0.35} />
+            <line key={pct} x1={PAD_L - 4} y1={valY(maxVal * pct)} x2={W - PAD_R} y2={valY(maxVal * pct)}
+              stroke="var(--ck-chart-grid)" strokeWidth={0.5} strokeDasharray="3 3" opacity={0.3} />
           ))}
-          {/* Y轴标签 */}
-          {[0.25, 0.5, 0.75, 1].map(pct => (
-            <text key={pct} x={PAD_L - 8} y={CHART_H * (1 - pct) + 3} textAnchor="end" fontSize={7}
+          {[0.25, 0.5, 0.75].map(pct => (
+            <text key={pct} x={PAD_L - 8} y={valY(maxVal * pct) + 3} textAnchor="end" fontSize={7}
               fill="var(--ck-chart-dim)">{Math.round(maxVal * pct)}</text>
           ))}
 
-          {/* 目标线 */}
-          <line x1={PAD_L - 4} y1={valY(targetCalories)} x2={W - PAD_R} y2={valY(targetCalories)}
-            stroke="#F97316" strokeWidth={1.5} strokeDasharray="5 3" opacity={0.6} />
-          <rect x={W - PAD_R - 42} y={valY(targetCalories) - 8} width={40} height={16} rx={8}
+          {/* Green area (below target) */}
+          {areaPath && (
+            <path d={areaPath} fill={`url(#${uid}GreenArea)`} clipPath={`url(#${uid}GreenClip)`}
+              opacity={animated ? 1 : 0} style={{ transition: 'opacity 0.8s ease-out' }} />
+          )}
+          {/* Red area (above target) */}
+          {areaPath && (
+            <path d={areaPath} fill={`url(#${uid}RedArea)`} clipPath={`url(#${uid}RedClip)`}
+              opacity={animated ? 1 : 0} style={{ transition: 'opacity 0.8s ease-out' }} />
+          )}
+
+          {/* Target line */}
+          <line x1={PAD_L - 4} y1={valY(target)} x2={W - PAD_R} y2={valY(target)}
+            stroke="#F97316" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.55} />
+          <rect x={W - PAD_R - 44} y={valY(target) - 9} width={42} height={18} rx={9}
             fill="rgba(249,115,22,0.12)" stroke="rgba(249,115,22,0.3)" strokeWidth={0.5} />
-          <text x={W - PAD_R - 22} y={valY(targetCalories) + 3} textAnchor="middle" fontSize={8}
+          <text x={W - PAD_R - 23} y={valY(target) + 4} textAnchor="middle" fontSize={8}
             fill="#F97316" fontWeight="700">目标</text>
 
-          {/* 7日均值线 */}
-          <line x1={PAD_L - 4} y1={valY(avgIntake)} x2={W - PAD_R} y2={valY(avgIntake)}
-            stroke="#818cf8" strokeWidth={1.2} strokeDasharray="4 3" opacity={0.5} />
-          <rect x={W - PAD_R - 50} y={valY(avgIntake) - 8} width={48} height={16} rx={8}
-            fill="rgba(129,140,248,0.12)" stroke="rgba(129,140,248,0.3)" strokeWidth={0.5} />
-          <text x={W - PAD_R - 26} y={valY(avgIntake) + 3} textAnchor="middle" fontSize={7.5}
-            fill="#818cf8" fontWeight="700">7日均</text>
+          {/* 7-day moving average line */}
+          {avgPts.length > 1 && (
+            <path d={avgPath} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="4 3"
+              opacity={animated ? 0.7 : 0} strokeLinecap="round"
+              style={{ transition: 'opacity 0.8s ease-out 0.3s' }} />
+          )}
 
-          {/* K线 */}
-          {candles.map((c, i) => {
+          {/* Main intake line */}
+          {linePts.length > 1 && (
+            <path d={linePath} fill="none" stroke={`url(#${uid}Line)`} strokeWidth={2.8}
+              strokeLinecap="round" strokeLinejoin="round"
+              filter={`url(#${uid}SoftGlow)`}
+              opacity={animated ? 0.95 : 0}
+              style={{ transition: 'opacity 0.6s ease-out' }} />
+          )}
+
+          {/* Hover vertical line */}
+          {hover !== null && (
+            <line x1={px(hover)} y1={TOP} x2={px(hover)} y2={TOP + CHART_H}
+              stroke="var(--ck-chart-grid)" strokeWidth={0.8} strokeDasharray="3 2" opacity={0.4} />
+          )}
+
+          {/* Data points + interaction */}
+          {points.map((p, i) => {
             const x = px(i);
-            const openY = valY(c.open);
-            const closeY = valY(c.close);
-            const highY = valY(c.high);
-            const lowY = valY(c.low);
-            // 绿色 = close < open (今天比昨天吃得少，热量减少), 红色 = close > open (今天比昨天吃得多)
-            const isGreen = c.close <= c.open;
-            const isDoji = c.close === c.open;
-            const color = isDoji ? '#9ca3af' : isGreen ? '#22c55e' : '#ef4444';
-            const bodyTop = Math.min(openY, closeY);
-            const bodyH = Math.max(Math.abs(closeY - openY), 2);
+            const y = valY(p.intake);
             const isH = hover === i;
             const dimmed = hover !== null && !isH;
-            const change = c.close - c.open;
-            const changeSign = change > 0 ? '+' : '';
-
+            const color = p.overTarget ? '#ef4444' : '#22c55e';
             return (
               <g key={i}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
                 onTouchStart={() => setHover(prev => prev === i ? null : i)}
-                style={{ cursor: 'pointer', transition: 'opacity 0.25s', opacity: dimmed ? 0.3 : 1 }}>
-                {/* 影线 */}
-                <line x1={x} y1={highY} x2={x} y2={lowY} stroke={color} strokeWidth={2.5} opacity={0.75} />
-                {/* 实体 */}
-                <rect x={x - candleW / 2} y={bodyTop} width={candleW} height={bodyH} rx={3}
-                  fill={color} opacity={isH ? 1 : isGreen ? 0.8 : 0.9}
-                  stroke={color} strokeWidth={isH ? 2 : 0.5}
-                  filter={isH ? 'url(#klineGlow)' : undefined}
+                style={{ cursor: 'pointer', transition: 'opacity 0.25s', opacity: dimmed ? 0.35 : 1 }}>
+                {/* Dot */}
+                <circle cx={x} cy={y} r={isH ? 5.5 : 3}
+                  fill="white" stroke={color} strokeWidth={isH ? 3 : 2}
+                  filter={isH ? `url(#${uid}Glow)` : undefined}
                   style={{ transition: 'all 0.2s' }} />
-                {/* 日期标签 — 旋转 -45° */}
-                <text x={x} y={CHART_H + 14} textAnchor="end" fontSize={7.5}
-                  fill={isH ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
-                  fontWeight={isH ? '700' : '500'}
-                  transform={`rotate(-45, ${x}, ${CHART_H + 14})`}>{c.label}</text>
+                {/* X label (adaptive skip) */}
+                {(i % labelSkip === 0 || isH) && (
+                  <text x={x} y={TOP + CHART_H + 14} textAnchor="middle" fontSize={7.5}
+                    fill={isH ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
+                    fontWeight={isH ? '700' : '500'}>{p.label}</text>
+                )}
 
                 {/* Tooltip */}
-                {isH && (
-                  <g>
-                    {(() => {
-                      const ttW = 105, ttH = 78;
-                      let ttX = x - ttW / 2;
-                      if (ttX < 2) ttX = 2;
-                      if (ttX + ttW > W - 2) ttX = W - ttW - 2;
-                      const ttY = Math.max(2, highY - ttH - 8);
-                      return (
-                        <>
-                          <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={9}
-                            fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                          <text x={ttX + ttW / 2} y={ttY + 13} textAnchor="middle" fontSize={9}
-                            fill="white" fontWeight="800">{c.date.slice(5)}</text>
-                          <text x={ttX + 8} y={ttY + 28} fontSize={8} fill="#9ca3af" fontWeight="600">
-                            昨日 {c.open}
-                          </text>
-                          <text x={ttX + ttW - 8} y={ttY + 28} textAnchor="end" fontSize={8}
-                            fill={isGreen ? '#86efac' : '#fca5a5'} fontWeight="600">
-                            今日 {c.close}
-                          </text>
-                          <text x={ttX + 8} y={ttY + 42} fontSize={8} fill="#fbbf24" fontWeight="600">
-                            最高餐 {c.maxMeal}
-                          </text>
-                          <text x={ttX + ttW - 8} y={ttY + 42} textAnchor="end" fontSize={8} fill="#38bdf8" fontWeight="600">
-                            最低餐 {c.minMeal}
-                          </text>
-                          <line x1={ttX + 8} y1={ttY + 50} x2={ttX + ttW - 8} y2={ttY + 50}
-                            stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
-                          <text x={ttX + ttW / 2} y={ttY + 62} textAnchor="middle" fontSize={8.5}
-                            fill={isDoji ? '#9ca3af' : isGreen ? '#86efac' : '#fca5a5'} fontWeight="700">
-                            {isDoji ? '持平' : `${changeSign}${change} kcal`}
-                          </text>
-                          <text x={ttX + ttW / 2} y={ttY + 73} textAnchor="middle" fontSize={7}
-                            fill="#818cf8" fontWeight="600">7日均 {avgIntake}</text>
-                        </>
-                      );
-                    })()}
-                  </g>
-                )}
+                {isH && (() => {
+                  const ttW = 130, ttH = 100;
+                  let ttX = x - ttW / 2;
+                  if (ttX < 2) ttX = 2;
+                  if (ttX + ttW > W - 2) ttX = W - ttW - 2;
+                  const ttY = Math.max(2, y - ttH - 12);
+                  const diff = p.intake - target;
+                  const diffSign = diff > 0 ? '+' : '';
+                  const mealNames = ['早餐', '午餐', '晚餐', '加餐'];
+                  const mealColors = ['#fbbf24', '#fb923c', '#ef4444', '#a78bfa'];
+                  return (
+                    <g>
+                      <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={10}
+                        fill="rgba(0,0,0,0.93)" opacity={0.96} />
+                      {/* Date + total */}
+                      <text x={ttX + ttW / 2} y={ttY + 14} textAnchor="middle" fontSize={9.5}
+                        fill="white" fontWeight="800">{p.date.slice(5)} · {p.intake} kcal</text>
+                      {/* Meals breakdown */}
+                      {p.meals.map((cal, mi) => cal > 0 ? (
+                        <text key={mi} x={ttX + 10} y={ttY + 28 + mi * 12} fontSize={7.5}
+                          fill={mealColors[mi]} fontWeight="600">
+                          {mealNames[mi]} {cal}
+                          <tspan fill="rgba(255,255,255,0.45)" fontSize={6.5}> kcal</tspan>
+                        </text>
+                      ) : null)}
+                      {/* Separator */}
+                      <line x1={ttX + 8} y1={ttY + 73} x2={ttX + ttW - 8} y2={ttY + 73}
+                        stroke="rgba(255,255,255,0.12)" strokeWidth={0.5} />
+                      {/* Diff from target */}
+                      <text x={ttX + ttW / 2} y={ttY + 85} textAnchor="middle" fontSize={8.5}
+                        fill={p.overTarget ? '#fca5a5' : '#86efac'} fontWeight="700">
+                        {diff === 0 ? '恰好达标' : p.overTarget ? `超标 ${diffSign}${diff}` : `余额 ${-diff}`} kcal
+                      </text>
+                      {/* 7-day avg */}
+                      <text x={ttX + ttW / 2} y={ttY + 96} textAnchor="middle" fontSize={7}
+                        fill="#fbbf24" fontWeight="600">7日均 {p.avg} kcal</text>
+                    </g>
+                  );
+                })()}
               </g>
             );
           })}
 
-          {/* 图例 */}
-          <g transform={`translate(${PAD_L}, ${H - 6})`}>
-            <rect x={0} y={0} width={10} height={7} rx={2} fill="#22c55e" opacity={0.8} />
-            <text x={14} y={6} fontSize={7} fill="var(--ck-chart-dim)">今日&lt;昨日</text>
-            <rect x={70} y={0} width={10} height={7} rx={2} fill="#ef4444" opacity={0.9} />
-            <text x={84} y={6} fontSize={7} fill="var(--ck-chart-dim)">今日&gt;昨日</text>
-            <rect x={140} y={2} width={10} height={2} rx={1} fill="#818cf8" opacity={0.7} />
-            <text x={154} y={6} fontSize={7} fill="var(--ck-chart-dim)">7日均值</text>
+          {/* Trend arrow indicator */}
+          {(trendUp || trendDown) && (() => {
+            const arrowX = W - PAD_R - 12;
+            const arrowY = TOP + 8;
+            const color = trendUp ? '#ef4444' : '#22c55e';
+            return (
+              <g opacity={0.8}>
+                <rect x={arrowX - 10} y={arrowY - 6} width={20} height={20} rx={10}
+                  fill={color} opacity={0.15} />
+                <text x={arrowX} y={arrowY + 8} textAnchor="middle" fontSize={13}
+                  fill={color} fontWeight="900">
+                  {trendUp ? '↑' : '↓'}
+                </text>
+              </g>
+            );
+          })()}
+
+          {/* Legend */}
+          <g transform={`translate(${PAD_L}, ${H - 8})`}>
+            <rect x={0} y={0} width={10} height={7} rx={2} fill="#22c55e" opacity={0.6} />
+            <text x={14} y={6} fontSize={7} fill="var(--ck-chart-dim)">达标</text>
+            <rect x={46} y={0} width={10} height={7} rx={2} fill="#ef4444" opacity={0.7} />
+            <text x={60} y={6} fontSize={7} fill="var(--ck-chart-dim)">超标</text>
+            <line x1={92} y1={3.5} x2={106} y2={3.5} stroke="#818cf8" strokeWidth={2} opacity={0.7} />
+            <text x={110} y={6} fontSize={7} fill="var(--ck-chart-dim)">摄入</text>
+            <line x1={140} y1={3.5} x2={154} y2={3.5} stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.7} />
+            <text x={158} y={6} fontSize={7} fill="var(--ck-chart-dim)">7日均</text>
+            <line x1={192} y1={3.5} x2={206} y2={3.5} stroke="#F97316" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.55} />
+            <text x={210} y={6} fontSize={7} fill="var(--ck-chart-dim)">目标</text>
           </g>
         </svg>
       </div>
@@ -1196,7 +1404,6 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
   );
 }
 
-/* ════════════════════ 主入口 ════════════════════ */
 export default function WeeklyCharts({ stats, targetCalories, selectedDate, profile }: WeeklyChartsProps) {
   if (!stats.length) return null;
 
