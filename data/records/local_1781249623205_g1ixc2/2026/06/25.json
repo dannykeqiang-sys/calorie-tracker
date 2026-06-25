@@ -1,0 +1,76 @@
+{
+  "date": "2026-06-25",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "a1f76028-9072-4223-9759-19024fd4b41c",
+        "name": "黄瓜×1",
+        "calories": 30,
+        "protein": 1.5,
+        "carbs": 6,
+        "fat": 0.2
+      },
+      {
+        "id": "caae90c3-a1c5-4bb6-92f8-53cbbbbe8e12",
+        "name": "玉米×1",
+        "calories": 200,
+        "protein": 5,
+        "carbs": 40,
+        "fat": 2
+      },
+      {
+        "id": "0943dd32-c20f-4a2e-adc7-520e364e5738",
+        "name": "卤蛋×1",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 1,
+        "fat": 5
+      },
+      {
+        "id": "26b80f7a-b893-4fde-a613-6a4cc12bf925",
+        "name": "拿铁×1杯",
+        "calories": 150,
+        "protein": 8,
+        "carbs": 12,
+        "fat": 8
+      }
+    ],
+    "lunch": [
+      {
+        "id": "ec1f5d17-a0e0-4dd2-924d-ce2b523fe756",
+        "name": "牛腩超级碗（1/5碳水）",
+        "calories": 500,
+        "protein": 35,
+        "carbs": 30,
+        "fat": 25
+      }
+    ],
+    "dinner": [],
+    "snack": [
+      {
+        "id": "733ce8f6-fbed-4144-8127-e79a336b7706",
+        "name": "玉米×半根",
+        "calories": 100,
+        "protein": 2.5,
+        "carbs": 20,
+        "fat": 1
+      }
+    ]
+  },
+  "exercises": [
+    {
+      "id": "fcfa6e58-b658-4881-8707-33e725345fdf",
+      "name": "手臂训练332",
+      "duration": 0,
+      "calories": 200
+    }
+  ],
+  "water": [
+    {
+      "id": "fcc8b233-7d27-4df2-bd40-095506653d1f",
+      "amount": 250,
+      "note": "拿铁",
+      "time": "15:34"
+    }
+  ]
+}
