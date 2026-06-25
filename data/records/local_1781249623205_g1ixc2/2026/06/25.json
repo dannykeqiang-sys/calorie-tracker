@@ -35,16 +35,7 @@
         "fat": 8
       }
     ],
-    "lunch": [
-      {
-        "id": "ec1f5d17-a0e0-4dd2-924d-ce2b523fe756",
-        "name": "牛腩超级碗（1/5碳水）",
-        "calories": 500,
-        "protein": 35,
-        "carbs": 30,
-        "fat": 25
-      }
-    ],
+    "lunch": [],
     "dinner": [],
     "snack": [
       {
