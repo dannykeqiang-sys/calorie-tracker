@@ -1,8 +1,8 @@
-// Service Worker - 动态 base 路径 + 导航请求 no-cache
-const CACHE_NAME = 'calorie-tracker-v2';
+// Service Worker - 版本控制 + 移动端优化
+const CACHE_VERSION = 'v2.1.0';
+const CACHE_NAME = `calorie-tracker-${CACHE_VERSION}`;
 
 // 从 SW 的 scope 动态计算 base 路径（适配 GitHub Pages 子目录部署）
-// 例如 scope = https://user.github.io/calorie-tracker/ → base = /calorie-tracker/
 const BASE_PATH = new URL(self.registration?.scope || self.location.origin + '/').pathname;
 
 // 静态资源列表（使用相对路径，相对于 SW 所在位置）
@@ -16,19 +16,20 @@ const STATIC_ASSETS = [
 
 // 安装阶段：预缓存静态资源（不包含 index.html，确保每次都获取最新版）
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
+  console.log('[SW] Installing version:', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Caching static assets');
       return cache.addAll(STATIC_ASSETS);
     })
   );
+  // 立即激活新版本，不等待旧版本卸载
   self.skipWaiting();
 });
 
-// 激活阶段：清理旧缓存
+// 激活阶段：清理所有旧版本缓存
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
+  console.log('[SW] Activating version:', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -39,27 +40,38 @@ self.addEventListener('activate', (event) => {
             return caches.delete(name);
           })
       );
+    }).then(() => {
+      console.log('[SW] Claiming clients');
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
-// 请求拦截：导航请求 no-cache，其他资源 Network First
+// 请求拦截：导航请求强制网络优先，其他资源 Network First
 self.addEventListener('fetch', (event) => {
   // 跳过非 GET 请求
   if (event.request.method !== 'GET') return;
 
-  // 导航请求：强制从网络获取（不缓存 index.html，确保用户总是获取最新版）
+  // 导航请求：强制从网络获取（确保用户总是获取最新版）
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(event.request, {
+        cache: 'no-cache',  // 强制跳过 HTTP 缓存
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }).catch(() => {
         // 网络失败时，返回已缓存的 index.html 作为离线回退
         return caches.match('./index.html').then((cached) => {
-          return cached || new Response('Offline - 燃烧我的卡路里', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-          });
+          return cached || new Response(
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>离线</title></head><body style="font-family:system-ui;text-align:center;padding:2rem"><h1>🔥 燃烧我的卡路里</h1><p>当前无法连接到网络</p><p>请检查网络连接后刷新页面</p></body></html>',
+            {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/html; charset=utf-8' }
+            }
+          );
         });
       })
     );
@@ -91,12 +103,32 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
 
-        // 4. 最终失败
-        return new Response('Offline', {
-          status: 503,
-          statusText: 'Service Unavailable'
-        });
+        // 4. 最终失败：返回友好的离线提示
+        return new Response(
+          JSON.stringify({ error: 'offline', message: '当前无法连接到网络' }),
+          {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
       }
     })()
   );
+});
+
+// 监听消息：支持手动清除缓存
+self.addEventListener('message', (event) => {
+  if (event.data === 'clear-cache') {
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          console.log('[SW] Clearing cache:', name);
+          return caches.delete(name);
+        })
+      );
+    }).then(() => {
+      event.ports[0].postMessage({ success: true });
+    });
+  }
 });
