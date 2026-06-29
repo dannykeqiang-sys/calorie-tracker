@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
-import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge } from 'lucide-react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Droplets } from 'lucide-react';
 import type { UserProfile } from '../../types';
-import AIHealingCard, { type DayStats } from './AIHealingCard';
+import AIHealingCard, { type DayStats, classifyDay, STATE_CONFIGS } from './AIHealingCard';
 import {
   CalorieTrendChart,
   MacroLineChart,
@@ -22,6 +22,7 @@ interface WeeklyStatsModalProps {
   targetCalories: number;
   tdee: number;
   dateRange?: string;
+  selectedDate?: string;
 }
 
 function getHeadline(name: string, activeDays: number, daysOnTarget: number, exerciseDays: number): string {
@@ -123,7 +124,7 @@ function getSuggestions(stats: DayStats[], profile: UserProfile | null, targetCa
 export default function WeeklyStatsModal({
   open, onClose, stats, profile,
   activeDaysCount, exerciseDays, daysOnTarget,
-  targetCalories, tdee, dateRange,
+  targetCalories, tdee, dateRange, selectedDate,
 }: WeeklyStatsModalProps) {
   const trendItems = getTrendItems(stats);
   const suggestions = getSuggestions(stats, profile, targetCalories);
@@ -135,6 +136,56 @@ export default function WeeklyStatsModal({
     : 0;
   const waterDays = stats.filter(d => d.water >= 1500).length;
 
+  // ─── 日期导航状态 ───
+  const [activeDate, setActiveDate] = useState<string>(
+    selectedDate || (activeDays.length > 0 ? activeDays[activeDays.length - 1].date : '')
+  );
+  const dateNavRef = useRef<HTMLDivElement>(null);
+
+  // 当 selectedDate 变化时同步
+  useEffect(() => {
+    if (selectedDate) {
+      setActiveDate(selectedDate);
+    }
+  }, [selectedDate]);
+
+  // 当前选中日期的数据
+  const activeDayData = useMemo(() => {
+    return stats.find(d => d.date === activeDate) || null;
+  }, [stats, activeDate]);
+
+  // 动态标题：基于选中日期的状态
+  const dynamicHeadline = useMemo(() => {
+    if (!activeDayData || activeDayData.intake === 0) {
+      return getHeadline(profile?.name || '你', activeDaysCount, daysOnTarget, exerciseDays);
+    }
+    const state = classifyDay(activeDayData, targetCalories);
+    const cfg = STATE_CONFIGS[state];
+    const name = profile?.name || '你';
+    return `${cfg.emoji} ${name}，${cfg.title}`;
+  }, [activeDayData, profile, activeDaysCount, daysOnTarget, exerciseDays, targetCalories]);
+
+  const dynamicSubline = useMemo(() => {
+    if (!activeDayData || activeDayData.intake === 0) {
+      return getSubline(activeDaysCount, exerciseDays);
+    }
+    const state = classifyDay(activeDayData, targetCalories);
+    const cfg = STATE_CONFIGS[state];
+    const dateObj = new Date(activeDayData.date + 'T00:00:00');
+    const dateStr = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+    return `${dateStr} · ${cfg.tone}`;
+  }, [activeDayData, targetCalories, activeDaysCount, exerciseDays]);
+
+  // 滚动日期导航到选中项
+  useEffect(() => {
+    if (dateNavRef.current && activeDate) {
+      const activeBtn = dateNavRef.current.querySelector(`[data-date="${activeDate}"]`);
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeDate]);
+
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
@@ -144,15 +195,21 @@ export default function WeeklyStatsModal({
   if (!open) return null;
 
   const name = profile?.name || '你';
-  const headline = getHeadline(name, activeDaysCount, daysOnTarget, exerciseDays);
-  const subline = getSubline(activeDaysCount, exerciseDays);
 
-  const metrics = [
-    { label: '记录', value: activeDaysCount, icon: Calendar, color: '#8B5CF6' },
-    { label: '达标', value: daysOnTarget, icon: Flame, color: '#F97316' },
-    { label: '运动', value: exerciseDays, icon: Dumbbell, color: '#22C55E' },
-    { label: '均摄入', value: `${avgIntake}`, icon: Gauge, color: '#6366F1' },
-  ];
+  // 单日指标 vs 全量指标
+  const metrics = activeDayData && activeDayData.intake > 0
+    ? [
+        { label: '摄入', value: `${activeDayData.intake}`, icon: Flame, color: '#F97316' },
+        { label: '消耗', value: `${activeDayData.burn}`, icon: Dumbbell, color: '#22C55E' },
+        { label: '饮水', value: `${activeDayData.water}`, icon: Droplets, color: '#0EA5E9' },
+        { label: '蛋白', value: `${activeDayData.protein}`, icon: Gauge, color: '#8B5CF6' },
+      ]
+    : [
+        { label: '记录', value: activeDaysCount, icon: Calendar, color: '#8B5CF6' },
+        { label: '达标', value: daysOnTarget, icon: Flame, color: '#F97316' },
+        { label: '运动', value: exerciseDays, icon: Dumbbell, color: '#22C55E' },
+        { label: '均摄入', value: `${avgIntake}`, icon: Gauge, color: '#6366F1' },
+      ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -185,8 +242,8 @@ export default function WeeklyStatsModal({
             <div className="relative pr-10">
               <p className="text-white/65 text-[11px] font-medium tracking-widest uppercase mb-2">{dateRange || '全程档案'}</p>
               <h2 className="text-white text-xl font-bold leading-snug mb-1"
-                style={{ fontFamily: '"Noto Serif SC", "Songti SC", serif' }}>{headline}</h2>
-              <p className="text-white/75 text-sm">{subline}</p>
+                style={{ fontFamily: '"Noto Serif SC", "Songti SC", serif' }}>{dynamicHeadline}</h2>
+              <p className="text-white/75 text-sm">{dynamicSubline}</p>
             </div>
           </div>
 
@@ -210,13 +267,44 @@ export default function WeeklyStatsModal({
             </div>
           </div>
 
+          {/* ─── 日期导航条 ─── */}
+          {activeDays.length > 1 && (
+            <div className="flex-shrink-0 px-4 pt-3 pb-2 relative z-10">
+              <div
+                ref={dateNavRef}
+                className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {activeDays.map(d => {
+                  const isActive = d.date === activeDate;
+                  const dateObj = new Date(d.date + 'T00:00:00');
+                  const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                  return (
+                    <button
+                      key={d.date}
+                      data-date={d.date}
+                      onClick={() => setActiveDate(d.date)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ─── 滚动内容：全周期可视化 ─── */}
           <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6 space-y-3">
             <AIHealingCard
               stats={stats} profile={profile}
               activeDaysCount={activeDaysCount} waterDays={waterDays}
               exerciseDays={exerciseDays} daysOnTarget={daysOnTarget}
-              targetCalories={targetCalories}
+              targetCalories={targetCalories} selectedDate={activeDate}
             />
 
             {/* 三大宏量全周期趋势 */}
@@ -228,7 +316,7 @@ export default function WeeklyStatsModal({
             </ChartCard>
 
             {/* 宏量流向 全宽 */}
-            <MacroSankey stats={stats} profile={profile} />
+            <MacroSankey stats={stats} profile={profile} selectedDate={activeDate} />
 
             {/* 全周期用餐热力图 */}
             <MealHeatmap stats={stats} />

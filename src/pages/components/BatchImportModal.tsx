@@ -5,7 +5,7 @@ import { parseMultiDateMeals } from '../../utils/deepseek';
 import type { MultiDateEntry } from '../../utils/deepseek';
 import { decryptData } from '../../utils/crypto';
 import { parseTextExport } from '../../utils/parseTextExport';
-import { fetchBackup } from '../../utils/githubDB';
+import { fetchBackup } from '../../utils/apiDB';
 import { idbGetRecord } from '../../utils/indexedDB';
 import { loadRecordByDate } from '../../utils/storage';
 import type { DailyRecord } from '../../types';

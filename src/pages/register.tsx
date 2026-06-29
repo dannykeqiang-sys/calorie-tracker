@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Activity, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { setSession } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
-import { syncProfileToCloud } from '../utils/githubDB';
+import { syncProfileToCloud } from '../utils/apiDB';
 import type { UserProfile, Gender, GoalType, ActivityLevel } from '../types';
 
 const GOAL_OPTIONS: { value: GoalType; label: string; desc: string; icon: string }[] = [

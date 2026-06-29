@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Download, Loader2, FileText, LayoutDashboard, Sheet, Shield, Key, Copy, Check } from 'lucide-react';
 import { idbGetAllRecords } from '../../utils/indexedDB';
 import { generatePasscode, encryptData } from '../../utils/crypto';
-import { uploadBackup } from '../../utils/githubDB';
+import { uploadBackup } from '../../utils/apiDB';
 import type { DailyRecord } from '../../types';
 
 interface ExportDataModalProps {

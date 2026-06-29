@@ -11,7 +11,7 @@
 import { useCallback } from 'react';
 import { saveTodayRecord, saveRecordByDate } from '../utils/storage';
 import { idbSaveRecord } from '../utils/indexedDB';
-import { syncRecordToCloud } from '../utils/githubDB';
+import { syncRecordToCloud } from '../utils/apiDB';
 import type {
   DailyRecord,
   MealRecord,

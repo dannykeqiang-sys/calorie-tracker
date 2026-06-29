@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loadRecordByDate, saveRecordByDate } from '../utils/storage';
 import { idbGetRecord, idbSaveRecord } from '../utils/indexedDB';
-import { loadRecordFromCloud } from '../utils/githubDB';
+import { loadRecordFromCloud } from '../utils/apiDB';
 import { getTodayKey } from '../utils/recordHelpers';
 import type { DailyRecord } from '../types';
 

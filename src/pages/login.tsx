@@ -1,8 +1,8 @@
 import { useState, useRef, forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, Loader2, UserX, RefreshCw } from 'lucide-react';
-import { findProfileByName } from '../utils/githubDB';
-import { setSession } from '../utils/auth';
+import { Flame, ArrowRight, Loader2, UserX, RefreshCw, KeyRound } from 'lucide-react';
+import { loginViaApi, findProfileViaGithub } from '../utils/apiDB';
+import { setSession, setApiToken } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
 import VideoIntro, { VIDEO_URL } from './components/VideoIntro';
 
@@ -11,29 +11,48 @@ type PageState = 'idle' | 'loading' | 'not-found' | 'error';
 export default function LoginPage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [state, setState] = useState<PageState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
   const [showOutro, setShowOutro] = useState(false);
   const [outroLeaving, setOutroLeaving] = useState(false);
 
   const trimmed = name.trim();
-  const canSubmit = trimmed.length > 0 && state !== 'loading';
+  const trimmedCode = inviteCode.trim();
+  const canSubmit = trimmed.length > 0 && trimmedCode.length > 0 && state !== 'loading';
 
   const handleLogin = async () => {
     if (!canSubmit) return;
     setState('loading');
     setErrorMsg('');
+
     try {
-      const result = await findProfileByName(trimmed);
-      if (result) {
-        setSession(result.workid, trimmed);
-        localStorage.setItem('calorie_workid', result.workid);
-        saveProfile(result.profile);
+      // 通道 1：后端 API 登录（昵称 + 邀请码）
+      const apiResult = await loginViaApi(trimmed, trimmedCode);
+      if (apiResult) {
+        // API 登录成功
+        setApiToken(apiResult.token);
+        const workid = `api_${apiResult.user.id}`;
+        setSession(workid, trimmed);
+        localStorage.setItem('calorie_workid', workid);
         setShowOutro(true);
-      } else {
-        setState('not-found');
+        return;
       }
+
+      // 通道 2：API 失败，尝试 GitHub 降级（仅用昵称查找已有用户）
+      const ghResult = await findProfileViaGithub(trimmed);
+      if (ghResult) {
+        setSession(ghResult.workid, trimmed);
+        localStorage.setItem('calorie_workid', ghResult.workid);
+        saveProfile(ghResult.profile);
+        setShowOutro(true);
+        return;
+      }
+
+      // 两个通道都没找到 → 提示未注册
+      setState('not-found');
     } catch {
       setState('error');
       setErrorMsg('网络异常，请稍后重试');
@@ -52,14 +71,15 @@ export default function LoginPage() {
   };
 
   const handleRegister = () => {
-    navigate(`/register?name=${encodeURIComponent(trimmed)}`);
+    navigate(`/register?name=${encodeURIComponent(trimmed)}&code=${encodeURIComponent(trimmedCode)}`);
   };
 
   const handleReset = () => {
     setName('');
+    setInviteCode('');
     setState('idle');
     setErrorMsg('');
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setTimeout(() => nameRef.current?.focus(), 50);
   };
 
   return (
@@ -115,9 +135,19 @@ export default function LoginPage() {
               <>
                 <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1">你的昵称</p>
                 <NameInput
-                  ref={inputRef}
+                  ref={nameRef}
                   value={name}
                   onChange={v => { setName(v); if (state === 'error') setState('idle'); }}
+                  onKeyDown={handleKeyDown}
+                  disabled={state === 'loading'}
+                  placeholder="输入你的昵称，比如：小梅"
+                />
+
+                <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1 mt-3">邀请码</p>
+                <CodeInput
+                  ref={codeRef}
+                  value={inviteCode}
+                  onChange={v => { setInviteCode(v); if (state === 'error') setState('idle'); }}
                   onKeyDown={handleKeyDown}
                   disabled={state === 'loading'}
                 />
@@ -138,7 +168,7 @@ export default function LoginPage() {
                   {state === 'loading' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      查找中...
+                      登录中...
                     </>
                   ) : (
                     <>
@@ -151,7 +181,7 @@ export default function LoginPage() {
                 <p className="mt-4 text-center text-xs text-muted-foreground">
                   第一次来？
                   <button
-                    onClick={() => trimmed ? handleRegister() : inputRef.current?.focus()}
+                    onClick={() => trimmed ? handleRegister() : nameRef.current?.focus()}
                     className="ml-1 font-semibold cursor-pointer"
                     style={{ color: '#F97316' }}
                   >
@@ -189,10 +219,11 @@ interface NameInputProps {
   onChange: (v: string) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 const NameInput = forwardRef<HTMLInputElement, NameInputProps>(
-  ({ value, onChange, onKeyDown, disabled }, ref) => {
+  ({ value, onChange, onKeyDown, disabled, placeholder }, ref) => {
     const [focused, setFocused] = useState(false);
     return (
       <input
@@ -204,7 +235,7 @@ const NameInput = forwardRef<HTMLInputElement, NameInputProps>(
         onKeyDown={onKeyDown}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="输入你的昵称，比如：小梅"
+        placeholder={placeholder}
         disabled={disabled}
         maxLength={20}
         className="w-full px-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
@@ -213,6 +244,44 @@ const NameInput = forwardRef<HTMLInputElement, NameInputProps>(
           boxShadow: focused ? '0 0 0 3px rgba(249,115,22,0.15), 0 2px 8px rgba(249,115,22,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
         }}
       />
+    );
+  }
+);
+
+interface CodeInputProps {
+  value: string;
+  onChange: (v: string) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  disabled?: boolean;
+}
+
+const CodeInput = forwardRef<HTMLInputElement, CodeInputProps>(
+  ({ value, onChange, onKeyDown, disabled }, ref) => {
+    const [focused, setFocused] = useState(false);
+    return (
+      <div className="relative">
+        <KeyRound
+          className="absolute left-3 top-3.5 w-4 h-4 pointer-events-none"
+          style={{ color: focused ? '#F97316' : '#9CA3AF' }}
+        />
+        <input
+          ref={ref}
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="输入邀请码"
+          disabled={disabled}
+          maxLength={32}
+          className="w-full pl-9 pr-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
+          style={{
+            borderColor: focused ? '#F97316' : '#E5E7EB',
+            boxShadow: focused ? '0 0 0 3px rgba(249,115,22,0.15), 0 2px 8px rgba(249,115,22,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
+          }}
+        />
+      </div>
     );
   }
 );
@@ -247,7 +316,7 @@ function NotFoundView({ name, onRegister, onReset }: { name: string; onRegister:
         className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-sm text-muted-foreground cursor-pointer hover:bg-gray-50 transition-all"
       >
         <RefreshCw className="w-3.5 h-3.5" />
-        重新输入昵称
+        重新输入
       </button>
     </div>
   );

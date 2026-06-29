@@ -21,18 +21,15 @@ import DesktopParallaxSlider from './components/DesktopParallaxSlider';
 import ExportDataModal from './components/ExportDataModal';
 import BatchImportModal from './components/BatchImportModal';
 import { loadProfile, saveProfile, getProfileUpdatedAt } from '../utils/storage';
-import { syncProfileToCloud, loadProfileFromCloud } from '../utils/githubDB';
+import { syncProfileToCloud, loadProfileFromCloud } from '../utils/apiDB';
 import { getSession, clearSession } from '../utils/auth';
 import { getTodayKey, makeEmptyRecord } from '../utils/recordHelpers';
 import { useRecordSync } from '../hooks/useRecordSync';
 import { useHistoryRecord } from '../hooks/useHistoryRecord';
 import { useRecordHandlers } from '../hooks/useRecordHandlers';
 import { useBatchImport } from '../hooks/useBatchImport';
-import { useDeviceCapability } from '../hooks/useDeviceCapability';
 import { calcTargetCalories } from '../utils/calculations';
 import type { UserProfile, FoodItem, MealType } from '../types';
-
-const ParticleBackground = lazy(() => import('../components/three/ParticleBackground'));
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -296,29 +293,8 @@ export default function Home() {
     />
   );
 
-  // ── 3D 能力检测 ──────────────────────────────────────
-  const { canUse3D } = useDeviceCapability();
-
-  // ── 计算热量百分比（用于粒子背景颜色） ─────────────────
-  const caloriePercent = useMemo(() => {
-    if (!record || !profile) return 0;
-    const allFoods = Object.values(record.meals).flat();
-    const intake = allFoods.reduce((sum, f) => sum + f.calories, 0);
-    const targetCalories = calcTargetCalories(profile);
-    return Math.round((intake / Math.max(targetCalories, 1)) * 100);
-  }, [record, profile]);
-
   return (
     <>
-      {/* ── 粒子背景（仅在 Today tab + 桌面端显示） ──────── */}
-      {canUse3D && activeTab === 'today' && (
-        <div className="hidden lg:block fixed inset-0 pointer-events-none z-0">
-          <Suspense fallback={null}>
-            <ParticleBackground caloriePercent={caloriePercent} />
-          </Suspense>
-        </div>
-      )}
-
       {/* ── 桌面端全屏布局 ──────────────────────────────── */}
       <div
         className="hidden lg:flex flex-col overflow-hidden"

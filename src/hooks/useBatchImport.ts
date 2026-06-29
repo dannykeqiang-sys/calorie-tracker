@@ -8,7 +8,7 @@
 import { useCallback } from 'react';
 import { loadTodayRecord, saveRecordByDate, loadRecordByDate, saveTodayRecord } from '../utils/storage';
 import { idbGetRecord, idbSaveRecord } from '../utils/indexedDB';
-import { syncRecordToCloud } from '../utils/githubDB';
+import { syncRecordToCloud } from '../utils/apiDB';
 import { getTodayKey, makeEmptyRecord } from '../utils/recordHelpers';
 import type { ImportMode } from '../pages/components/BatchImportModal';
 import type { MultiDateEntry } from '../utils/deepseek';

@@ -404,6 +404,7 @@ export default function AnalyticsPanel({ profile, record, journalDate, onClose }
         targetCalories={targetCalories}
         tdee={tdee}
         dateRange={dateRange}
+        selectedDate={journalDate}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Sparkles, Droplets, Dumbbell, Flame, TrendingUp, BookOpen } from 'lucide-react';
 import type { UserProfile } from '../../types';
 
@@ -29,13 +30,14 @@ interface AIHealingCardProps {
   exerciseDays: number;
   daysOnTarget: number;
   targetCalories: number;
+  selectedDate?: string;
 }
 
 // ─── 状态分类 ────────────────────────────────────────────
 
-type DayState = 'perfect' | 'good' | 'normal' | 'overeat' | 'undereat' | 'no_data';
+export type DayState = 'perfect' | 'good' | 'normal' | 'overeat' | 'undereat' | 'no_data';
 
-interface StateConfig {
+export interface StateConfig {
   emoji: string;
   title: string;
   tone: string;
@@ -45,7 +47,7 @@ interface StateConfig {
   blobBot: string;
 }
 
-const STATE_CONFIGS: Record<DayState, StateConfig> = {
+export const STATE_CONFIGS: Record<DayState, StateConfig> = {
   perfect: {
     emoji: '🌟',
     title: '今日高光',
@@ -102,7 +104,7 @@ const STATE_CONFIGS: Record<DayState, StateConfig> = {
   },
 };
 
-function classifyDay(today: DayStats, target: number): DayState {
+export function classifyDay(today: DayStats, target: number): DayState {
   if (today.intake === 0) return 'no_data';
   const ratio = today.intake / Math.max(target, 1);
   const hasExercise = today.burn > 0;
@@ -228,9 +230,18 @@ export default function AIHealingCard({
   stats,
   profile,
   targetCalories,
+  selectedDate,
 }: AIHealingCardProps) {
   const name = profile?.name || '你';
-  const today = stats.length > 0 ? stats[stats.length - 1] : null;
+
+  // Find the day matching selectedDate, or fallback to the last day
+  const today = useMemo(() => {
+    if (selectedDate && stats.length > 0) {
+      const found = stats.find(s => s.date === selectedDate);
+      if (found) return found;
+    }
+    return stats.length > 0 ? stats[stats.length - 1] : null;
+  }, [stats, selectedDate]);
 
   const state = today ? classifyDay(today, targetCalories) : 'no_data';
   const cfg = STATE_CONFIGS[state];

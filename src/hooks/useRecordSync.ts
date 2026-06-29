@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loadTodayRecord, saveTodayRecord } from '../utils/storage';
 import { idbSaveRecord } from '../utils/indexedDB';
-import { syncRecordToCloud, loadRecordFromCloud } from '../utils/githubDB';
+import { syncRecordToCloud, loadRecordFromCloud } from '../utils/apiDB';
 import { getTodayKey } from '../utils/recordHelpers';
 import type { DailyRecord, MealRecord } from '../types';
 
