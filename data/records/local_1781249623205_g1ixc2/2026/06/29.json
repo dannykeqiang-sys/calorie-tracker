@@ -98,5 +98,24 @@
       "duration": 0
     }
   ],
-  "water": []
+  "water": [
+    {
+      "id": "f916d7af-bd0f-47af-890f-3a9ff27b3b23",
+      "amount": 500,
+      "note": "",
+      "time": "20:58"
+    },
+    {
+      "id": "569fb56f-9341-4896-a634-038a352cf1a1",
+      "amount": 500,
+      "note": "",
+      "time": "20:58"
+    },
+    {
+      "id": "6d247801-ea22-4dae-8510-e01c13aea093",
+      "amount": 500,
+      "note": "",
+      "time": "20:58"
+    }
+  ]
 }
