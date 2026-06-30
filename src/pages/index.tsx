@@ -406,7 +406,7 @@ export default function Home() {
           className="flex-shrink-0 z-10 border-b border-border"
           style={{ background: 'var(--background)', opacity: 0.92, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
         >
-          <div className="px-4 sm:px-6 py-1.5 flex items-center gap-2">
+          <div className="px-4 sm:px-6 py-1 flex items-center gap-2">
             <div className="flex-1 min-w-0">
               <DateSwitcher selectedDate={journalDate} onDateChange={setJournalDate} />
             </div>
@@ -415,7 +415,7 @@ export default function Home() {
         </div>
 
         <main className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="flex-shrink-0 flex items-center gap-2 pt-3 pb-2 px-4 sm:px-6">
+          <div className="flex-shrink-0 flex items-center gap-2 pt-2 pb-1 px-4 sm:px-6">
             <div className="flex-1 min-w-0">
               {activeTab === 'today' && (
                 <div className="flex items-center gap-2.5">
@@ -459,7 +459,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div data-tutorial="cards" className="flex-1 min-h-0 pb-16">
+              <div data-tutorial="cards" className="flex-1 min-h-0 pb-14">
                 <MealCarousel
                   ref={carouselRef}
                   record={activeRecord}
@@ -477,13 +477,13 @@ export default function Home() {
           )}
 
           {activeTab === 'analytics' && (
-            <div className="flex-1 overflow-y-auto pb-20 px-4 sm:px-6">
+            <div className="flex-1 overflow-y-auto pb-16 px-4 sm:px-6">
               <AnalyticsPanel profile={profile} record={activeRecord} journalDate={journalDate} onClose={() => setActiveTab('today')} />
             </div>
           )}
 
           {activeTab === 'ai' && (
-            <div className="flex-1 overflow-y-auto pb-20 px-4 sm:px-6">
+            <div className="flex-1 overflow-y-auto pb-16 px-4 sm:px-6">
               <SmartAdvicePanel profile={profile} record={activeRecord} apiKey={apiKey} isViewingToday={isViewingToday} />
             </div>
           )}

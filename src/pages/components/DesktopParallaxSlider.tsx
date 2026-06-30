@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import MealCardSlot from './MealCardSlot';
@@ -78,6 +78,10 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
     const swipeStartX = useRef<number | null>(null);
     const swipeStartY = useRef<number | null>(null);
     const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [swipeTilt, setSwipeTilt] = useState(0); // -1 left, 0 none, 1 right
+    const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+    const tiltTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const dateStr = journalDate ?? '';
 
@@ -137,13 +141,48 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       else if (dx > 0 && activeIndex > 0) switchCard(activeIndex - 1);
     }, [activeIndex, switchCard]);
 
-    const handleWheel = useCallback((e: React.WheelEvent) => {
+    const handleWheel = useCallback((e: WheelEvent) => {
+      // Pinch-to-zoom: ctrlKey (Windows) or metaKey (macOS trackpad pinch)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        // Optional: could scale the active card here in the future
+        return;
+      }
+
+      // Only handle horizontal trackpad swipes (deltaX dominant)
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+
+      // Prevent browser back/forward navigation from horizontal swipe
+      e.preventDefault();
+
+      // Debounce: 300ms cooldown to avoid triggering multiple switches
       if (wheelTimerRef.current) return;
       wheelTimerRef.current = setTimeout(() => { wheelTimerRef.current = null; }, 300);
+
+      // Visual feedback: tilt and direction highlight
+      const direction = e.deltaX > 0 ? 'right' : 'left';
+      setSwipeTilt(direction === 'right' ? 1 : -1);
+      setSwipeDirection(direction);
+
+      // Reset tilt after 300ms
+      if (tiltTimerRef.current) clearTimeout(tiltTimerRef.current);
+      tiltTimerRef.current = setTimeout(() => {
+        setSwipeTilt(0);
+        setSwipeDirection(null);
+      }, 300);
+
+      // Switch card
       if (e.deltaX > 0 && activeIndex < CARD_ORDER.length - 1) switchCard(activeIndex + 1);
       else if (e.deltaX < 0 && activeIndex > 0) switchCard(activeIndex - 1);
     }, [activeIndex, switchCard]);
+
+    // Attach non-passive wheel listener to allow preventDefault()
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      el.addEventListener('wheel', handleWheel, { passive: false });
+      return () => el.removeEventListener('wheel', handleWheel);
+    }, [handleWheel]);
 
     useImperativeHandle(ref, () => ({
       scrollToMeal: (type: CarouselCardType) => {
@@ -435,8 +474,8 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         width: 34,
                         height: 34,
                         borderRadius: '50%',
-                        border: `1.5px solid ${activeIndex === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)'}`,
-                        background: 'rgba(255,255,255,0.08)',
+                        border: `1.5px solid ${swipeDirection === 'left' ? accent : activeIndex === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)'}`,
+                        background: swipeDirection === 'left' ? `${accent}38` : 'rgba(255,255,255,0.08)',
                         backdropFilter: 'blur(10px)',
                         WebkitBackdropFilter: 'blur(10px)',
                         display: 'flex',
@@ -446,6 +485,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         opacity: activeIndex === 0 ? 0.3 : 1,
                         transition: 'all 0.24s ease',
                         color: '#fff',
+                        transform: swipeDirection === 'left' ? 'scale(1.15)' : 'scale(1)',
                       }}
                     >
                       <ChevronLeft style={{ width: 16, height: 16 }} />
@@ -457,8 +497,8 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         width: 34,
                         height: 34,
                         borderRadius: '50%',
-                        border: `1.5px solid ${activeIndex === CARD_ORDER.length - 1 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)'}`,
-                        background: `${activeIndex < CARD_ORDER.length - 1 ? accent + '38' : 'rgba(255,255,255,0.08)'}`,
+                        border: `1.5px solid ${swipeDirection === 'right' ? accent : activeIndex === CARD_ORDER.length - 1 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)'}`,
+                        background: swipeDirection === 'right' ? `${accent}50` : activeIndex < CARD_ORDER.length - 1 ? `${accent}38` : 'rgba(255,255,255,0.08)',
                         backdropFilter: 'blur(10px)',
                         WebkitBackdropFilter: 'blur(10px)',
                         display: 'flex',
@@ -468,6 +508,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         opacity: activeIndex === CARD_ORDER.length - 1 ? 0.3 : 1,
                         transition: 'all 0.24s ease',
                         color: '#fff',
+                        transform: swipeDirection === 'right' ? 'scale(1.15)' : 'scale(1)',
                       }}
                     >
                       <ChevronRight style={{ width: 16, height: 16 }} />
@@ -481,6 +522,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
 
           {/* RIGHT: Immersive card stack (supports swipe left/right) */}
           <div
+            ref={containerRef}
             className="relative flex-1 overflow-visible"
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
@@ -514,12 +556,14 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                     y: '-50%',
                     scale: targetScale,
                     opacity: targetOpacity,
+                    rotateY: delta === 0 ? swipeTilt * -4 : 0,
                   }}
                   transition={{
                     x: { type: 'spring', stiffness: 220, damping: 26, mass: 1 },
                     y: { duration: 0 },
                     scale: { type: 'spring', stiffness: 220, damping: 26, mass: 1 },
                     opacity: { duration: 0.38, ease: 'easeInOut' },
+                    rotateY: { type: 'spring', stiffness: 300, damping: 20, mass: 0.8 },
                   }}
                   onClick={clickable ? () => switchCard(i) : undefined}
                   whileHover={clickable ? { scale: (cfg?.scale ?? 0.6) * 1.03, opacity: Math.min(1, (cfg?.opacity ?? 0.2) + 0.15) } : undefined}

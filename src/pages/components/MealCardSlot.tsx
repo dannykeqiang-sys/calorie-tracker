@@ -613,7 +613,7 @@ export default function MealCardSlot({
             }}
           />
         )}
-        <div className="p-5 pb-2">
+        <div className="px-4 pt-3 pb-1">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
               <div
@@ -650,7 +650,7 @@ export default function MealCardSlot({
         </div>
 
         <div
-          className={fullscreen ? `flex-1 px-5 space-y-1.5 min-h-0 pt-1 ${hasOverlay ? 'overflow-hidden' : 'overflow-y-auto'}` : 'px-5 space-y-1.5 pt-1'}
+          className={fullscreen ? `flex-1 px-4 space-y-1 min-h-0 pt-0.5 ${hasOverlay ? 'overflow-hidden' : 'overflow-y-auto'}` : 'px-4 space-y-1 pt-0.5'}
           style={{ pointerEvents: showDetails ? 'auto' : 'none' }}
         >
           {groups.length === 0 && (
@@ -789,7 +789,7 @@ export default function MealCardSlot({
         </div>
 
         <div
-          className="px-4 pt-3 pb-4 mx-1 mb-2 rounded-2xl space-y-2"
+          className="px-3 pt-2 pb-3 mx-1 mb-1 rounded-2xl space-y-1.5"
           style={{
             opacity: showDetails ? 1 : 0,
             transition: 'opacity 0.35s ease',

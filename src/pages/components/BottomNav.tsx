@@ -19,7 +19,7 @@ export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomN
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border sm:hidden" style={{ boxShadow: '0 -2px 16px rgba(139,130,120,0.06)' }}>
-      <div className="relative flex items-stretch h-16 safe-area-inset-bottom">
+      <div className="relative flex items-stretch h-14 safe-area-inset-bottom">
         {LEFT_TABS.map(item => {
           const Icon = item.icon;
           const isActive = activeTab === item.value;

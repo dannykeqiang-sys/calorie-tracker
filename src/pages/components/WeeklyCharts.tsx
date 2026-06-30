@@ -439,7 +439,7 @@ export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { st
   );
 }
 
-export function MacroLineChart({ stats, target }: { stats: DayStats[]; target: number }) {
+export function MacroLineChart({ stats, target, onDateClick, activeDate }: { stats: DayStats[]; target: number; onDateClick?: (date: string) => void; activeDate?: string }) {
   const [hover, setHover] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
   const w = svgW(stats.length);
@@ -501,6 +501,7 @@ export function MacroLineChart({ stats, target }: { stats: DayStats[]; target: n
           {/* 柱状图 — 三柱分组 */}
           {stats.map((_d, i) => {
             const groupX = px(i) - (barW * 3 + barGap * 2) / 2;
+            const isActive = activeDate === _d.date;
             return macros.map((m, mi) => {
               const v = (_d[m.key] as number) || 0;
               const pct = v / Math.max(m.target, 1);
@@ -511,8 +512,8 @@ export function MacroLineChart({ stats, target }: { stats: DayStats[]; target: n
                   x={groupX + mi * (barW + barGap)} y={barH - (animated ? h : 0)}
                   width={barW} height={animated ? h : 0} rx={3}
                   fill={m.color}
-                  opacity={isH ? 0.95 : 0.55}
-                  filter={isH ? 'url(#macroGlow)' : undefined}
+                  opacity={isActive ? 1 : isH ? 0.95 : 0.55}
+                  filter={isH || isActive ? 'url(#macroGlow)' : undefined}
                   style={{ transition: 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s' }} />
               );
             });
@@ -536,10 +537,18 @@ export function MacroLineChart({ stats, target }: { stats: DayStats[]; target: n
 
           {stats.map((_d, i) => {
             const isH = hover === i;
+            const isActive = activeDate === _d.date;
             return (
               <g key={_d.date} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
-                onTouchStart={() => setHover(prev => prev === i ? null : i)} style={{ cursor: 'crosshair' }}>
+                onTouchStart={() => setHover(prev => prev === i ? null : i)}
+                onClick={() => _d.intake > 0 && onDateClick?.(_d.date)}
+                style={{ cursor: _d.intake > 0 ? 'pointer' : 'default' }}>
                 <rect x={px(i) - 18} y={0} width={36} height={barH} fill="transparent" />
+                {/* Active date underline */}
+                {isActive && _d.intake > 0 && (
+                  <rect x={px(i) - 14} y={barH + 1} width={28} height={2} rx={1}
+                    fill="#6366F1" opacity={0.7} />
+                )}
                 {isH && macros.map((m, mi) => {
                   const v = (_d[m.key] as number) || 0;
                   const pct = v / Math.max(m.target, 1);
@@ -589,7 +598,7 @@ export function MacroLineChart({ stats, target }: { stats: DayStats[]; target: n
 const MEAL_LABELS = ['早餐', '午餐', '晚餐', '加餐'];
 const MEAL_COLORS = ['#fbbf24', '#f97316', '#ef4444', '#a78bfa'];
 
-export function MealHeatmap({ stats }: { stats: DayStats[] }) {
+export function MealHeatmap({ stats, onDateClick, activeDate }: { stats: DayStats[]; onDateClick?: (date: string) => void; activeDate?: string }) {
   const [hoverCell, setHoverCell] = useState<{ row: number; col: number } | null>(null);
   const visible = stats;
   const CELL = 28, MG = 3, PAD = 28;
@@ -611,37 +620,44 @@ export function MealHeatmap({ stats }: { stats: DayStats[] }) {
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
-          {visible.map((d, i) => (
-            <text key={i} x={PAD + i * (CELL + MG) + CELL / 2} y={14} textAnchor="middle" fontSize={8} fill="var(--ck-chart-dim)">{d.label}</text>
-          ))}
+          {visible.map((d, i) => {
+            const isActiveCol = activeDate === d.date;
+            return (
+              <text key={i} x={PAD + i * (CELL + MG) + CELL / 2} y={14} textAnchor="middle" fontSize={8}
+                fill={isActiveCol ? '#8B5CF6' : 'var(--ck-chart-dim)'} fontWeight={isActiveCol ? '800' : '500'}>{d.label}</text>
+            );
+          })}
           {MEAL_LABELS.map((l, i) => (
             <text key={i} x={10} y={PAD + i * (CELL + MG) + CELL / 2 + 4} textAnchor="end" fontSize={8} fill={MEAL_COLORS[i]} fontWeight="600">{l}</text>
           ))}
           {mealCals.map((row, ri) => row.map((cal, ci) => {
             const intensity = maxCal > 0 ? cal / maxCal : 0;
             const isH = hoverCell?.row === ri && hoverCell?.col === ci;
+            const isActiveCol = activeDate === visible[ri]?.date;
             const scale = isH ? 1.2 : 1;
             return (
               <g key={`${ri}-${ci}`}
                 onMouseEnter={() => cal > 0 && setHoverCell({ row: ri, col: ci })}
                 onMouseLeave={() => setHoverCell(null)}
                 onTouchStart={() => cal > 0 && setHoverCell(prev => prev?.row === ri && prev?.col === ci ? null : { row: ri, col: ci })}
+                onClick={() => cal > 0 && onDateClick?.(visible[ri].date)}
                 style={{ cursor: cal > 0 ? 'pointer' : 'default' }}>
                 {cal > 0 ? (
                   <rect x={(PAD + ri * (CELL + MG)) - (CELL * (scale - 1)) / 2}
                     y={(PAD + ci * (CELL + MG)) - (CELL * (scale - 1)) / 2}
                     width={CELL * scale} height={CELL * scale} rx={6} fill={MEAL_COLORS[ci]}
-                    opacity={0.25 + intensity * 0.75} filter={isH ? 'url(#heatmapGlow)' : undefined}
+                    opacity={isActiveCol ? Math.min(0.25 + intensity * 0.75 + 0.2, 1) : 0.25 + intensity * 0.75}
+                    filter={isH || isActiveCol ? 'url(#heatmapGlow)' : undefined}
                     style={{ transition: 'all 0.25s ease' }} />
                 ) : (
                   <rect x={PAD + ri * (CELL + MG)} y={PAD + ci * (CELL + MG)}
                     width={CELL} height={CELL} rx={6} fill="var(--ck-chart-empty)" opacity={0.15} />
                 )}
-                {isH && cal > 0 && (
+                {(isH || isActiveCol) && cal > 0 && (
                   <rect x={PAD + ri * (CELL + MG) - 2} y={PAD + ci * (CELL + MG) - 2}
-                    width={CELL + 4} height={CELL + 4} rx={8} fill="none" stroke={MEAL_COLORS[ci]} strokeWidth={2} opacity={0.8} />
+                    width={CELL + 4} height={CELL + 4} rx={8} fill="none" stroke={MEAL_COLORS[ci]} strokeWidth={isActiveCol ? 2.5 : 2} opacity={0.8} />
                 )}
-                {isH && cal > 0 && (
+                {(isH || isActiveCol) && cal > 0 && (
                   <text x={PAD + ri * (CELL + MG) + CELL / 2} y={PAD + ci * (CELL + MG) + CELL / 2 + 4}
                     textAnchor="middle" fontSize={10} fill="white" fontWeight="800"
                     style={{ textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{cal}</text>
@@ -663,7 +679,7 @@ export function MealHeatmap({ stats }: { stats: DayStats[] }) {
 }
 
 /* ════════════════════ 5. 热量趋势 — 纯折线 ════════════════════ */
-export function CalorieTrendChart({ stats, target }: { stats: DayStats[]; target: number }) {
+export function CalorieTrendChart({ stats, target, onDateClick, activeDate }: { stats: DayStats[]; target: number; onDateClick?: (date: string) => void; activeDate?: string }) {
   const [hover, setHover] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
   const w = svgW(stats.length);
@@ -734,12 +750,13 @@ export function CalorieTrendChart({ stats, target }: { stats: DayStats[]; target
         {intakePts.map((p, pi) => {
           const idx = stats.findIndex((_d, i) => px(i) === p.x || Math.abs(px(i) - p.x) < 2);
           const isH = hover === idx;
+          const isActive = idx >= 0 && activeDate === stats[idx].date;
           const isOver = p.v > target;
           return (
             <g key={`dp${pi}`} style={{ cursor: 'pointer' }}>
-              <circle cx={p.x} cy={p.y} r={isH ? 6 : 3}
-                fill="white" stroke={isOver ? '#ef4444' : '#22c55e'} strokeWidth={isH ? 3 : 2}
-                filter={isH ? 'url(#trendGlow)' : undefined} style={{ transition: 'all 0.25s' }} />
+              <circle cx={p.x} cy={p.y} r={isActive ? 7 : isH ? 6 : 3}
+                fill="white" stroke={isOver ? '#ef4444' : '#22c55e'} strokeWidth={isH || isActive ? 3 : 2}
+                filter={isH || isActive ? 'url(#trendGlow)' : undefined} style={{ transition: 'all 0.25s' }} />
             </g>
           );
         })}
@@ -751,12 +768,21 @@ export function CalorieTrendChart({ stats, target }: { stats: DayStats[]; target
 
         {stats.map((d, i) => {
           const isH = hover === i;
+          const isActive = activeDate === d.date;
           const tdeeV = (d.intake || 0) - (d.net || 0) + (d.burn || 0);
           const dotY = d.intake > 0 ? CHART_H - (d.intake / maxV) * CHART_H : CHART_H;
           return (
             <g key={d.date} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
-              onTouchStart={() => setHover(prev => prev === i ? null : i)} style={{ cursor: 'crosshair' }}>
+              onTouchStart={() => setHover(prev => prev === i ? null : i)}
+              onClick={() => d.intake > 0 && onDateClick?.(d.date)}
+              style={{ cursor: d.intake > 0 ? 'pointer' : 'default' }}>
               <rect x={px(i) - 16} y={0} width={32} height={CHART_H} fill="transparent" />
+              {/* Active date highlight ring */}
+              {isActive && d.intake > 0 && (
+                <circle cx={px(i)} cy={dotY} r={10}
+                  fill="none" stroke={d.intake > target ? '#ef4444' : '#22c55e'} strokeWidth={1.5} opacity={0.4}
+                  style={{ animation: 'pulse 2s ease-in-out infinite' }} />
+              )}
               {isH && d.intake > 0 && (
                 <>
                   <rect x={px(i) - 55} y={dotY - 42} width={110} height={36} rx={8} fill="rgba(0,0,0,0.92)" opacity={0.95} />
@@ -1149,7 +1175,7 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
 }
 
 /* ════════════════════ 8. 日K线图 — 每日热量增减趋势 ════════════════════ */
-export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; targetCalories: number }) {
+export function DailyKLineChart({ stats, targetCalories, onDateClick, activeDate }: { stats: DayStats[]; targetCalories: number; onDateClick?: (date: string) => void; activeDate?: string }) {
   const [hover, setHover] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
   const active = stats.filter(d => d.intake > 0);
@@ -1304,24 +1330,32 @@ export function DailyKLineChart({ stats, targetCalories }: { stats: DayStats[]; 
             const x = px(i);
             const y = valY(p.intake);
             const isH = hover === i;
-            const dimmed = hover !== null && !isH;
+            const isActive = activeDate === p.date;
+            const dimmed = hover !== null && !isH && !isActive;
             const color = p.overTarget ? '#ef4444' : '#22c55e';
             return (
               <g key={i}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
                 onTouchStart={() => setHover(prev => prev === i ? null : i)}
+                onClick={() => onDateClick?.(p.date)}
                 style={{ cursor: 'pointer', transition: 'opacity 0.25s', opacity: dimmed ? 0.35 : 1 }}>
+                {/* Active date ring */}
+                {isActive && (
+                  <circle cx={x} cy={y} r={9}
+                    fill="none" stroke={color} strokeWidth={1.5} opacity={0.4}
+                    style={{ animation: 'pulse 2s ease-in-out infinite' }} />
+                )}
                 {/* Dot */}
-                <circle cx={x} cy={y} r={isH ? 5.5 : 3}
-                  fill="white" stroke={color} strokeWidth={isH ? 3 : 2}
-                  filter={isH ? `url(#${uid}Glow)` : undefined}
+                <circle cx={x} cy={y} r={isActive ? 5 : isH ? 5.5 : 3}
+                  fill="white" stroke={color} strokeWidth={isH || isActive ? 3 : 2}
+                  filter={isH || isActive ? `url(#${uid}Glow)` : undefined}
                   style={{ transition: 'all 0.2s' }} />
                 {/* X label (adaptive skip) */}
-                {(i % labelSkip === 0 || isH) && (
+                {(i % labelSkip === 0 || isH || isActive) && (
                   <text x={x} y={TOP + CHART_H + 14} textAnchor="middle" fontSize={7.5}
-                    fill={isH ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
-                    fontWeight={isH ? '700' : '500'}>{p.label}</text>
+                    fill={isH || isActive ? 'var(--ck-chart-label-hover)' : 'var(--ck-chart-label)'}
+                    fontWeight={isH || isActive ? '700' : '500'}>{p.label}</text>
                 )}
 
                 {/* Tooltip */}

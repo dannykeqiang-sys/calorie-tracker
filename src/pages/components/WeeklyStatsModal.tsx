@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Droplets } from 'lucide-react';
+import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Droplets, ChevronDown, ChevronUp, Utensils, Apple, Moon, Cookie } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import AIHealingCard, { type DayStats, classifyDay, STATE_CONFIGS } from './AIHealingCard';
 import {
@@ -143,6 +143,7 @@ export default function WeeklyStatsModal({
   const [activeDate, setActiveDate] = useState<string>(
     selectedDate || (activeDays.length > 0 ? activeDays[activeDays.length - 1].date : '')
   );
+  const [detailExpanded, setDetailExpanded] = useState(false);
   const dateNavRef = useRef<HTMLDivElement>(null);
 
   // 当 selectedDate 变化时同步
@@ -308,6 +309,155 @@ export default function WeeklyStatsModal({
 
           {/* ─── 滚动内容：近 7 天可视化 ─── */}
           <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6 space-y-3">
+
+            {/* ─── 当日详情（可折叠） ─── */}
+            {activeDayData && activeDayData.intake > 0 && (
+              <div className="rounded-2xl border border-border overflow-hidden"
+                style={{ background: 'var(--ck-modal-card)', backdropFilter: 'blur(12px)' }}>
+                <button
+                  onClick={() => setDetailExpanded(prev => !prev)}
+                  className="w-full flex items-center justify-between px-4 py-3 cursor-pointer transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                      style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
+                      <Calendar className="w-3 h-3 text-white" />
+                    </div>
+                    <span className="text-sm font-bold text-foreground">当日详情</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {(() => { const d = new Date(activeDayData.date + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}`; })()}
+                    </span>
+                  </div>
+                  {detailExpanded
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground transition-transform" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform" />}
+                </button>
+
+                {detailExpanded && (
+                  <div className="px-4 pb-4 space-y-3" style={{ animation: 'fadeIn 0.2s ease' }}>
+                    {/* 四餐明细 */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">用餐明细</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: '早餐', cal: activeDayData.mealCals?.[0] ?? 0, icon: Apple, color: '#fbbf24' },
+                          { label: '午餐', cal: activeDayData.mealCals?.[1] ?? 0, icon: Utensils, color: '#f97316' },
+                          { label: '晚餐', cal: activeDayData.mealCals?.[2] ?? 0, icon: Moon, color: '#ef4444' },
+                          { label: '加餐', cal: activeDayData.mealCals?.[3] ?? 0, icon: Cookie, color: '#a78bfa' },
+                        ].map(meal => {
+                          const MealIcon = meal.icon;
+                          return (
+                            <div key={meal.label} className="flex items-center gap-2 p-2 rounded-xl"
+                              style={{ backgroundColor: `${meal.color}10` }}>
+                              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: `${meal.color}20` }}>
+                                <MealIcon className="w-3.5 h-3.5" style={{ color: meal.color }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-muted-foreground">{meal.label}</p>
+                                <p className="text-xs font-bold text-foreground">{meal.cal} <span className="text-[9px] font-normal text-muted-foreground">kcal</span></p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 宏量营养素 */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">宏量营养素</p>
+                      <div className="space-y-2">
+                        {(() => {
+                          const macroT = { protein: Math.round(targetCalories * 0.25 / 4), carbs: Math.round(targetCalories * 0.5 / 4), fat: Math.round(targetCalories * 0.25 / 9) };
+                          const macroList = [
+                            { label: '蛋白质', value: activeDayData.protein, target: macroT.protein, unit: 'g', color: '#fb923c' },
+                            { label: '碳水', value: activeDayData.carbs, target: macroT.carbs, unit: 'g', color: '#818cf8' },
+                            { label: '脂肪', value: activeDayData.fat, target: macroT.fat, unit: 'g', color: '#38bdf8' },
+                          ];
+                          return macroList.map(m => {
+                            const pct = m.target > 0 ? Math.round((m.value / m.target) * 100) : 0;
+                            const barPct = Math.min(pct, 150);
+                            return (
+                              <div key={m.label}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[11px] text-muted-foreground">{m.label}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-bold text-foreground">{m.value}{m.unit}</span>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
+                                      style={{
+                                        backgroundColor: pct >= 95 && pct <= 110 ? '#22c55e20' : pct > 110 ? '#ef444420' : '#f59e0b20',
+                                        color: pct >= 95 && pct <= 110 ? '#22c55e' : pct > 110 ? '#ef4444' : '#f59e0b'
+                                      }}>
+                                      {pct}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${m.color}15` }}>
+                                  <div className="h-full rounded-full transition-all duration-500"
+                                    style={{ width: `${(barPct / 150) * 100}%`, backgroundColor: m.color }} />
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* 运动记录 */}
+                    {activeDayData.exercises && activeDayData.exercises.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">运动记录</p>
+                        <div className="space-y-1.5">
+                          {activeDayData.exercises.map((ex, i) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg"
+                              style={{ backgroundColor: 'rgba(34,197,94,0.06)' }}>
+                              <div className="flex items-center gap-2">
+                                <Dumbbell className="w-3.5 h-3.5" style={{ color: '#22C55E' }} />
+                                <span className="text-xs text-foreground">{ex.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                <span>{ex.duration}min</span>
+                                <span className="font-semibold" style={{ color: '#22C55E' }}>{ex.calories} kcal</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 饮水 + 膳食纤维 + 钠 */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">其他指标</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="p-2 rounded-xl text-center" style={{ backgroundColor: 'rgba(14,165,233,0.08)' }}>
+                          <Droplets className="w-3.5 h-3.5 mx-auto mb-1" style={{ color: '#0EA5E9' }} />
+                          <p className="text-xs font-bold text-foreground">{activeDayData.water}<span className="text-[9px] font-normal text-muted-foreground ml-0.5">ml</span></p>
+                          <p className="text-[9px] text-muted-foreground">饮水</p>
+                        </div>
+                        <div className="p-2 rounded-xl text-center" style={{ backgroundColor: 'rgba(34,197,94,0.08)' }}>
+                          <p className="text-sm font-bold text-foreground leading-none mt-1">{activeDayData.fiber}<span className="text-[9px] font-normal text-muted-foreground ml-0.5">g</span></p>
+                          <p className="text-[9px] text-muted-foreground">膳食纤维</p>
+                        </div>
+                        <div className="p-2 rounded-xl text-center" style={{ backgroundColor: 'rgba(249,115,22,0.08)' }}>
+                          <p className="text-sm font-bold text-foreground leading-none mt-1">{activeDayData.sodium}<span className="text-[9px] font-normal text-muted-foreground ml-0.5">mg</span></p>
+                          <p className="text-[9px] text-muted-foreground">钠</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 体重（如果有） */}
+                    {activeDayData.weight != null && (
+                      <div className="flex items-center justify-between p-2.5 rounded-xl"
+                        style={{ backgroundColor: 'rgba(139,92,246,0.08)' }}>
+                        <span className="text-xs text-muted-foreground">当日体重</span>
+                        <span className="text-sm font-bold" style={{ color: '#8B5CF6' }}>{activeDayData.weight} <span className="text-[10px] font-normal">kg</span></span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <AIHealingCard
               stats={recentStats} profile={profile}
               activeDaysCount={recentActiveDaysCount} waterDays={waterDays}
@@ -316,21 +466,21 @@ export default function WeeklyStatsModal({
             />
 
             {/* 三大宏量近 7 天趋势 */}
-            <MacroLineChart stats={recentStats} target={targetCalories} />
+            <MacroLineChart stats={recentStats} target={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
 
             {/* 热量近 7 天趋势 */}
             <ChartCard icon={Flame} title="近 7 天热量趋势" iconColor="#F97316" kind="orange">
-              <CalorieTrendChart stats={recentStats} target={targetCalories} />
+              <CalorieTrendChart stats={recentStats} target={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
             </ChartCard>
 
             {/* 宏量流向 全宽 */}
-            <MacroSankey stats={recentStats} profile={profile} selectedDate={activeDate} />
+            <MacroSankey stats={recentStats} profile={profile} selectedDate={activeDate} onDateChange={setActiveDate} />
 
             {/* 近 7 天用餐热力图 */}
-            <MealHeatmap stats={recentStats} />
+            <MealHeatmap stats={recentStats} onDateClick={setActiveDate} activeDate={activeDate} />
 
             {/* K线图 */}
-            <DailyKLineChart stats={recentStats} targetCalories={targetCalories} />
+            <DailyKLineChart stats={recentStats} targetCalories={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
 
             {/* 近 7 天趋势对比 */}
             {trendItems.length > 0 && (
