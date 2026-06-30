@@ -1,0 +1,36 @@
+{
+  "date": "2026-06-27",
+  "meals": {
+    "breakfast": [],
+    "lunch": [],
+    "dinner": [
+      {
+        "id": "cf92187b-6105-434d-bf64-4e0316053392",
+        "name": "小炒牛肉",
+        "calories": 200,
+        "protein": 20,
+        "carbs": 5,
+        "fat": 12
+      },
+      {
+        "id": "8ccebedf-c138-48ef-92e0-1803a22f0c21",
+        "name": "炒西葫芦",
+        "calories": 50,
+        "protein": 2,
+        "carbs": 8,
+        "fat": 2
+      },
+      {
+        "id": "a871916f-167b-4a28-8ec1-b3c04bf98665",
+        "name": "米饭50克",
+        "calories": 58,
+        "protein": 1.3,
+        "carbs": 12.8,
+        "fat": 0.1
+      }
+    ],
+    "snack": []
+  },
+  "exercises": [],
+  "water": []
+}
