@@ -141,11 +141,14 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       else if (dx > 0 && activeIndex > 0) switchCard(activeIndex - 1);
     }, [activeIndex, switchCard]);
 
+    const wheelAccumRef = useRef(0);
+    const wheelLockedRef = useRef(false);
+    const wheelIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const handleWheel = useCallback((e: WheelEvent) => {
       // Pinch-to-zoom: ctrlKey (Windows) or metaKey (macOS trackpad pinch)
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        // Optional: could scale the active card here in the future
         return;
       }
 
@@ -155,25 +158,49 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       // Prevent browser back/forward navigation from horizontal swipe
       e.preventDefault();
 
-      // Debounce: 300ms cooldown to avoid triggering multiple switches
-      if (wheelTimerRef.current) return;
-      wheelTimerRef.current = setTimeout(() => { wheelTimerRef.current = null; }, 300);
+      // If locked (already switched this gesture), ignore
+      if (wheelLockedRef.current) {
+        // Reset idle timer — gesture still ongoing
+        if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
+        wheelIdleTimerRef.current = setTimeout(() => {
+          wheelLockedRef.current = false;
+          wheelAccumRef.current = 0;
+        }, 200);
+        return;
+      }
 
-      // Visual feedback: tilt and direction highlight
+      // Accumulate horizontal delta
+      wheelAccumRef.current += e.deltaX;
+
+      // Reset idle timer on each event
+      if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
+      wheelIdleTimerRef.current = setTimeout(() => {
+        wheelLockedRef.current = false;
+        wheelAccumRef.current = 0;
+      }, 200);
+
+      // Visual feedback
       const direction = e.deltaX > 0 ? 'right' : 'left';
       setSwipeTilt(direction === 'right' ? 1 : -1);
       setSwipeDirection(direction);
-
-      // Reset tilt after 300ms
       if (tiltTimerRef.current) clearTimeout(tiltTimerRef.current);
       tiltTimerRef.current = setTimeout(() => {
         setSwipeTilt(0);
         setSwipeDirection(null);
       }, 300);
 
-      // Switch card
-      if (e.deltaX > 0 && activeIndex < CARD_ORDER.length - 1) switchCard(activeIndex + 1);
-      else if (e.deltaX < 0 && activeIndex > 0) switchCard(activeIndex - 1);
+      // Switch when accumulated displacement exceeds threshold (80px)
+      const THRESHOLD = 80;
+      if (Math.abs(wheelAccumRef.current) >= THRESHOLD) {
+        if (wheelAccumRef.current > 0 && activeIndex < CARD_ORDER.length - 1) {
+          switchCard(activeIndex + 1);
+        } else if (wheelAccumRef.current < 0 && activeIndex > 0) {
+          switchCard(activeIndex - 1);
+        }
+        // Lock until gesture ends (200ms of no horizontal movement)
+        wheelLockedRef.current = true;
+        wheelAccumRef.current = 0;
+      }
     }, [activeIndex, switchCard]);
 
     // Attach non-passive wheel listener to allow preventDefault()
