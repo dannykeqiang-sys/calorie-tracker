@@ -1,0 +1,44 @@
+{
+  "date": "2026-06-13",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "c4b6e8ea-c406-4233-8472-d93be7467d68",
+        "name": "米饭(100g)",
+        "calories": 116,
+        "protein": 2.6,
+        "carbs": 25.9,
+        "fat": 0.3
+      },
+      {
+        "id": "fa045b8e-bfc3-461f-999f-cfdea0d714de",
+        "name": "烧鸡(去皮)×2块",
+        "calories": 200,
+        "protein": 30,
+        "carbs": 0,
+        "fat": 8
+      },
+      {
+        "id": "bd9acef0-8fd7-4b96-b6d5-af8fa143eb15",
+        "name": "烧鸭(去皮)×2块",
+        "calories": 180,
+        "protein": 28,
+        "carbs": 0,
+        "fat": 14
+      },
+      {
+        "id": "c4574c27-830a-48b5-aea2-c5c2e8e44a76",
+        "name": "小番茄×几个",
+        "calories": 30,
+        "protein": 1,
+        "carbs": 6,
+        "fat": 0.3
+      }
+    ],
+    "lunch": [],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": []
+}
