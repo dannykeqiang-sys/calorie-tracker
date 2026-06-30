@@ -28,7 +28,7 @@ router.post('/login', async (req: Request, res: Response) => {
     if (existingUser) {
       // User exists, update last login
       db.prepare(
-        'UPDATE users SET last_login_at = datetime("now") WHERE id = ?'
+        "UPDATE users SET last_login_at = datetime('now') WHERE id = ?"
       ).run(existingUser.id);
 
       const token = generateUserToken(existingUser.id, existingUser.nickname);
