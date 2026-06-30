@@ -1,0 +1,53 @@
+{
+  "date": "2026-06-30",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "c0a28581-57fe-4f64-9ae3-439f1838c8da",
+        "name": "红薯×0.5",
+        "calories": 86,
+        "protein": 1.6,
+        "carbs": 20.1,
+        "fat": 0.1
+      },
+      {
+        "id": "652d14ce-f295-4e8f-a813-cb9f01ab4074",
+        "name": "黄瓜×1",
+        "calories": 16,
+        "protein": 0.7,
+        "carbs": 2.9,
+        "fat": 0.1
+      },
+      {
+        "id": "5e45616d-c718-4a78-a063-0ddb82c0793f",
+        "name": "溏心蛋×1",
+        "calories": 70,
+        "protein": 6.3,
+        "carbs": 0.4,
+        "fat": 4.8
+      }
+    ],
+    "lunch": [
+      {
+        "id": "252ac6eb-7a4b-41ed-8838-4ce2ef1b450e",
+        "name": "酸汤米粉×1份",
+        "calories": 350,
+        "protein": 8,
+        "carbs": 70,
+        "fat": 4
+      },
+      {
+        "id": "d093ee3a-12ff-4133-ae99-2802561ae65b",
+        "name": "牛肉×200g",
+        "calories": 250,
+        "protein": 40,
+        "carbs": 0,
+        "fat": 8
+      }
+    ],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": []
+}
