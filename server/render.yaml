@@ -6,14 +6,14 @@ services:
     plan: free
     rootDir: server
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node dist/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "10000"
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: ADMIN_PASSWORD
         sync: false
       - key: DATABASE_PATH
