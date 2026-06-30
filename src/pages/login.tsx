@@ -1,6 +1,6 @@
 import { useState, useRef, forwardRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, Loader2, UserX, RefreshCw, KeyRound, Activity, ChevronRight, Check } from 'lucide-react';
+import { Flame, ArrowRight, Loader2, UserX, RefreshCw, KeyRound, Activity, ChevronRight, Check, X, FileText } from 'lucide-react';
 import { loginViaApi, findProfileViaGithub, syncProfileToCloud } from '../utils/apiDB';
 import { setSession, setApiToken } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
@@ -81,6 +81,8 @@ export default function LoginPage() {
   const [weight, setWeight] = useState('');
   const [goal, setGoal] = useState<GoalType>('maintain');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel>('light');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAgreement, setShowAgreement] = useState(false);
 
   const trimmed = name.trim();
   const trimmedCode = inviteCode.trim();
@@ -359,6 +361,17 @@ export default function LoginPage() {
                         创建健康档案
                       </button>
                     </p>
+
+                    <p className="mt-3 text-center text-xs text-muted-foreground/70">
+                      登录即代表同意
+                      <button
+                        onClick={() => setShowAgreement(true)}
+                        className="ml-1 font-semibold cursor-pointer hover:underline"
+                        style={{ color: '#F97316' }}
+                      >
+                        《用户协议》
+                      </button>
+                    </p>
                   </>
                 ) : (
                   <NotFoundView
@@ -508,6 +521,32 @@ export default function LoginPage() {
                           </span>
                         </div>
                       )}
+
+                      {/* 用户协议勾选 */}
+                      <div className="flex items-start gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setAgreedToTerms(!agreedToTerms)}
+                          className="mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all cursor-pointer"
+                          style={{
+                            borderColor: agreedToTerms ? REG_ACCENT[1] : '#D1D5DB',
+                            backgroundColor: agreedToTerms ? REG_ACCENT[1] : 'transparent',
+                          }}
+                        >
+                          {agreedToTerms && <Check className="w-3 h-3 text-white" />}
+                        </button>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          我已阅读并同意
+                          <button
+                            type="button"
+                            onClick={() => setShowAgreement(true)}
+                            className="mx-1 font-semibold cursor-pointer hover:underline"
+                            style={{ color: REG_ACCENT[1] }}
+                          >
+                            《用户协议》
+                          </button>
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -539,11 +578,11 @@ export default function LoginPage() {
                   ) : (
                     <button
                       onClick={handleRegisterComplete}
-                      disabled={!canNext0 || submitting}
+                      disabled={!canNext0 || submitting || !agreedToTerms}
                       className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96]"
                       style={{
-                        background: 'linear-gradient(135deg, #F97316, #EC4899)',
-                        boxShadow: '0 6px 20px rgba(249,115,22,0.4)',
+                        background: (!canNext0 || submitting || !agreedToTerms) ? '#E5E7EB' : 'linear-gradient(135deg, #F97316, #EC4899)',
+                        boxShadow: (!canNext0 || submitting || !agreedToTerms) ? 'none' : '0 6px 20px rgba(249,115,22,0.4)',
                       }}
                     >
                       {submitting ? (
@@ -599,8 +638,118 @@ export default function LoginPage() {
             100% { transform: translateY(-110vh) scale(1.3); opacity: 0; }
           }
         `}</style>
+
+        {/* 用户协议弹窗 */}
+        {showAgreement && (
+          <UserAgreementModal onClose={() => setShowAgreement(false)} />
+        )}
       </div>
     </>
+  );
+}
+
+// ─── 用户协议弹窗 ──────────────────────────────────────────────
+
+function UserAgreementModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div
+        className="relative w-full max-w-md max-h-[85vh] rounded-3xl overflow-hidden flex flex-col"
+        style={{
+          background: 'rgba(255,255,255,0.98)',
+          backdropFilter: 'blur(20px)',
+          animation: 'loginSlideUp 0.3s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        {/* 头部 */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5" style={{ color: '#F97316' }} />
+            <h2 className="text-lg font-bold text-foreground">用户协议</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all cursor-pointer"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* 内容 */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-sm text-foreground leading-relaxed">
+          <p className="text-xs text-muted-foreground">最后更新：2026年6月30日</p>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">一、服务说明</h3>
+            <p className="text-muted-foreground">
+              欢迎使用"燃烧我的卡路里"（以下简称"本应用"）。本应用是一款个人健康记录工具，帮助您记录饮食、运动和身体数据，以便更好地管理健康。
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">二、数据隐私</h3>
+            <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
+              <li>您的健康数据（饮食记录、运动记录、身体指标等）仅存储在您的浏览器本地存储中</li>
+              <li>API Key 仅保存在您的浏览器中，不会上传到云端服务器</li>
+              <li>我们不会收集、出售或共享您的个人健康数据</li>
+              <li>您可以随时导出或删除您的所有数据</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">三、AI 功能说明</h3>
+            <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
+              <li>本应用使用第三方 AI 服务（如 DeepSeek）提供智能分析和建议</li>
+              <li>AI 生成的内容仅供参考，不构成医疗建议</li>
+              <li>如有健康问题，请咨询专业医疗机构或医生</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">四、用户责任</h3>
+            <ul className="list-disc list-inside space-y-1.5 text-muted-foreground">
+              <li>请确保输入的数据真实准确</li>
+              <li>妥善保管您的邀请码，不要分享给他人</li>
+              <li>定期备份您的数据，防止意外丢失</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">五、免责声明</h3>
+            <p className="text-muted-foreground">
+              本应用提供的健康建议和分析仅供参考，不能替代专业医疗建议。使用本应用前，请咨询医生或其他医疗专业人员。对于因使用本应用而产生的任何直接或间接损失，我们不承担责任。
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-base mb-2">六、协议变更</h3>
+            <p className="text-muted-foreground">
+              我们保留随时修改本协议的权利。协议变更后，继续使用本应用即表示您同意新的协议条款。
+            </p>
+          </section>
+
+          <section className="pt-4 border-t border-gray-100">
+            <p className="text-xs text-muted-foreground text-center">
+              如有疑问，请联系应用开发者
+            </p>
+          </section>
+        </div>
+
+        {/* 底部按钮 */}
+        <div className="px-6 py-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl text-sm font-bold text-white cursor-pointer active:scale-[0.97] transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #F97316, #EC4899)',
+              boxShadow: '0 6px 20px rgba(249,115,22,0.35)',
+            }}
+          >
+            我已阅读
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
