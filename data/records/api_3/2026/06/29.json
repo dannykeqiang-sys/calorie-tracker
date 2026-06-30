@@ -1,0 +1,121 @@
+{
+  "date": "2026-06-29",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "35e0a32c-f612-4ba5-8ff4-5ec776a6907a",
+        "name": "玉米×1根",
+        "calories": 150,
+        "protein": 5,
+        "carbs": 30,
+        "fat": 2,
+        "sodium": 1
+      },
+      {
+        "id": "c5eadf02-8d6e-4ba9-81fd-b3eb2d583963",
+        "name": "黄瓜×1根",
+        "calories": 30,
+        "protein": 1,
+        "carbs": 6,
+        "fat": 0.2,
+        "sodium": 2
+      },
+      {
+        "id": "0ed9c7ca-edfa-4d3a-a079-cc42e076332a",
+        "name": "拿铁×1杯",
+        "calories": 150,
+        "protein": 6,
+        "carbs": 12,
+        "fat": 8,
+        "sodium": 100
+      }
+    ],
+    "lunch": [
+      {
+        "id": "19362d89-a32c-40e1-8eae-1096faaf386e",
+        "name": "超级碗×1份",
+        "calories": 300,
+        "protein": 20,
+        "carbs": 30,
+        "fat": 10,
+        "sodium": 500
+      },
+      {
+        "id": "f136f64d-f0e0-496f-a0e7-a822eb3ffe57",
+        "name": "溏心蛋×1个",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 0.5,
+        "fat": 5,
+        "sodium": 70
+      }
+    ],
+    "dinner": [
+      {
+        "id": "8a696ccc-5a89-4ffc-9b5e-73b555ee924a",
+        "name": "牛肉×120g",
+        "calories": 200,
+        "protein": 30,
+        "carbs": 0,
+        "fat": 8,
+        "sodium": 70
+      },
+      {
+        "id": "d8380d66-5552-4dd5-943f-7b8be93a33ee",
+        "name": "红薯×半个",
+        "calories": 75,
+        "protein": 1,
+        "carbs": 17.5,
+        "fat": 0.1,
+        "sodium": 5
+      },
+      {
+        "id": "62b95f68-39ef-4289-9be6-f0784ef428c7",
+        "name": "榴莲×300g",
+        "calories": 441,
+        "protein": 4.5,
+        "carbs": 81,
+        "fat": 12,
+        "sodium": 6
+      },
+      {
+        "id": "6f68705b-9cc4-4fd8-828d-22f536d77661",
+        "name": "沙拉×1份",
+        "calories": 200,
+        "protein": 10,
+        "carbs": 15,
+        "fat": 12,
+        "sodium": 400
+      }
+    ],
+    "snack": []
+  },
+  "exercises": [
+    {
+      "id": "5ea33438-5f3b-41fd-ad88-a4c36ea2d953",
+      "name": "练肩",
+      "calories": 433,
+      "duration": 0
+    }
+  ],
+  "water": [
+    {
+      "id": "f916d7af-bd0f-47af-890f-3a9ff27b3b23",
+      "amount": 500,
+      "note": "",
+      "time": "20:58"
+    },
+    {
+      "id": "569fb56f-9341-4896-a634-038a352cf1a1",
+      "amount": 500,
+      "note": "",
+      "time": "20:58"
+    },
+    {
+      "id": "6d247801-ea22-4dae-8510-e01c13aea093",
+      "amount": 500,
+      "note": "",
+      "time": "20:58"
+    }
+  ]
+}
