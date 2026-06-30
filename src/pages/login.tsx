@@ -111,7 +111,9 @@ export default function LoginPage() {
       const apiResult = await loginViaApi(trimmed, trimmedCode);
       if (apiResult) {
         setApiToken(apiResult.token);
-        const workid = `api_${apiResult.user.id}`;
+        // 保留已有的 workid（兼容 GitHub 通道数据），没有才用 api_ 前缀
+        const existingWorkid = localStorage.getItem('calorie_workid');
+        const workid = existingWorkid || `api_${apiResult.user.id}`;
         setSession(workid, trimmed);
         localStorage.setItem('calorie_workid', workid);
         setShowOutro(true);
