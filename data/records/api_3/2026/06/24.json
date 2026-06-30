@@ -1,0 +1,133 @@
+{
+  "date": "2026-06-24",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "8113e48a-bb78-4828-9a4c-e26cafcf258a",
+        "name": "黄瓜×1根",
+        "calories": 16,
+        "protein": 0.8,
+        "carbs": 3.6,
+        "fat": 0.2
+      },
+      {
+        "id": "bb63738d-d5ae-4dde-b119-a94a53c3e877",
+        "name": "鸡蛋×1个",
+        "calories": 72,
+        "protein": 6.7,
+        "carbs": 0.6,
+        "fat": 4.8
+      },
+      {
+        "id": "f60ad20a-e1ed-4204-8f89-8ec20c1346be",
+        "name": "红薯×1根",
+        "calories": 112,
+        "protein": 1.6,
+        "carbs": 26.2,
+        "fat": 0.1
+      },
+      {
+        "id": "e0b19d5c-124b-46a2-9289-cb3fe4906cf5",
+        "name": "抹茶拿铁×1杯",
+        "calories": 120,
+        "protein": 4,
+        "carbs": 14,
+        "fat": 5
+      }
+    ],
+    "lunch": [
+      {
+        "id": "6f0df01d-34f4-40bd-9e7b-b62f4a300fa9",
+        "name": "汉堡（无酱）",
+        "calories": 350,
+        "protein": 20,
+        "carbs": 40,
+        "fat": 10
+      },
+      {
+        "id": "39fde0d0-f439-4f46-b5ed-7487412881f4",
+        "name": "无糖豆浆500ml",
+        "calories": 160,
+        "protein": 12,
+        "carbs": 12,
+        "fat": 6
+      },
+      {
+        "id": "b1ea56f1-9cb8-475c-9c48-d45e6ed80d4b",
+        "name": "三文鱼100g",
+        "calories": 208,
+        "protein": 20,
+        "carbs": 0,
+        "fat": 13
+      },
+      {
+        "id": "5c3b15ba-b492-460b-8f99-eb73345f3544",
+        "name": "沙拉120g",
+        "calories": 60,
+        "protein": 3,
+        "carbs": 10,
+        "fat": 1
+      }
+    ],
+    "dinner": [
+      {
+        "id": "b93ec9b8-e09c-454f-8961-5303b9cc2f17",
+        "name": "西瓜",
+        "calories": 75,
+        "protein": 1.5,
+        "carbs": 18.5,
+        "fat": 0.25
+      },
+      {
+        "id": "d96c4345-ff33-4aa8-b6a6-45efdaed948a",
+        "name": "豌杂面",
+        "calories": 350,
+        "protein": 12,
+        "carbs": 50,
+        "fat": 10
+      },
+      {
+        "id": "ef6c8c44-5c19-496a-b568-86de1af7ef27",
+        "name": "卤牛腱子",
+        "calories": 180,
+        "protein": 24,
+        "carbs": 2,
+        "fat": 8
+      }
+    ],
+    "snack": []
+  },
+  "exercises": [],
+  "water": [
+    {
+      "id": "f4081b6a-2383-481f-9c69-e610ede9441f",
+      "amount": 200,
+      "note": "抹茶拿铁",
+      "time": "11:19"
+    },
+    {
+      "id": "c3847f7d-b86d-41fa-92c2-d671f149495e",
+      "amount": 500,
+      "note": "无糖豆浆",
+      "time": "13:11"
+    },
+    {
+      "id": "1659d141-9b89-4c1f-af8a-be8d07a2db93",
+      "amount": 500,
+      "note": "",
+      "time": "23:19"
+    },
+    {
+      "id": "64d59567-e5d4-4b0e-ada4-b5090493675a",
+      "amount": 500,
+      "note": "",
+      "time": "23:19"
+    },
+    {
+      "id": "57b7b374-2ac6-4aeb-ac09-7f95ce8f58d2",
+      "amount": 500,
+      "note": "",
+      "time": "23:19"
+    }
+  ]
+}
