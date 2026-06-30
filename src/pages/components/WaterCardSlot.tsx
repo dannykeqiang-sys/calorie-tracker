@@ -237,7 +237,10 @@ export default function WaterCardSlot({
           <img
             src={config.imageUrl}
             alt={config.label}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
           <div className="w-full h-full" style={{ background: `linear-gradient(135deg, #EFF9FF, #E0F4FD)` }} />
