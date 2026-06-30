@@ -1,0 +1,102 @@
+{
+  "date": "2026-06-18",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "fc46524b-5277-4643-95ae-556ff95f281a",
+        "name": "拿铁",
+        "calories": 150,
+        "protein": 6,
+        "carbs": 12,
+        "fat": 8
+      },
+      {
+        "id": "50d5201e-8abe-4cb2-8ed4-e0da876022de",
+        "name": "AD钙奶450ml",
+        "calories": 200,
+        "protein": 9,
+        "carbs": 45,
+        "fat": 6
+      },
+      {
+        "id": "c5ff2ecf-3b70-47f1-8f94-974a4a4d782b",
+        "name": "黄瓜",
+        "calories": 16,
+        "protein": 1,
+        "carbs": 3,
+        "fat": 0
+      },
+      {
+        "id": "66239aab-4539-4fcd-9109-bbde8a1b28c3",
+        "name": "番茄",
+        "calories": 20,
+        "protein": 1,
+        "carbs": 4,
+        "fat": 0
+      },
+      {
+        "id": "fb019000-3f61-45ec-a585-ec757869e91e",
+        "name": "卤蛋",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 1,
+        "fat": 5
+      }
+    ],
+    "lunch": [
+      {
+        "id": "add3bddf-cbc2-47e1-8893-fe8c1e5ecedb",
+        "name": "去皮油焖鸡",
+        "calories": 198,
+        "protein": 24,
+        "carbs": 0,
+        "fat": 11
+      },
+      {
+        "id": "f0c64014-ebc5-4bfd-90a6-0f613677d999",
+        "name": "土豆",
+        "calories": 77,
+        "protein": 2,
+        "carbs": 17,
+        "fat": 0
+      },
+      {
+        "id": "fce8b331-1c77-452f-abf7-b10fa30843c8",
+        "name": "米饭",
+        "calories": 58,
+        "protein": 1,
+        "carbs": 13,
+        "fat": 0
+      }
+    ],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": [
+    {
+      "id": "56cba76b-d918-48ce-9a31-7f678e747958",
+      "amount": 250,
+      "note": "拿铁",
+      "time": "11:56"
+    },
+    {
+      "id": "50b1a165-5c2c-4879-b34c-86baf68e665e",
+      "amount": 450,
+      "note": "AD钙奶",
+      "time": "11:56"
+    },
+    {
+      "id": "f2bfb948-04b2-4f92-a80a-e6740b753d10",
+      "amount": 500,
+      "note": "",
+      "time": "15:48"
+    },
+    {
+      "id": "e069238b-3c49-4838-906e-f6fa03259231",
+      "amount": 500,
+      "note": "",
+      "time": "15:48"
+    }
+  ]
+}
