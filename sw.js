@@ -1,5 +1,5 @@
 // Service Worker - 版本控制 + 移动端优化
-const CACHE_VERSION = 'v3.1.0';
+const CACHE_VERSION = 'v3.2.0';
 const CACHE_NAME = `calorie-tracker-${CACHE_VERSION}`;
 
 // 从 SW 的 scope 动态计算 base 路径（适配 GitHub Pages 子目录部署）
@@ -74,6 +74,30 @@ self.addEventListener('fetch', (event) => {
           );
         });
       })
+    );
+    return;
+  }
+
+  // 图片请求：Network First，只缓存成功响应，失败不缓存
+  if (event.request.destination === 'image') {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        try {
+          const networkResponse = await fetch(event.request);
+          // 只缓存成功的 200 响应
+          if (networkResponse.ok && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch (error) {
+          // 网络失败，尝试从缓存返回
+          const cachedResponse = await cache.match(event.request);
+          if (cachedResponse) return cachedResponse;
+          // 缓存也没有，返回离线响应
+          return new Response('', { status: 404, statusText: 'Image offline' });
+        }
+      })()
     );
     return;
   }
