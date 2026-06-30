@@ -1,0 +1,98 @@
+{
+  "date": "2026-06-17",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "d063957c-58b6-41c0-ac38-ac080c5a710a",
+        "name": "拿铁",
+        "calories": 150,
+        "protein": 6,
+        "carbs": 14,
+        "fat": 8
+      },
+      {
+        "id": "49550731-1fdd-4f59-b26d-c50ec05166be",
+        "name": "黄瓜",
+        "calories": 16,
+        "protein": 1,
+        "carbs": 3,
+        "fat": 0
+      },
+      {
+        "id": "051a43c8-6e82-4bfb-bdaa-824deb93f96e",
+        "name": "番茄",
+        "calories": 18,
+        "protein": 1,
+        "carbs": 4,
+        "fat": 0
+      },
+      {
+        "id": "bd6c16f5-db15-45a5-8f3f-d24450691f98",
+        "name": "卤蛋",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 1,
+        "fat": 5
+      }
+    ],
+    "lunch": [
+      {
+        "id": "a53e82b1-32d9-4832-baa1-d111aca48305",
+        "name": "超级碗（去皮鸡腿）",
+        "calories": 450,
+        "protein": 40,
+        "carbs": 40,
+        "fat": 12
+      }
+    ],
+    "dinner": [
+      {
+        "id": "11c526b2-00e1-4088-9e62-93937d54cf44",
+        "name": "涮羊肉（300克）",
+        "calories": 600,
+        "protein": 50,
+        "carbs": 0,
+        "fat": 45
+      },
+      {
+        "id": "9ee1cc37-593f-46db-92b3-88718de7a097",
+        "name": "蔬菜",
+        "calories": 50,
+        "protein": 3,
+        "carbs": 10,
+        "fat": 0
+      }
+    ],
+    "snack": [
+      {
+        "id": "c5cad234-f57c-4023-9d85-f70b42fbbaa3",
+        "name": "NFC橙汁",
+        "calories": 110,
+        "protein": 2,
+        "carbs": 26,
+        "fat": 0
+      }
+    ]
+  },
+  "exercises": [],
+  "water": [
+    {
+      "id": "76687eb6-07be-4ecc-befd-65e6c1113b3d",
+      "amount": 250,
+      "note": "拿铁",
+      "time": "11:52"
+    },
+    {
+      "id": "4e70ba86-422f-4fc5-be09-2e8dcaafb86f",
+      "amount": 250,
+      "note": "茉莉花茶",
+      "time": "11:52"
+    },
+    {
+      "id": "c684a2af-561a-4581-989a-8f3533a2d1eb",
+      "amount": 300,
+      "note": "NFC橙汁",
+      "time": "11:52"
+    }
+  ]
+}
