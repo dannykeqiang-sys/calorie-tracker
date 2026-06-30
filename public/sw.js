@@ -1,5 +1,5 @@
 // Service Worker - 版本控制 + 移动端优化
-const CACHE_VERSION = 'v2.1.0';
+const CACHE_VERSION = 'v3.0.0';
 const CACHE_NAME = `calorie-tracker-${CACHE_VERSION}`;
 
 // 从 SW 的 scope 动态计算 base 路径（适配 GitHub Pages 子目录部署）

@@ -189,7 +189,12 @@ router.delete('/invites/:id', (req: Request, res: Response) => {
  */
 router.get('/users', (req: Request, res: Response) => {
   try {
-    const users = db.prepare(`
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const sort = (req.query.sort as string) || 'created_at';
+
+    const orderColumn = sort === 'last_login_at' ? 'u.last_login_at' : 'u.created_at';
+
+    let query = `
       SELECT
         u.id,
         u.nickname,
@@ -202,12 +207,59 @@ router.get('/users', (req: Request, res: Response) => {
       FROM users u
       LEFT JOIN daily_records dr ON dr.user_id = u.id
       GROUP BY u.id
-      ORDER BY u.created_at DESC
-    `).all();
+      ORDER BY ${orderColumn} DESC
+    `;
+
+    if (limit) {
+      query += ` LIMIT ${limit}`;
+    }
+
+    const users = db.prepare(query).all();
 
     res.json({ users });
   } catch (error) {
     console.error('Get users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/admin/users/recent
+ * Get recently registered users
+ */
+router.get('/users/recent', (req: Request, res: Response) => {
+  try {
+    const users = db.prepare(`
+      SELECT id, nickname, invite_code, created_at, last_login_at, is_active
+      FROM users
+      ORDER BY created_at DESC
+      LIMIT 5
+    `).all();
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Get recent users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/admin/users/active
+ * Get recently active users
+ */
+router.get('/users/active', (req: Request, res: Response) => {
+  try {
+    const users = db.prepare(`
+      SELECT id, nickname, invite_code, created_at, last_login_at, is_active
+      FROM users
+      WHERE last_login_at IS NOT NULL
+      ORDER BY last_login_at DESC
+      LIMIT 5
+    `).all();
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Get active users error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -282,6 +334,71 @@ router.delete('/users/:id', (req: Request, res: Response) => {
     res.json({ message: 'User disabled successfully' });
   } catch (error) {
     console.error('Disable user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/admin/backups
+ * List all backups
+ */
+router.get('/backups', (req: Request, res: Response) => {
+  try {
+    const backups = db.prepare(`
+      SELECT
+        db.id,
+        db.user_id,
+        db.created_at,
+        db.note,
+        LENGTH(db.backup_data) as data_size,
+        u.nickname as user_nickname
+      FROM data_backups db
+      LEFT JOIN users u ON u.id = db.user_id
+      ORDER BY db.created_at DESC
+    `).all();
+
+    res.json({ backups });
+  } catch (error) {
+    console.error('Get backups error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/admin/users/:id/backup
+ * Create individual user backup
+ */
+router.post('/users/:id/backup', (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId);
+    const records = db.prepare('SELECT date, data FROM daily_records WHERE user_id = ?').all(userId);
+
+    const backupData = {
+      user,
+      profile,
+      records: (records as any[]).map(r => ({ date: r.date, data: JSON.parse(r.data) }))
+    };
+
+    const result = db.prepare(`
+      INSERT INTO data_backups (user_id, backup_data, note)
+      VALUES (?, ?, ?)
+    `).run(
+      userId,
+      JSON.stringify(backupData),
+      `Individual user backup - ${new Date().toISOString()}`
+    );
+
+    res.json({ message: 'User backup created successfully', backupId: result.lastInsertRowid });
+  } catch (error) {
+    console.error('Create user backup error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

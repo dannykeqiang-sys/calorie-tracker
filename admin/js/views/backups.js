@@ -25,6 +25,23 @@ const BackupsView = {
                         </button>
                     </div>
 
+                    <!-- Download Latest -->
+                    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            下载完整数据
+                        </h3>
+                        <p class="text-gray-400 mb-4">实时导出所有用户数据（生成并下载 JSON 文件）。</p>
+                        <button id="download-latest-btn" class="btn-secondary">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            下载完整备份
+                        </button>
+                    </div>
+
                     <!-- Backup History -->
                     <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
                         <h3 class="text-lg font-bold text-white mb-4">备份历史</h3>
@@ -52,8 +69,9 @@ const BackupsView = {
     },
 
     renderBackupItem(backup) {
-        const date = new Date(backup.createdAt);
-        const sizeKB = (backup.size / 1024).toFixed(2);
+        // Backend fields: id, user_id, created_at, note, data_size, user_nickname
+        const date = backup.created_at ? new Date(backup.created_at) : new Date();
+        const sizeKB = ((backup.data_size || 0) / 1024).toFixed(2);
 
         return `
             <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
@@ -64,19 +82,12 @@ const BackupsView = {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-white font-medium">备份 ${backup.id}</p>
+                        <p class="text-white font-medium">备份 #${backup.id} ${backup.user_nickname ? `- ${backup.user_nickname}` : ''}</p>
                         <p class="text-gray-400 text-sm">
                             ${date.toLocaleString('zh-CN')} · ${sizeKB} KB
                         </p>
+                        ${backup.note ? `<p class="text-gray-500 text-xs mt-1">${backup.note}</p>` : ''}
                     </div>
-                </div>
-                <div class="flex gap-2">
-                    <button class="btn-secondary download-btn" data-backup-id="${backup.id}">
-                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        下载
-                    </button>
                 </div>
             </div>
         `;
@@ -90,8 +101,8 @@ const BackupsView = {
             btn.textContent = '正在备份...';
 
             try {
-                await window.adminAPI.createFullBackup();
-                window.adminApp.showToast('备份创建成功', 'success');
+                const result = await window.adminAPI.createFullBackup();
+                window.adminApp.showToast(result.message || '备份创建成功', 'success');
                 this.render(document.getElementById('content'));
             } catch (error) {
                 window.adminApp.showToast('备份失败: ' + error.message, 'error');
@@ -101,24 +112,28 @@ const BackupsView = {
             }
         });
 
-        // Download buttons
-        document.querySelectorAll('.download-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const backupId = btn.dataset.backupId;
-                btn.disabled = true;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 mr-1"></span>下载中...';
+        // Download latest backup
+        const downloadBtn = document.getElementById('download-latest-btn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', async () => {
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = '正在生成...';
 
                 try {
-                    await window.adminAPI.downloadBackup(backupId);
+                    await window.adminAPI.downloadBackup();
                     window.adminApp.showToast('下载成功', 'success');
                 } catch (error) {
                     window.adminApp.showToast('下载失败: ' + error.message, 'error');
                 } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
+                    downloadBtn.disabled = false;
+                    downloadBtn.innerHTML = `
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        下载完整备份
+                    `;
                 }
             });
-        });
+        }
     }
 };

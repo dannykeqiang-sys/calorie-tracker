@@ -1,12 +1,62 @@
-import { useState, useRef, forwardRef, useCallback } from 'react';
+import { useState, useRef, forwardRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, Loader2, UserX, RefreshCw, KeyRound } from 'lucide-react';
-import { loginViaApi, findProfileViaGithub } from '../utils/apiDB';
+import { Flame, ArrowRight, Loader2, UserX, RefreshCw, KeyRound, Activity, ChevronRight, Check } from 'lucide-react';
+import { loginViaApi, findProfileViaGithub, syncProfileToCloud } from '../utils/apiDB';
 import { setSession, setApiToken } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
 import VideoIntro, { VIDEO_URL } from './components/VideoIntro';
+import type { UserProfile, Gender, GoalType, ActivityLevel } from '../types';
 
+// ─── 常量 ────────────────────────────────────────────────
+
+const GOAL_OPTIONS: { value: GoalType; label: string; desc: string; icon: string }[] = [
+  { value: 'lose', label: '减脂塑形', desc: '控制热量，打造好身材', icon: 'lose' },
+  { value: 'maintain', label: '维持体重', desc: '保持现有状态，健康生活', icon: 'maintain' },
+  { value: 'gain', label: '增肌增重', desc: '增加热量摄入，强化体魄', icon: 'gain' },
+];
+
+const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string; desc: string }[] = [
+  { value: 'sedentary', label: '久坐不动', desc: '几乎不运动' },
+  { value: 'light', label: '轻度活跃', desc: '每周 1-3 次' },
+  { value: 'moderate', label: '中度活跃', desc: '每周 3-5 次' },
+  { value: 'active', label: '高度活跃', desc: '每周 6-7 次' },
+  { value: 'very_active', label: '超高强度', desc: '每天高强度' },
+];
+
+const AF: Record<ActivityLevel, number> = {
+  sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9,
+};
+
+const GOAL_ICON: Record<string, string> = { lose: '🔥', maintain: '⚖️', gain: '💪' };
+
+const REG_ACCENT = ['#6366F1', '#10B981'];
+const REG_BG = [
+  'linear-gradient(160deg, #F0F4FF 0%, #F5F2FF 100%)',
+  'linear-gradient(160deg, #F0FDF8 0%, #F0F9FF 100%)',
+];
+
+// ─── 工具函数 ──────────────────────────────────────────────
+
+function calcBMR(p: Partial<UserProfile>): number {
+  if (!p.weight || !p.height || !p.age || !p.gender) return 0;
+  return p.gender === 'male'
+    ? 10 * p.weight + 6.25 * p.height - 5 * p.age + 5
+    : 10 * p.weight + 6.25 * p.height - 5 * p.age - 161;
+}
+
+function calcTarget(p: Partial<UserProfile>): number {
+  const bmr = calcBMR(p);
+  if (!bmr || !p.activityLevel || !p.goal) return 0;
+  const tdee = bmr * AF[p.activityLevel];
+  return Math.round(p.goal === 'lose' ? tdee - 500 : p.goal === 'gain' ? tdee + 300 : tdee);
+}
+
+// ─── 类型 ────────────────────────────────────────────────
+
+type PageMode = 'login' | 'register';
 type PageState = 'idle' | 'loading' | 'not-found' | 'error';
+
+// ─── 主组件 ──────────────────────────────────────────────
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -19,9 +69,35 @@ export default function LoginPage() {
   const [showOutro, setShowOutro] = useState(false);
   const [outroLeaving, setOutroLeaving] = useState(false);
 
+  // 注册相关 state
+  const [mode, setMode] = useState<PageMode>('login');
+  const [regStep, setRegStep] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [flash, setFlash] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [gender, setGender] = useState<Gender>('female');
+  const [age, setAge] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [goal, setGoal] = useState<GoalType>('maintain');
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('light');
+
   const trimmed = name.trim();
   const trimmedCode = inviteCode.trim();
   const canSubmit = trimmed.length > 0 && trimmedCode.length > 0 && state !== 'loading';
+
+  // 注册表单计算
+  const partial: Partial<UserProfile> = useMemo(() => ({
+    gender, age: Number(age) || 0, height: Number(height) || 0,
+    weight: Number(weight) || 0, goal, activityLevel,
+  }), [gender, age, height, weight, goal, activityLevel]);
+
+  const targetCalories = calcTarget(partial);
+  const bmi = height && weight ? Math.round((Number(weight) / ((Number(height) / 100) ** 2)) * 10) / 10 : 0;
+
+  const canNext0 = Number(age) >= 10 && Number(age) <= 120
+    && Number(height) >= 100 && Number(height) <= 250
+    && Number(weight) >= 20 && Number(weight) <= 300;
 
   const handleLogin = async () => {
     if (!canSubmit) return;
@@ -32,7 +108,6 @@ export default function LoginPage() {
       // 通道 1：后端 API 登录（昵称 + 邀请码）
       const apiResult = await loginViaApi(trimmed, trimmedCode);
       if (apiResult) {
-        // API 登录成功
         setApiToken(apiResult.token);
         const workid = `api_${apiResult.user.id}`;
         setSession(workid, trimmed);
@@ -70,8 +145,16 @@ export default function LoginPage() {
     if (e.key === 'Enter') handleLogin();
   };
 
-  const handleRegister = () => {
-    navigate(`/register?name=${encodeURIComponent(trimmed)}&code=${encodeURIComponent(trimmedCode)}`);
+  const handleSwitchToRegister = () => {
+    setMode('register');
+    setRegStep(0);
+    setDirection(1);
+  };
+
+  const handleSwitchToLogin = () => {
+    setMode('login');
+    setState('idle');
+    setErrorMsg('');
   };
 
   const handleReset = () => {
@@ -82,6 +165,54 @@ export default function LoginPage() {
     setTimeout(() => nameRef.current?.focus(), 50);
   };
 
+  const triggerFlash = () => { setFlash(true); setTimeout(() => setFlash(false), 450); };
+  const goNext = () => { triggerFlash(); setDirection(1); setRegStep(s => s + 1); };
+  const goPrev = () => { triggerFlash(); setDirection(-1); setRegStep(s => s - 1); };
+
+  const handleRegisterComplete = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      // 调用 login API 创建用户（服务端自动创建）
+      const apiResult = await loginViaApi(trimmed, trimmedCode);
+      if (apiResult) {
+        setApiToken(apiResult.token);
+        const workid = `api_${apiResult.user.id}`;
+        localStorage.setItem('calorie_workid', workid);
+        setSession(workid, trimmed);
+      } else {
+        // API 失败，降级到本地存储
+        const workid = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem('calorie_workid', workid);
+        setSession(workid, trimmed);
+      }
+
+      // 保存 profile
+      const profile: UserProfile = {
+        name: trimmed, gender,
+        age: Number(age), height: Number(height), weight: Number(weight),
+        goal, activityLevel,
+      };
+      saveProfile(profile);
+      await syncProfileToCloud(profile).catch(() => {});
+
+      // 播放 outro → 跳转首页
+      setShowOutro(true);
+    } catch {
+      setState('error');
+      setErrorMsg('注册失败，请稍后重试');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // 背景样式
+  const bgStyle = mode === 'register'
+    ? REG_BG[regStep]
+    : 'linear-gradient(160deg, #FFF8F5 0%, #FFF0FA 60%, #F0F4FF 100%)';
+
+  const slideAnim = direction === 1 ? 'registerSlideInRight' : 'registerSlideInLeft';
+
   return (
     <>
       <video src={VIDEO_URL} preload="auto" muted playsInline style={{ display: 'none' }} />
@@ -91,18 +222,19 @@ export default function LoginPage() {
       )}
 
       <div
-        className="fixed inset-0 overflow-auto flex items-center justify-center p-4"
+        className="fixed inset-0 overflow-auto flex items-center justify-center p-4 transition-all duration-500"
         style={{
-          background: 'linear-gradient(160deg, #FFF8F5 0%, #FFF0FA 60%, #F0F4FF 100%)',
+          background: bgStyle,
           opacity: showOutro ? 0 : 1,
           transform: showOutro ? 'scale(1.04)' : 'scale(1)',
-          transition: 'opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1)',
+          transition: 'opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1), background 0.5s ease',
           pointerEvents: showOutro ? 'none' : 'auto',
         }}
       >
-        <FloatingParticles />
+        {mode === 'login' ? <FloatingParticles /> : <FloatingDots accent={REG_ACCENT[regStep]} />}
 
         <div className="relative w-full max-w-sm">
+          {/* Logo + 标题 */}
           <div
             className="text-center mb-8"
             style={{ animation: 'loginPopIn 0.6s cubic-bezier(0.34,1.56,0.64,1)' }}
@@ -122,8 +254,25 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">科学记录，遇见更好的自己</p>
           </div>
 
+          {/* 步骤指示器（仅注册模式） */}
+          {mode === 'register' && (
+            <div className="flex items-center justify-center gap-1.5 mb-4">
+              {[0, 1].map(i => (
+                <div
+                  key={i}
+                  className="h-1.5 rounded-full transition-all duration-500"
+                  style={{
+                    width: i === regStep ? '28px' : '8px',
+                    backgroundColor: i <= regStep ? REG_ACCENT[regStep] : '#E5E7EB',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 主卡片 */}
           <div
-            className="rounded-3xl p-6 shadow-sm"
+            className="rounded-3xl p-6 shadow-sm relative overflow-hidden"
             style={{
               background: 'rgba(255,255,255,0.85)',
               backdropFilter: 'blur(20px)',
@@ -131,66 +280,291 @@ export default function LoginPage() {
               animation: 'loginSlideUp 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s both',
             }}
           >
-            {state !== 'not-found' ? (
+            {/* 注册模式下的用户信息摘要 */}
+            {mode === 'register' && (
+              <div
+                className="mb-4 pb-4 flex items-center justify-between"
+                style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+              >
+                <div>
+                  <p className="text-xs text-muted-foreground">昵称</p>
+                  <p className="text-sm font-semibold text-foreground">{trimmed}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">邀请码</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {trimmedCode.length > 8 ? trimmedCode.slice(0, 8) + '...' : trimmedCode}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 登录模式 */}
+            {mode === 'login' && (
               <>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1">你的昵称</p>
-                <NameInput
-                  ref={nameRef}
-                  value={name}
-                  onChange={v => { setName(v); if (state === 'error') setState('idle'); }}
-                  onKeyDown={handleKeyDown}
-                  disabled={state === 'loading'}
-                  placeholder="输入你的昵称，比如：小梅"
-                />
+                {state !== 'not-found' ? (
+                  <>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1">你的昵称</p>
+                    <NameInput
+                      ref={nameRef}
+                      value={name}
+                      onChange={v => { setName(v); if (state === 'error') setState('idle'); }}
+                      onKeyDown={handleKeyDown}
+                      disabled={state === 'loading'}
+                      placeholder="输入你的昵称，比如：小梅"
+                    />
 
-                <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1 mt-3">邀请码</p>
-                <CodeInput
-                  ref={codeRef}
-                  value={inviteCode}
-                  onChange={v => { setInviteCode(v); if (state === 'error') setState('idle'); }}
-                  onKeyDown={handleKeyDown}
-                  disabled={state === 'loading'}
-                />
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1 mt-3">邀请码</p>
+                    <CodeInput
+                      ref={codeRef}
+                      value={inviteCode}
+                      onChange={v => { setInviteCode(v); if (state === 'error') setState('idle'); }}
+                      onKeyDown={handleKeyDown}
+                      disabled={state === 'loading'}
+                    />
 
-                {state === 'error' && (
-                  <p className="mt-2 text-xs text-red-500 pl-1">{errorMsg}</p>
+                    {state === 'error' && (
+                      <p className="mt-2 text-xs text-red-500 pl-1">{errorMsg}</p>
+                    )}
+
+                    <button
+                      onClick={handleLogin}
+                      disabled={!canSubmit}
+                      className="mt-4 w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      style={{
+                        background: canSubmit ? 'linear-gradient(135deg, #F97316, #EC4899)' : '#E5E7EB',
+                        boxShadow: canSubmit ? '0 8px 24px rgba(249,115,22,0.35)' : 'none',
+                      }}
+                    >
+                      {state === 'loading' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          登录中...
+                        </>
+                      ) : (
+                        <>
+                          开始记录
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+
+                    <p className="mt-4 text-center text-xs text-muted-foreground">
+                      第一次来？
+                      <button
+                        onClick={() => trimmed ? handleSwitchToRegister() : nameRef.current?.focus()}
+                        className="ml-1 font-semibold cursor-pointer"
+                        style={{ color: '#F97316' }}
+                      >
+                        创建健康档案
+                      </button>
+                    </p>
+                  </>
+                ) : (
+                  <NotFoundView
+                    name={trimmed}
+                    onRegister={handleSwitchToRegister}
+                    onReset={handleReset}
+                  />
+                )}
+              </>
+            )}
+
+            {/* 注册模式 */}
+            {mode === 'register' && (
+              <>
+                {flash && (
+                  <div
+                    className="absolute inset-0 z-10 pointer-events-none rounded-3xl"
+                    style={{
+                      background: `radial-gradient(circle at 50% 20%, ${REG_ACCENT[regStep]}44, transparent 70%)`,
+                      animation: 'registerFlash 0.45s ease-out forwards',
+                    }}
+                  />
                 )}
 
-                <button
-                  onClick={handleLogin}
-                  disabled={!canSubmit}
-                  className="mt-4 w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  style={{
-                    background: canSubmit ? 'linear-gradient(135deg, #F97316, #EC4899)' : '#E5E7EB',
-                    boxShadow: canSubmit ? '0 8px 24px rgba(249,115,22,0.35)' : 'none',
-                  }}
-                >
-                  {state === 'loading' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      登录中...
-                    </>
-                  ) : (
-                    <>
-                      开始记录
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                <div key={`step-${regStep}`} style={{ animation: `${slideAnim} 0.35s cubic-bezier(0.4,0,0.2,1)` }}>
+                  {/* 步骤 0：基本信息 */}
+                  {regStep === 0 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1">性别</p>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {(['female', 'male'] as Gender[]).map(g => (
+                            <button
+                              key={g}
+                              onClick={() => setGender(g)}
+                              className="py-3 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
+                              style={{
+                                border: `2px solid ${gender === g ? REG_ACCENT[0] : '#E5E7EB'}`,
+                                background: gender === g ? `${REG_ACCENT[0]}15` : 'transparent',
+                                color: gender === g ? REG_ACCENT[0] : 'var(--muted-foreground)',
+                              }}
+                            >
+                              {g === 'female' ? '女生' : '男生'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {[
+                          { label: '年龄', value: age, onChange: setAge, placeholder: '25', unit: '岁' },
+                          { label: '身高', value: height, onChange: setHeight, placeholder: '165', unit: 'cm' },
+                          { label: '体重', value: weight, onChange: setWeight, placeholder: '55', unit: 'kg' },
+                        ].map(f => (
+                          <div key={f.label}>
+                            <p className="text-xs text-muted-foreground mb-1.5 pl-1">{f.label}</p>
+                            <GlowInput
+                              type="number"
+                              value={f.value}
+                              onChange={f.onChange}
+                              placeholder={f.placeholder}
+                              unit={f.unit}
+                              accent={REG_ACCENT[0]}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {bmi > 0 && (
+                        <div
+                          className="rounded-2xl px-4 py-3 flex items-center justify-between"
+                          style={{ background: `${REG_ACCENT[0]}12`, border: `1.5px solid ${REG_ACCENT[0]}30` }}
+                        >
+                          <span className="text-xs text-muted-foreground">BMI 指数</span>
+                          <span className="text-lg font-black" style={{ color: REG_ACCENT[0] }}>{bmi}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 步骤 1：目标 + 运动频率 */}
+                  {regStep === 1 && (
+                    <div className="space-y-3">
+                      {GOAL_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setGoal(opt.value)}
+                          className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all cursor-pointer"
+                          style={{
+                            border: `2px solid ${goal === opt.value ? REG_ACCENT[1] : '#E5E7EB'}`,
+                            background: goal === opt.value ? `${REG_ACCENT[1]}10` : 'transparent',
+                          }}
+                        >
+                          <span className="text-xl">{GOAL_ICON[opt.icon]}</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                            <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                          </div>
+                          {goal === opt.value && (
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: REG_ACCENT[1] }}
+                            >
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 pl-1 flex items-center gap-1.5">
+                          <Activity className="w-3 h-3" /> 活动水平
+                        </p>
+                        <div className="space-y-1.5">
+                          {ACTIVITY_OPTIONS.map(opt => (
+                            <button
+                              key={opt.value}
+                              onClick={() => setActivityLevel(opt.value)}
+                              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-all cursor-pointer"
+                              style={{
+                                border: `1.5px solid ${activityLevel === opt.value ? REG_ACCENT[1] : '#E5E7EB'}`,
+                                background: activityLevel === opt.value ? `${REG_ACCENT[1]}10` : 'transparent',
+                              }}
+                            >
+                              <div
+                                className="w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 transition-all"
+                                style={{
+                                  borderColor: activityLevel === opt.value ? REG_ACCENT[1] : '#D1D5DB',
+                                  backgroundColor: activityLevel === opt.value ? REG_ACCENT[1] : 'transparent',
+                                }}
+                              />
+                              <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                              <span className="text-xs text-muted-foreground ml-auto">{opt.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {targetCalories > 0 && (
+                        <div
+                          className="rounded-2xl px-4 py-3 flex items-center justify-between"
+                          style={{ background: `${REG_ACCENT[1]}12`, border: `1.5px solid ${REG_ACCENT[1]}30` }}
+                        >
+                          <span className="text-xs text-muted-foreground">每日目标热量</span>
+                          <span className="text-lg font-black" style={{ color: REG_ACCENT[1] }}>
+                            {targetCalories} <span className="text-xs font-normal">kcal</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 注册模式底部按钮 */}
+                <div className="flex gap-2.5 mt-4">
+                  {regStep > 0 && (
+                    <button
+                      onClick={goPrev}
+                      disabled={submitting}
+                      className="px-5 py-3.5 rounded-2xl border border-border text-sm text-muted-foreground hover:bg-border/30 transition-all cursor-pointer active:scale-95 disabled:opacity-40"
+                    >
+                      返回
+                    </button>
+                  )}
+                  {regStep < 1 ? (
+                    <button
+                      onClick={goNext}
+                      disabled={!canNext0}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96]"
+                      style={{
+                        background: `linear-gradient(135deg, ${REG_ACCENT[0]}, ${REG_ACCENT[0]}cc)`,
+                        boxShadow: `0 6px 20px ${REG_ACCENT[0]}40`,
+                      }}
+                    >
+                      下一步
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleRegisterComplete}
+                      disabled={!canNext0 || submitting}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96]"
+                      style={{
+                        background: 'linear-gradient(135deg, #F97316, #EC4899)',
+                        boxShadow: '0 6px 20px rgba(249,115,22,0.4)',
+                      }}
+                    >
+                      {submitting ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> 创建中...</>
+                      ) : '立即开启健康记录'}
+                    </button>
+                  )}
+                </div>
+
+                {/* 返回登录 */}
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  第一次来？
+                  已有账号？
                   <button
-                    onClick={() => trimmed ? handleRegister() : nameRef.current?.focus()}
+                    onClick={handleSwitchToLogin}
                     className="ml-1 font-semibold cursor-pointer"
                     style={{ color: '#F97316' }}
                   >
-                    创建健康档案
+                    返回登录
                   </button>
                 </p>
               </>
-            ) : (
-              <NotFoundView name={trimmed} onRegister={handleRegister} onReset={handleReset} />
             )}
           </div>
         </div>
@@ -208,11 +582,29 @@ export default function LoginPage() {
             0% { transform: translateY(0) scale(0.8); opacity: 0.6; }
             100% { transform: translateY(-110vh) scale(1.4); opacity: 0; }
           }
+          @keyframes registerSlideInRight {
+            from { opacity: 0; transform: translateX(32px) scale(0.97); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+          }
+          @keyframes registerSlideInLeft {
+            from { opacity: 0; transform: translateX(-32px) scale(0.97); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+          }
+          @keyframes registerFlash {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+          @keyframes dotFloat {
+            0% { transform: translateY(0) scale(0.8); opacity: 0.5; }
+            100% { transform: translateY(-110vh) scale(1.3); opacity: 0; }
+          }
         `}</style>
       </div>
     </>
   );
 }
+
+// ─── 子组件 ──────────────────────────────────────────────
 
 interface NameInputProps {
   value: string;
@@ -322,7 +714,34 @@ function NotFoundView({ name, onRegister, onReset }: { name: string; onRegister:
   );
 }
 
-const COLORS = ['#F97316', '#EC4899', '#7C3AED', '#0EA5E9', '#22C55E', '#F59E0B'];
+function GlowInput({ type = 'text', value, onChange, placeholder, unit, accent, disabled }: {
+  type?: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; unit?: string; accent: string; disabled?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        disabled={disabled}
+        className="w-full px-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
+        style={{
+          borderColor: focused ? accent : '#E5E7EB',
+          boxShadow: focused ? `0 0 0 3px ${accent}22, 0 2px 8px ${accent}18` : '0 1px 3px rgba(0,0,0,0.06)',
+          paddingRight: unit ? '3.5rem' : undefined,
+        }}
+      />
+      {unit && <span className="absolute right-3 top-3.5 text-xs text-muted-foreground">{unit}</span>}
+    </div>
+  );
+}
+
+const PARTICLE_COLORS = ['#F97316', '#EC4899', '#7C3AED', '#0EA5E9', '#22C55E', '#F59E0B'];
 
 function FloatingParticles() {
   const particles = Array.from({ length: 18 }, (_, i) => ({
@@ -331,7 +750,7 @@ function FloatingParticles() {
     x: (i * 17 + 5) % 100,
     delay: (i * 0.51) % 6,
     duration: 5 + (i * 0.41) % 4,
-    color: COLORS[i % COLORS.length],
+    color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
   }));
 
   return (
@@ -347,6 +766,35 @@ function FloatingParticles() {
             bottom: '-20px',
             backgroundColor: p.color + '44',
             animation: `particleFloat ${p.duration}s ease-in ${p.delay}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FloatingDots({ accent }: { accent: string }) {
+  const dots = Array.from({ length: 14 }, (_, i) => ({
+    id: i,
+    size: 4 + (i * 5 % 10),
+    x: (i * 19 + 3) % 100,
+    delay: (i * 0.47) % 5,
+    duration: 5 + (i * 0.39) % 4,
+  }));
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {dots.map(d => (
+        <div
+          key={d.id}
+          className="absolute rounded-full"
+          style={{
+            width: d.size,
+            height: d.size,
+            left: `${d.x}%`,
+            bottom: '-20px',
+            backgroundColor: accent + '55',
+            animation: `dotFloat ${d.duration}s ease-in ${d.delay}s infinite`,
           }}
         />
       ))}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { UserProfile, DailyRecord } from '../../types';
 import { calcTargetCalories, calcMacroTargets, sumMacrosWithEstimate } from '../../utils/calculations';
 import { TrendingDown, Minus, TrendingUp } from 'lucide-react';
@@ -16,23 +16,52 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
 }) {
   const [hoverRing, setHoverRing] = useState<number | null>(null);
   const [animated, setAnimated] = useState(false);
+  // Smooth data transitions: store previous values and interpolate
+  const [displayData, setDisplayData] = useState({ intake, protein, carbs });
+  const dataRef = useRef({ intake, protein, carbs });
+  const rafRef = useRef<number | null>(null);
+
   const cx = 150, cy = 150;
+
+  // Animate numeric values smoothly when data changes
+  useEffect(() => {
+    const start = { ...dataRef.current };
+    const end = { intake, protein, carbs };
+    const duration = 600;
+    const startTime = performance.now();
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+    const tick = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // easeInOutCubic
+      setDisplayData({
+        intake: Math.round(start.intake + (end.intake - start.intake) * ease),
+        protein: Math.round(start.protein + (end.protein - start.protein) * ease),
+        carbs: Math.round(start.carbs + (end.carbs - start.carbs) * ease),
+      });
+      if (t < 1) rafRef.current = requestAnimationFrame(tick);
+      else dataRef.current = end;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [intake, protein, carbs]);
 
   const rings = [
     {
-      r: 90, sw: 16, value: intake, max: target,
+      r: 90, sw: 16, value: displayData.intake, rawValue: intake, max: target,
       color: '#f97316', gradientId: 'grad-cal',
       label: '热量', unit: 'kcal',
       pct: Math.min(intake / Math.max(target, 1), 1.5) * 100
     },
     {
-      r: 70, sw: 16, value: protein, max: proteinTarget,
+      r: 70, sw: 16, value: displayData.protein, rawValue: protein, max: proteinTarget,
       color: '#3b82f6', gradientId: 'grad-protein',
       label: '蛋白质', unit: 'g',
       pct: Math.min(protein / Math.max(proteinTarget, 1), 1.5) * 100
     },
     {
-      r: 50, sw: 16, value: carbs, max: carbsTarget,
+      r: 50, sw: 16, value: displayData.carbs, rawValue: carbs, max: carbsTarget,
       color: '#22c55e', gradientId: 'grad-carbs',
       label: '碳水', unit: 'g',
       pct: Math.min(carbs / Math.max(carbsTarget, 1), 1.5) * 100
@@ -133,7 +162,8 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
                 style={{
                   transform: `rotate(-90deg)`,
                   transformOrigin: `${cx}px ${cy}px`,
-                  transition: 'stroke-dashoffset 0.8s ease-out, stroke-width 0.3s ease, opacity 0.3s ease',
+                  willChange: 'transform, stroke-dashoffset, stroke-width',
+                  transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
                   cursor: 'pointer',
                 }}
                 onMouseEnter={() => setHoverRing(i)}
@@ -153,7 +183,7 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
                     fill={isOver ? '#ef4444' : ring.color}
                     opacity={hoverRing !== null && !isH ? 0.4 : 1}
                     style={{
-                      transition: 'all 0.3s ease',
+                      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
                       pointerEvents: 'none',
                     }}
                   />
@@ -163,89 +193,84 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
           );
         })}
 
-        {/* 中心文字 */}
-        {hoverRing === null ? (
-          <>
-            <text
-              x={cx}
-              y={cy - 10}
-              textAnchor="middle"
-              fontSize={30}
-              fontWeight="900"
-              fill="var(--ck-dock-title)"
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              {intake}
-            </text>
-            <text
-              x={cx}
-              y={cy + 10}
-              textAnchor="middle"
-              fontSize={12}
-              fill="var(--ck-dock-sub)"
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              / {target} kcal
-            </text>
-            <text
-              x={cx}
-              y={cy + 28}
-              textAnchor="middle"
-              fontSize={11}
-              fontWeight="700"
-              fill={overallColor}
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              {overallPct}%
-            </text>
-          </>
-        ) : (
-          <>
-            <text
-              x={cx}
-              y={cy - 12}
-              textAnchor="middle"
-              fontSize={13}
-              fontWeight="700"
-              fill={rings[hoverRing].color}
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              {rings[hoverRing].label}
-            </text>
-            <text
-              x={cx}
-              y={cy + 8}
-              textAnchor="middle"
-              fontSize={26}
-              fontWeight="900"
-              fill="var(--ck-dock-title)"
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              {rings[hoverRing].value}
-            </text>
-            <text
-              x={cx}
-              y={cy + 24}
-              textAnchor="middle"
-              fontSize={11}
-              fill="var(--ck-dock-sub)"
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              / {rings[hoverRing].max} {rings[hoverRing].unit}
-            </text>
-            <text
-              x={cx}
-              y={cy + 40}
-              textAnchor="middle"
-              fontSize={10}
-              fontWeight="700"
-              fill={rings[hoverRing].pct > 100 ? '#ef4444' : rings[hoverRing].color}
-              style={{ transition: 'all 0.3s ease' }}
-            >
-              {Math.round(rings[hoverRing].pct)}%
-            </text>
-          </>
-        )}
+        {/* 中心文字 — 双层 opacity fade */}
+        <g style={{ opacity: hoverRing === null ? 1 : 0, transition: 'opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1)', pointerEvents: 'none' }}>
+          <text
+            x={cx}
+            y={cy - 10}
+            textAnchor="middle"
+            fontSize={30}
+            fontWeight="900"
+            fill="var(--ck-dock-title)"
+          >
+            {displayData.intake}
+          </text>
+          <text
+            x={cx}
+            y={cy + 10}
+            textAnchor="middle"
+            fontSize={12}
+            fill="var(--ck-dock-sub)"
+          >
+            / {target} kcal
+          </text>
+          <text
+            x={cx}
+            y={cy + 28}
+            textAnchor="middle"
+            fontSize={11}
+            fontWeight="700"
+            fill={overallColor}
+          >
+            {overallPct}%
+          </text>
+        </g>
+
+        <g style={{ opacity: hoverRing !== null ? 1 : 0, transition: 'opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1)', pointerEvents: 'none' }}>
+          {hoverRing !== null && (
+            <>
+              <text
+                x={cx}
+                y={cy - 12}
+                textAnchor="middle"
+                fontSize={13}
+                fontWeight="700"
+                fill={rings[hoverRing].color}
+              >
+                {rings[hoverRing].label}
+              </text>
+              <text
+                x={cx}
+                y={cy + 8}
+                textAnchor="middle"
+                fontSize={26}
+                fontWeight="900"
+                fill="var(--ck-dock-title)"
+              >
+                {rings[hoverRing].value}
+              </text>
+              <text
+                x={cx}
+                y={cy + 24}
+                textAnchor="middle"
+                fontSize={11}
+                fill="var(--ck-dock-sub)"
+              >
+                / {rings[hoverRing].max} {rings[hoverRing].unit}
+              </text>
+              <text
+                x={cx}
+                y={cy + 40}
+                textAnchor="middle"
+                fontSize={10}
+                fontWeight="700"
+                fill={rings[hoverRing].pct > 100 ? '#ef4444' : rings[hoverRing].color}
+              >
+                {Math.round(rings[hoverRing].pct)}%
+              </text>
+            </>
+          )}
+        </g>
       </svg>
 
       {/* 底部指标卡片 */}

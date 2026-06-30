@@ -349,7 +349,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
               }}
               className="w-full text-sm bg-card border rounded-xl px-3.5 py-2.5 outline-none transition-shadow"
               style={{ borderColor: error && !editName.trim() ? '#EF4444' : `${accent}35` }}
-              onFocus={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}30`; }}
+              onFocus={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}30`; setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
               onBlur={e => { e.currentTarget.style.boxShadow = 'none'; }}
             />
           </div>
@@ -367,7 +367,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
               }}
               className="w-full text-sm bg-card border rounded-xl px-3.5 py-2.5 outline-none transition-shadow"
               style={{ borderColor: error && (isNaN(Number(editCalories)) || Number(editCalories) <= 0) ? '#EF4444' : `${accent}35` }}
-              onFocus={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}30`; }}
+              onFocus={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}30`; setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
               onBlur={e => { e.currentTarget.style.boxShadow = 'none'; }}
             />
           </div>

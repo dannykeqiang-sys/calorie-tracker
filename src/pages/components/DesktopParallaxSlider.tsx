@@ -77,6 +77,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
     const prevActiveRef = useRef(0);
     const swipeStartX = useRef<number | null>(null);
     const swipeStartY = useRef<number | null>(null);
+    const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const dateStr = journalDate ?? '';
 
@@ -134,6 +135,14 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
       if (dx < 0 && activeIndex < CARD_ORDER.length - 1) switchCard(activeIndex + 1);
       else if (dx > 0 && activeIndex > 0) switchCard(activeIndex - 1);
+    }, [activeIndex, switchCard]);
+
+    const handleWheel = useCallback((e: React.WheelEvent) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      if (wheelTimerRef.current) return;
+      wheelTimerRef.current = setTimeout(() => { wheelTimerRef.current = null; }, 300);
+      if (e.deltaX > 0 && activeIndex < CARD_ORDER.length - 1) switchCard(activeIndex + 1);
+      else if (e.deltaX < 0 && activeIndex > 0) switchCard(activeIndex - 1);
     }, [activeIndex, switchCard]);
 
     useImperativeHandle(ref, () => ({

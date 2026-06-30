@@ -7,20 +7,22 @@ const DashboardView = {
         window.adminApp.showLoading(container);
 
         try {
-            const [stats, recentUsers, activeUsers] = await Promise.all([
+            const [statsData, recentUsers, activeUsers] = await Promise.all([
                 window.adminAPI.getStats(),
                 window.adminAPI.getRecentUsers(),
                 window.adminAPI.getActiveUsers(),
             ]);
 
+            const stats = statsData.stats || {};
+
             container.innerHTML = `
                 <div class="fade-in space-y-6">
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        ${this.renderStatCard('总用户数', stats.totalUsers, 'users', '#3b82f6')}
-                        ${this.renderStatCard('活跃用户', stats.activeUsers, 'activity', '#22c55e')}
-                        ${this.renderStatCard('总记录天数', stats.totalDays, 'calendar', '#f97316')}
-                        ${this.renderStatCard('邀请码剩余', stats.availableInvites, 'key', '#a855f7')}
+                        ${this.renderStatCard('总用户数', stats.totalUsers || 0, 'users', '#3b82f6')}
+                        ${this.renderStatCard('活跃用户 (7天)', stats.activeUsersLast7Days || 0, 'activity', '#22c55e')}
+                        ${this.renderStatCard('总记录天数', stats.totalRecords || 0, 'calendar', '#f97316')}
+                        ${this.renderStatCard('邀请码剩余', (stats.totalInviteCodes || 0) - (stats.usedInviteCodes || 0), 'key', '#a855f7')}
                     </div>
 
                     <!-- Recent Users Lists -->
@@ -34,7 +36,7 @@ const DashboardView = {
                                 最近注册
                             </h3>
                             <div class="space-y-3">
-                                ${recentUsers.map(user => this.renderUserItem(user)).join('')}
+                                ${recentUsers.length > 0 ? recentUsers.map(user => this.renderUserItem(user)).join('') : '<p class="text-gray-400 text-center py-4">暂无用户</p>'}
                             </div>
                         </div>
 
@@ -47,7 +49,7 @@ const DashboardView = {
                                 最近活跃
                             </h3>
                             <div class="space-y-3">
-                                ${activeUsers.map(user => this.renderUserItem(user)).join('')}
+                                ${activeUsers.length > 0 ? activeUsers.map(user => this.renderUserItem(user)).join('') : '<p class="text-gray-400 text-center py-4">暂无活跃用户</p>'}
                             </div>
                         </div>
                     </div>
@@ -82,24 +84,26 @@ const DashboardView = {
     },
 
     renderUserItem(user) {
-        const initials = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+        const nickname = user.nickname || '未命名';
+        const initials = nickname.charAt(0).toUpperCase();
         return `
             <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer" onclick="window.location.hash='#users/detail/${user.id}'">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
                     ${initials}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-white font-medium truncate">${user.name || '未命名'}</p>
-                    <p class="text-gray-400 text-sm">${user.inviteCode || '无邀请码'}</p>
+                    <p class="text-white font-medium truncate">${nickname}</p>
+                    <p class="text-gray-400 text-sm">${user.invite_code || '无邀请码'}</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-gray-400 text-xs">${this.formatDate(user.createdAt)}</p>
+                    <p class="text-gray-400 text-xs">${this.formatDate(user.created_at)}</p>
                 </div>
             </div>
         `;
     },
 
     formatDate(dateStr) {
+        if (!dateStr) return '未知';
         const date = new Date(dateStr);
         const now = new Date();
         const diff = now - date;

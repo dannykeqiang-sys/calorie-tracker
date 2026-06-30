@@ -44,7 +44,7 @@ class AdminAPI {
 
             if (!response.ok) {
                 const error = await response.json().catch(() => ({ message: 'Request failed' }));
-                throw new Error(error.message || `HTTP ${response.status}`);
+                throw new Error(error.message || error.error || `HTTP ${response.status}`);
             }
 
             return await response.json();
@@ -56,7 +56,7 @@ class AdminAPI {
 
     // Auth
     async login(password) {
-        const data = await this.request('/auth/login', {
+        const data = await this.request('/login', {
             method: 'POST',
             body: JSON.stringify({ password }),
         });
@@ -74,33 +74,44 @@ class AdminAPI {
     }
 
     async getRecentUsers() {
-        return this.request('/users/recent');
+        const data = await this.request('/users/recent');
+        return data.users || [];
     }
 
     async getActiveUsers() {
-        return this.request('/users/active');
+        const data = await this.request('/users/active');
+        return data.users || [];
     }
 
     // Invites
     async getInvites() {
-        return this.request('/invites');
+        const data = await this.request('/invites');
+        return data.invites || [];
     }
 
-    async generateInvites(data) {
-        return this.request('/invites/generate', {
+    async generateInvites(formData) {
+        const expiresInDays = parseInt(formData.expiresIn) || 30;
+        const expiresAt = new Date(Date.now() + expiresInDays * 86400000).toISOString();
+
+        return this.request('/invites', {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: JSON.stringify({
+                count: parseInt(formData.count) || 1,
+                label: formData.label || '',
+                maxUses: parseInt(formData.maxUses) || 1,
+                expiresAt,
+            }),
         });
     }
 
-    async disableInvite(code) {
-        return this.request(`/invites/${code}/disable`, {
-            method: 'POST',
+    async disableInvite(id) {
+        return this.request(`/invites/${id}`, {
+            method: 'DELETE',
         });
     }
 
-    async deleteInvite(code) {
-        return this.request(`/invites/${code}`, {
+    async deleteInvite(id) {
+        return this.request(`/invites/${id}`, {
             method: 'DELETE',
         });
     }
@@ -108,7 +119,8 @@ class AdminAPI {
     // Users
     async getUsers(params = {}) {
         const query = new URLSearchParams(params).toString();
-        return this.request(`/users${query ? '?' + query : ''}`);
+        const data = await this.request(`/users${query ? '?' + query : ''}`);
+        return data.users || [];
     }
 
     async getUserDetail(userId) {
@@ -123,17 +135,19 @@ class AdminAPI {
 
     // Backups
     async getBackups() {
-        return this.request('/backups');
+        const data = await this.request('/backups');
+        return data.backups || [];
     }
 
     async createFullBackup() {
-        return this.request('/backups/full', {
+        return this.request('/backup/all', {
             method: 'POST',
+            body: JSON.stringify({ note: 'Admin full backup' }),
         });
     }
 
-    async downloadBackup(backupId) {
-        const url = `${API_BASE}/backups/${backupId}/download`;
+    async downloadBackup() {
+        const url = `${API_BASE}/backup/all`;
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${this.token}`,
@@ -148,7 +162,7 @@ class AdminAPI {
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = `backup-${backupId}.json`;
+        a.download = `calorie-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

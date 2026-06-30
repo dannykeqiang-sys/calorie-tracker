@@ -79,8 +79,9 @@ const InvitesView = {
     },
 
     renderInviteRow(invite) {
-        const isExpired = new Date(invite.expiresAt) < new Date();
-        const isDisabled = invite.disabled;
+        // Backend fields: id, code, label, used_count, max_uses, is_active, created_at, expires_at
+        const isExpired = invite.expires_at && new Date(invite.expires_at) < new Date();
+        const isDisabled = !invite.is_active;
         const status = isExpired ? '已过期' : isDisabled ? '已禁用' : '活跃';
         const statusClass = isExpired || isDisabled ? 'inactive' : 'active';
 
@@ -98,20 +99,20 @@ const InvitesView = {
                 </td>
                 <td class="py-4 text-gray-300">${invite.label || '-'}</td>
                 <td class="py-4">
-                    <span class="text-white">${invite.usedCount}</span>
-                    <span class="text-gray-400">/ ${invite.maxUses}</span>
+                    <span class="text-white">${invite.used_count || 0}</span>
+                    <span class="text-gray-400">/ ${invite.max_uses || 1}</span>
                 </td>
                 <td class="py-4">
                     <span class="status-badge ${statusClass}">${status}</span>
                 </td>
-                <td class="py-4 text-gray-400 text-sm">${new Date(invite.createdAt).toLocaleDateString('zh-CN')}</td>
-                <td class="py-4 text-gray-400 text-sm">${new Date(invite.expiresAt).toLocaleDateString('zh-CN')}</td>
+                <td class="py-4 text-gray-400 text-sm">${invite.created_at ? new Date(invite.created_at).toLocaleDateString('zh-CN') : '-'}</td>
+                <td class="py-4 text-gray-400 text-sm">${invite.expires_at ? new Date(invite.expires_at).toLocaleDateString('zh-CN') : '永久'}</td>
                 <td class="py-4">
                     <div class="flex gap-2">
                         ${!isDisabled && !isExpired ? `
-                            <button class="btn-secondary text-sm disable-btn" data-code="${invite.code}">禁用</button>
+                            <button class="btn-secondary text-sm disable-btn" data-id="${invite.id}" data-code="${invite.code}">禁用</button>
                         ` : ''}
-                        <button class="btn-danger text-sm delete-btn" data-code="${invite.code}">删除</button>
+                        <button class="btn-danger text-sm delete-btn" data-id="${invite.id}" data-code="${invite.code}">删除</button>
                     </div>
                 </td>
             </tr>
@@ -127,8 +128,8 @@ const InvitesView = {
 
             try {
                 const result = await window.adminAPI.generateInvites(data);
-                this.showNewCodes(result.codes);
-                window.adminApp.showToast('邀请码生成成功', 'success');
+                this.showNewCodes(result.codes || []);
+                window.adminApp.showToast(result.message || '邀请码生成成功', 'success');
                 this.render(document.getElementById('content'));
             } catch (error) {
                 window.adminApp.showToast('生成失败: ' + error.message, 'error');
@@ -153,14 +154,15 @@ const InvitesView = {
             });
         });
 
-        // Disable buttons
+        // Disable buttons - use id instead of code
         document.querySelectorAll('.disable-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
                 const code = btn.dataset.code;
                 if (!confirm(`确定要禁用邀请码 ${code} 吗？`)) return;
 
                 try {
-                    await window.adminAPI.disableInvite(code);
+                    await window.adminAPI.disableInvite(id);
                     window.adminApp.showToast('邀请码已禁用', 'success');
                     this.render(document.getElementById('content'));
                 } catch (error) {
@@ -169,14 +171,15 @@ const InvitesView = {
             });
         });
 
-        // Delete buttons
+        // Delete buttons - use id instead of code
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
                 const code = btn.dataset.code;
                 if (!confirm(`确定要删除邀请码 ${code} 吗？此操作不可恢复。`)) return;
 
                 try {
-                    await window.adminAPI.deleteInvite(code);
+                    await window.adminAPI.deleteInvite(id);
                     window.adminApp.showToast('邀请码已删除', 'success');
                     this.render(document.getElementById('content'));
                 } catch (error) {

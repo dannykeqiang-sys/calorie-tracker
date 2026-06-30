@@ -320,6 +320,7 @@ export default function GlobalTreeholeInput({
               placeholder="如：早上喝了牛奶，中午吃了米饭和鸡胸肉，下午跑步了30分钟"
               rows={4}
               className="w-full resize-none rounded-xl border border-border/70 bg-card/80 px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onFocus={e => { setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
               onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();

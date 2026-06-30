@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && cp -r ../admin dist/public/admin",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },

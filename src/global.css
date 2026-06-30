@@ -285,6 +285,17 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+
+  /* ═══ 移动端视口固定 + 键盘弹出优化 ═══ */
+  html {
+    overflow-x: hidden;
+    height: -webkit-fill-available;
+  }
+  body {
+    overflow-x: hidden;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
 }
 
 /* ═══ Animation System — Premium Micro-Interactions ═══ */

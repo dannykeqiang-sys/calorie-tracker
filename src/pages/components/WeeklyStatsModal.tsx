@@ -126,15 +126,18 @@ export default function WeeklyStatsModal({
   activeDaysCount, exerciseDays, daysOnTarget,
   targetCalories, tdee, dateRange, selectedDate,
 }: WeeklyStatsModalProps) {
-  const trendItems = getTrendItems(stats);
-  const suggestions = getSuggestions(stats, profile, targetCalories);
+  // 时光机只展示近 7 天数据
+  const recentStats = useMemo(() => stats.slice(-7), [stats]);
 
-  // 计算全周期平均摄入与饮水达标天数
-  const activeDays = stats.filter(d => d.intake > 0);
+  const trendItems = getTrendItems(recentStats);
+  const suggestions = getSuggestions(recentStats, profile, targetCalories);
+
+  // 近 7 天有效记录
+  const activeDays = recentStats.filter(d => d.intake > 0);
   const avgIntake = activeDays.length > 0
     ? Math.round(activeDays.reduce((s, d) => s + d.intake, 0) / activeDays.length)
     : 0;
-  const waterDays = stats.filter(d => d.water >= 1500).length;
+  const waterDays = recentStats.filter(d => d.water >= 1500).length;
 
   // ─── 日期导航状态 ───
   const [activeDate, setActiveDate] = useState<string>(
@@ -149,32 +152,37 @@ export default function WeeklyStatsModal({
     }
   }, [selectedDate]);
 
-  // 当前选中日期的数据
-  const activeDayData = useMemo(() => {
-    return stats.find(d => d.date === activeDate) || null;
-  }, [stats, activeDate]);
+  // 近 7 天统计指标
+  const recentActiveDaysCount = activeDays.length;
+  const recentExerciseDays = recentStats.filter(d => d.burn > 0).length;
+  const recentDaysOnTarget = recentStats.filter(d => d.intake > 0 && d.intake <= targetCalories).length;
 
-  // 动态标题：基于选中日期的状态
+  // 当前选中日期的数据（从近 7 天中查找）
+  const activeDayData = useMemo(() => {
+    return recentStats.find(d => d.date === activeDate) || null;
+  }, [recentStats, activeDate]);
+
+  // 动态标题：基于选中日期的状态（使用近 7 天指标）
   const dynamicHeadline = useMemo(() => {
     if (!activeDayData || activeDayData.intake === 0) {
-      return getHeadline(profile?.name || '你', activeDaysCount, daysOnTarget, exerciseDays);
+      return getHeadline(profile?.name || '你', recentActiveDaysCount, recentDaysOnTarget, recentExerciseDays);
     }
     const state = classifyDay(activeDayData, targetCalories);
     const cfg = STATE_CONFIGS[state];
     const name = profile?.name || '你';
     return `${cfg.emoji} ${name}，${cfg.title}`;
-  }, [activeDayData, profile, activeDaysCount, daysOnTarget, exerciseDays, targetCalories]);
+  }, [activeDayData, profile, recentActiveDaysCount, recentDaysOnTarget, recentExerciseDays, targetCalories]);
 
   const dynamicSubline = useMemo(() => {
     if (!activeDayData || activeDayData.intake === 0) {
-      return getSubline(activeDaysCount, exerciseDays);
+      return getSubline(recentActiveDaysCount, recentExerciseDays);
     }
     const state = classifyDay(activeDayData, targetCalories);
     const cfg = STATE_CONFIGS[state];
     const dateObj = new Date(activeDayData.date + 'T00:00:00');
     const dateStr = `${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
     return `${dateStr} · ${cfg.tone}`;
-  }, [activeDayData, targetCalories, activeDaysCount, exerciseDays]);
+  }, [activeDayData, targetCalories, recentActiveDaysCount, recentExerciseDays]);
 
   // 滚动日期导航到选中项
   useEffect(() => {
@@ -196,7 +204,7 @@ export default function WeeklyStatsModal({
 
   const name = profile?.name || '你';
 
-  // 单日指标 vs 全量指标
+  // 单日指标 vs 近 7 天汇总指标
   const metrics = activeDayData && activeDayData.intake > 0
     ? [
         { label: '摄入', value: `${activeDayData.intake}`, icon: Flame, color: '#F97316' },
@@ -205,9 +213,9 @@ export default function WeeklyStatsModal({
         { label: '蛋白', value: `${activeDayData.protein}`, icon: Gauge, color: '#8B5CF6' },
       ]
     : [
-        { label: '记录', value: activeDaysCount, icon: Calendar, color: '#8B5CF6' },
-        { label: '达标', value: daysOnTarget, icon: Flame, color: '#F97316' },
-        { label: '运动', value: exerciseDays, icon: Dumbbell, color: '#22C55E' },
+        { label: '记录', value: recentActiveDaysCount, icon: Calendar, color: '#8B5CF6' },
+        { label: '达标', value: recentDaysOnTarget, icon: Flame, color: '#F97316' },
+        { label: '运动', value: recentExerciseDays, icon: Dumbbell, color: '#22C55E' },
         { label: '均摄入', value: `${avgIntake}`, icon: Gauge, color: '#6366F1' },
       ];
 
@@ -240,7 +248,7 @@ export default function WeeklyStatsModal({
               style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 65%)' }} />
 
             <div className="relative pr-10">
-              <p className="text-white/65 text-[11px] font-medium tracking-widest uppercase mb-2">{dateRange || '全程档案'}</p>
+              <p className="text-white/65 text-[11px] font-medium tracking-widest uppercase mb-2">近 7 天 · 时光机</p>
               <h2 className="text-white text-xl font-bold leading-snug mb-1"
                 style={{ fontFamily: '"Noto Serif SC", "Songti SC", serif' }}>{dynamicHeadline}</h2>
               <p className="text-white/75 text-sm">{dynamicSubline}</p>
@@ -298,33 +306,33 @@ export default function WeeklyStatsModal({
             </div>
           )}
 
-          {/* ─── 滚动内容：全周期可视化 ─── */}
+          {/* ─── 滚动内容：近 7 天可视化 ─── */}
           <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6 space-y-3">
             <AIHealingCard
-              stats={stats} profile={profile}
-              activeDaysCount={activeDaysCount} waterDays={waterDays}
-              exerciseDays={exerciseDays} daysOnTarget={daysOnTarget}
+              stats={recentStats} profile={profile}
+              activeDaysCount={recentActiveDaysCount} waterDays={waterDays}
+              exerciseDays={recentExerciseDays} daysOnTarget={recentDaysOnTarget}
               targetCalories={targetCalories} selectedDate={activeDate}
             />
 
-            {/* 三大宏量全周期趋势 */}
-            <MacroLineChart stats={stats} target={targetCalories} />
+            {/* 三大宏量近 7 天趋势 */}
+            <MacroLineChart stats={recentStats} target={targetCalories} />
 
-            {/* 热量全周期趋势 */}
-            <ChartCard icon={Flame} title="全周期热量趋势" iconColor="#F97316" kind="orange">
-              <CalorieTrendChart stats={stats} target={targetCalories} />
+            {/* 热量近 7 天趋势 */}
+            <ChartCard icon={Flame} title="近 7 天热量趋势" iconColor="#F97316" kind="orange">
+              <CalorieTrendChart stats={recentStats} target={targetCalories} />
             </ChartCard>
 
             {/* 宏量流向 全宽 */}
-            <MacroSankey stats={stats} profile={profile} selectedDate={activeDate} />
+            <MacroSankey stats={recentStats} profile={profile} selectedDate={activeDate} />
 
-            {/* 全周期用餐热力图 */}
-            <MealHeatmap stats={stats} />
+            {/* 近 7 天用餐热力图 */}
+            <MealHeatmap stats={recentStats} />
 
-            {/* 周K线图 */}
-            <DailyKLineChart stats={stats} targetCalories={targetCalories} />
+            {/* K线图 */}
+            <DailyKLineChart stats={recentStats} targetCalories={targetCalories} />
 
-            {/* 全程趋势对比 */}
+            {/* 近 7 天趋势对比 */}
             {trendItems.length > 0 && (
               <div className="rounded-2xl bg-card border border-border overflow-hidden">
                 <div className="px-4 pt-4 pb-2 flex items-center gap-2">
@@ -332,7 +340,7 @@ export default function WeeklyStatsModal({
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)' }}>
                     <TrendingUp className="w-3 h-3 text-white" />
                   </div>
-                  <p className="text-sm font-bold text-foreground">全程趋势对比</p>
+                  <p className="text-sm font-bold text-foreground">近 7 天趋势对比</p>
                   <span className="text-[10px] text-muted-foreground ml-auto">前半段 vs 后半段</span>
                 </div>
                 <div className="px-4 pb-4 space-y-3">

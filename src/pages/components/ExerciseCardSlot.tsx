@@ -182,6 +182,7 @@ export default function ExerciseCardSlot({
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
+                  onFocus={e => { setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
                   className="flex-1 min-w-0 text-sm bg-transparent border-b border-blue-300 outline-none py-0.5"
                 />
                 <input

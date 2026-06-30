@@ -76,8 +76,10 @@ const UsersView = {
     },
 
     renderUserRow(user) {
-        const initials = user.name ? user.name.charAt(0).toUpperCase() : 'U';
-        const isActive = this.isRecentlyActive(user.lastLogin);
+        // Backend fields: id, nickname, invite_code, created_at, last_login_at, is_active, record_count
+        const nickname = user.nickname || '未命名';
+        const initials = nickname.charAt(0).toUpperCase();
+        const isActive = this.isRecentlyActive(user.last_login_at);
 
         return `
             <tr class="table-row">
@@ -87,18 +89,18 @@ const UsersView = {
                             ${initials}
                         </div>
                         <div>
-                            <p class="text-white font-medium">${user.name || '未命名'}</p>
-                            <p class="text-gray-400 text-sm">${user.email || '无邮箱'}</p>
+                            <p class="text-white font-medium">${nickname}</p>
+                            <p class="text-gray-400 text-sm">ID: ${user.id}</p>
                         </div>
                     </div>
                 </td>
                 <td class="py-4">
-                    <code class="text-orange-400 font-mono text-sm">${user.inviteCode || '-'}</code>
+                    <code class="text-orange-400 font-mono text-sm">${user.invite_code || '-'}</code>
                 </td>
-                <td class="py-4 text-gray-400 text-sm">${new Date(user.createdAt).toLocaleDateString('zh-CN')}</td>
-                <td class="py-4 text-gray-400 text-sm">${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('zh-CN') : '从未登录'}</td>
+                <td class="py-4 text-gray-400 text-sm">${user.created_at ? new Date(user.created_at).toLocaleDateString('zh-CN') : '-'}</td>
+                <td class="py-4 text-gray-400 text-sm">${user.last_login_at ? new Date(user.last_login_at).toLocaleDateString('zh-CN') : '从未登录'}</td>
                 <td class="py-4">
-                    <span class="text-white font-semibold">${user.recordDays || 0}</span>
+                    <span class="text-white font-semibold">${user.record_count || 0}</span>
                     <span class="text-gray-400 text-sm"> 天</span>
                 </td>
                 <td class="py-4">
@@ -150,14 +152,14 @@ const UsersView = {
 
         if (query) {
             filtered = filtered.filter(user =>
-                (user.name && user.name.toLowerCase().includes(query)) ||
-                (user.inviteCode && user.inviteCode.toLowerCase().includes(query))
+                (user.nickname && user.nickname.toLowerCase().includes(query)) ||
+                (user.invite_code && user.invite_code.toLowerCase().includes(query))
             );
         }
 
         if (statusFilter) {
             filtered = filtered.filter(user => {
-                const isActive = this.isRecentlyActive(user.lastLogin);
+                const isActive = this.isRecentlyActive(user.last_login_at);
                 return statusFilter === 'active' ? isActive : !isActive;
             });
         }
@@ -177,7 +179,13 @@ const UsersView = {
         window.adminApp.showLoading(container);
 
         try {
-            const user = await window.adminAPI.getUserDetail(userId);
+            const data = await window.adminAPI.getUserDetail(userId);
+            // Backend returns: { user: {...}, recentRecords: [...] }
+            const user = data.user || {};
+            const recentRecords = data.recentRecords || [];
+
+            const nickname = user.nickname || '未命名';
+            const initials = nickname.charAt(0).toUpperCase();
 
             container.innerHTML = `
                 <div class="fade-in space-y-6">
@@ -193,26 +201,26 @@ const UsersView = {
                     <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
                         <div class="flex items-start gap-6">
                             <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-bold">
-                                ${user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                                ${initials}
                             </div>
                             <div class="flex-1">
-                                <h2 class="text-2xl font-bold text-white mb-2">${user.name || '未命名'}</h2>
+                                <h2 class="text-2xl font-bold text-white mb-2">${nickname}</h2>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                     <div>
-                                        <p class="text-gray-400">邮箱</p>
-                                        <p class="text-white">${user.email || '无'}</p>
+                                        <p class="text-gray-400">用户 ID</p>
+                                        <p class="text-white">${user.id}</p>
                                     </div>
                                     <div>
                                         <p class="text-gray-400">邀请码</p>
-                                        <p class="text-orange-400 font-mono">${user.inviteCode || '无'}</p>
+                                        <p class="text-orange-400 font-mono">${user.invite_code || '无'}</p>
                                     </div>
                                     <div>
                                         <p class="text-gray-400">注册时间</p>
-                                        <p class="text-white">${new Date(user.createdAt).toLocaleString('zh-CN')}</p>
+                                        <p class="text-white">${user.created_at ? new Date(user.created_at).toLocaleString('zh-CN') : '-'}</p>
                                     </div>
                                     <div>
                                         <p class="text-gray-400">最后登录</p>
-                                        <p class="text-white">${user.lastLogin ? new Date(user.lastLogin).toLocaleString('zh-CN') : '从未'}</p>
+                                        <p class="text-white">${user.last_login_at ? new Date(user.last_login_at).toLocaleString('zh-CN') : '从未'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -220,29 +228,23 @@ const UsersView = {
                     </div>
 
                     <!-- Stats -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
                             <h3 class="text-gray-400 text-sm mb-2">记录天数</h3>
-                            <p class="text-3xl font-bold text-white">${user.recordDays || 0}</p>
+                            <p class="text-3xl font-bold text-white">${user.record_count || 0}</p>
                         </div>
                         <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
-                            <h3 class="text-gray-400 text-sm mb-2">总摄入</h3>
-                            <p class="text-3xl font-bold text-orange-400">${user.totalIntake || 0}</p>
-                            <p class="text-gray-400 text-sm">kcal</p>
-                        </div>
-                        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
-                            <h3 class="text-gray-400 text-sm mb-2">运动消耗</h3>
-                            <p class="text-3xl font-bold text-green-400">${user.totalBurn || 0}</p>
-                            <p class="text-gray-400 text-sm">kcal</p>
+                            <h3 class="text-gray-400 text-sm mb-2">账号状态</h3>
+                            <p class="text-3xl font-bold ${user.is_active ? 'text-green-400' : 'text-red-400'}">${user.is_active ? '正常' : '已禁用'}</p>
                         </div>
                     </div>
 
                     <!-- Recent Records -->
                     <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
-                        <h3 class="text-lg font-bold text-white mb-4">最近 7 天记录</h3>
+                        <h3 class="text-lg font-bold text-white mb-4">最近 10 天记录</h3>
                         <div class="space-y-3">
-                            ${user.recentRecords && user.recentRecords.length > 0
-                                ? user.recentRecords.map(record => this.renderRecordItem(record)).join('')
+                            ${recentRecords.length > 0
+                                ? recentRecords.map(record => this.renderRecordItem(record)).join('')
                                 : '<p class="text-gray-400 text-center py-8">暂无记录</p>'
                             }
                         </div>
@@ -267,14 +269,20 @@ const UsersView = {
     },
 
     renderRecordItem(record) {
+        // Backend returns: { date, data: {...}, updated_at }
+        // data contains meal info, intake, burn etc.
+        const data = record.data || {};
+        const mealCount = data.meals ? data.meals.length : 0;
+        const intake = data.totalIntake || data.total_intake || 0;
+
         return `
             <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                 <div>
-                    <p class="text-white font-medium">${new Date(record.date).toLocaleDateString('zh-CN')}</p>
-                    <p class="text-gray-400 text-sm">${record.mealCount || 0} 餐</p>
+                    <p class="text-white font-medium">${record.date || '-'}</p>
+                    <p class="text-gray-400 text-sm">${mealCount} 餐</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-orange-400 font-semibold">${record.intake || 0} kcal</p>
+                    <p class="text-orange-400 font-semibold">${intake} kcal</p>
                     <p class="text-gray-400 text-sm">摄入</p>
                 </div>
             </div>

@@ -405,6 +405,7 @@ export default function WaterCardSlot({
                   value={editState.amount}
                   onChange={e => setEditState(s => s ? { ...s, amount: e.target.value } : s)}
                   onKeyDown={handleEditKey}
+                  onFocus={e => { setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
                   className="w-16 text-sm bg-transparent border-b border-sky-300 outline-none text-right py-0.5"
                 />
                 <span className="text-xs text-muted-foreground flex-shrink-0">ml</span>
@@ -469,6 +470,7 @@ export default function WaterCardSlot({
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={e => { setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
               disabled={inputStatus === 'parsing' || inputStatus === 'confirm'}
               placeholder={apiKey ? '输入任意食物/饮料，智能识别含水量' : '输入量，如：一大杯、300ml'}
               className="flex-1 h-10 rounded-full border border-white/80 bg-white/72 px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 disabled:opacity-50"
