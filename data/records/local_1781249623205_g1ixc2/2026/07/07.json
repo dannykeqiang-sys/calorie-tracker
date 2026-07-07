@@ -79,7 +79,16 @@
         "fat": 5
       }
     ],
-    "snack": []
+    "snack": [
+      {
+        "id": "433fa797-8552-40b4-aaa1-d670f871a4d0",
+        "name": "喜茶",
+        "calories": 150,
+        "protein": 0,
+        "carbs": 35,
+        "fat": 0
+      }
+    ]
   },
   "exercises": [],
   "water": [
