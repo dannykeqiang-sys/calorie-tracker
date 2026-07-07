@@ -1,0 +1,93 @@
+{
+  "date": "2026-07-07",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "5352b686-e8b1-40b6-9b93-3a8f0d28b13b",
+        "name": "玉米×1",
+        "calories": 200,
+        "protein": 5,
+        "carbs": 40,
+        "fat": 2
+      },
+      {
+        "id": "b261caff-05bd-4d64-8d16-d770fc75b5eb",
+        "name": "黄瓜×1",
+        "calories": 30,
+        "protein": 1,
+        "carbs": 6,
+        "fat": 0
+      },
+      {
+        "id": "cc515921-1455-43df-9443-b29378b05eb7",
+        "name": "鸡蛋×1",
+        "calories": 70,
+        "protein": 6,
+        "carbs": 0,
+        "fat": 5
+      },
+      {
+        "id": "37a4d337-fd1f-477f-b2f5-76432f803cef",
+        "name": "椰汁水美式",
+        "calories": 50,
+        "protein": 0,
+        "carbs": 10,
+        "fat": 0
+      }
+    ],
+    "lunch": [
+      {
+        "id": "3e748f62-4d65-4328-9282-8fd0104823f7",
+        "name": "麻酱麻辣拌（蔬菜为主）",
+        "calories": 350,
+        "protein": 10,
+        "carbs": 20,
+        "fat": 25
+      },
+      {
+        "id": "7657447b-c3fd-41b7-95d9-ea6c4795d921",
+        "name": "方便面饼×1",
+        "calories": 400,
+        "protein": 8,
+        "carbs": 60,
+        "fat": 15
+      }
+    ],
+    "dinner": [
+      {
+        "id": "0325c9ab-e942-4dfa-bdda-3bd9b1eba858",
+        "name": "碗杂面×1份",
+        "calories": 500,
+        "protein": 15,
+        "carbs": 70,
+        "fat": 15
+      },
+      {
+        "id": "565b9016-8a00-4bdf-8f59-880c2a6e4431",
+        "name": "卤牛肉×1份",
+        "calories": 200,
+        "protein": 25,
+        "carbs": 2,
+        "fat": 10
+      },
+      {
+        "id": "a8806903-3c03-4d7a-a76d-163ff77263c1",
+        "name": "小份沙拉",
+        "calories": 100,
+        "protein": 3,
+        "carbs": 10,
+        "fat": 5
+      }
+    ],
+    "snack": []
+  },
+  "exercises": [],
+  "water": [
+    {
+      "id": "9057433c-9e20-401f-9837-f9c45c77f194",
+      "amount": 250,
+      "note": "椰汁水美式",
+      "time": "23:11"
+    }
+  ]
+}
