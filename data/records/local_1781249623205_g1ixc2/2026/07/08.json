@@ -74,5 +74,30 @@
     ]
   },
   "exercises": [],
-  "water": []
+  "water": [
+    {
+      "id": "781fe62c-1572-4eb4-9b7d-6de817f79ee7",
+      "amount": 250,
+      "note": "拿铁",
+      "time": "16:30"
+    },
+    {
+      "id": "b5e5d127-3d5e-4a6a-9ec6-dd3fddf0d140",
+      "amount": 250,
+      "note": "无糖柠檬茶",
+      "time": "16:30"
+    },
+    {
+      "id": "853d50d9-5bbe-403f-b752-25b35c62ce0a",
+      "amount": 500,
+      "note": "",
+      "time": "16:30"
+    },
+    {
+      "id": "92126fcd-0175-4184-a13f-d728fcb6f129",
+      "amount": 500,
+      "note": "",
+      "time": "16:30"
+    }
+  ]
 }
