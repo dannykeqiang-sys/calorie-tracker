@@ -1,0 +1,43 @@
+{
+  "date": "2026-07-09",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "d12dd6c5-6b43-434e-83a1-5a3a0af910d3",
+        "name": "黄瓜×1",
+        "calories": 16,
+        "protein": 0.8,
+        "carbs": 3.6,
+        "fat": 0.2
+      },
+      {
+        "id": "35140859-e7ce-4ffd-a6e7-2365382ecd60",
+        "name": "咸芝士拿铁冰大杯Manner×1",
+        "calories": 250,
+        "protein": 10,
+        "carbs": 25,
+        "fat": 12
+      },
+      {
+        "id": "da9adfef-d496-4ab3-ad02-f1ff56955105",
+        "name": "紫薯×0.5",
+        "calories": 60,
+        "protein": 1.5,
+        "carbs": 14,
+        "fat": 0.1
+      }
+    ],
+    "lunch": [],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": [
+    {
+      "id": "4cf6ae5b-e123-4ec5-8d48-72d755a7b77f",
+      "amount": 250,
+      "note": "咸芝士拿铁",
+      "time": "10:41"
+    }
+  ]
+}
