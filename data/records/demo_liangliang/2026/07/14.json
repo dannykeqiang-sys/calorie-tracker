@@ -3,46 +3,111 @@
   "meals": {
     "breakfast": [
       {
-        "id": "demo-2026-07-14-b-0",
-        "name": "希腊酸奶坚果碗",
-        "calories": 343,
-        "protein": 19,
-        "carbs": 31,
-        "fat": 15,
-        "sodium": 112
+        "id": "8b43d916-4e9c-4d76-99d7-f0cb19de3c8f",
+        "name": "燕麦粥",
+        "calories": 150,
+        "protein": 5,
+        "carbs": 27,
+        "fat": 3,
+        "sodium": 5
+      },
+      {
+        "id": "33f6d3bd-8302-4371-9d9e-29fd0959c080",
+        "name": "牛奶",
+        "calories": 128,
+        "protein": 8,
+        "carbs": 12,
+        "fat": 7,
+        "sodium": 100
+      },
+      {
+        "id": "a217ac18-9bea-43fa-80e3-6ee6954a96d6",
+        "name": "蓝莓",
+        "calories": 29,
+        "protein": 0.4,
+        "carbs": 7,
+        "fat": 0.2,
+        "sodium": 1
       }
     ],
     "lunch": [
       {
-        "id": "31a36007-ddf9-4dc0-91d5-70271ed8a6fd",
-        "name": "卤蛋（1 个）",
-        "calories": 78,
-        "protein": 7,
-        "carbs": 2,
-        "fat": 5,
-        "sodium": 310
+        "id": "82ad0ef5-51ad-4de8-a4c3-5fd522b58e9b",
+        "name": "糙米饭",
+        "calories": 216,
+        "protein": 5,
+        "carbs": 45,
+        "fat": 1.8,
+        "sodium": 5
       },
       {
-        "id": "3287ee61-13d9-4871-aabf-c5a09e13af13",
-        "name": "牛肉面（1 碗）",
-        "calories": 650,
-        "protein": 28,
-        "carbs": 82,
-        "fat": 22,
-        "sodium": 1380
+        "id": "5d092ba5-08a7-43af-8517-b6dd24fd8d6e",
+        "name": "鸡胸肉",
+        "calories": 165,
+        "protein": 31,
+        "carbs": 0,
+        "fat": 3.6,
+        "sodium": 70
       },
       {
-        "id": "6bc9fcab-8522-4663-abfb-aa64dfb51f05",
-        "name": "卤蛋（1 个）",
-        "calories": 78,
-        "protein": 7,
-        "carbs": 2,
-        "fat": 5,
-        "sodium": 310
+        "id": "cfed9d23-3394-4614-8b8d-682ae428ea0a",
+        "name": "西兰花",
+        "calories": 40,
+        "protein": 3,
+        "carbs": 7,
+        "fat": 0.4,
+        "sodium": 30
       }
     ],
-    "dinner": [],
-    "snack": []
+    "dinner": [
+      {
+        "id": "50e75b51-459d-425e-a3ec-fa08e82fb079",
+        "name": "鲈鱼",
+        "calories": 120,
+        "protein": 20,
+        "carbs": 0,
+        "fat": 4,
+        "sodium": 80
+      },
+      {
+        "id": "a94f34fa-0b0f-4f37-82c5-a7b5293e6136",
+        "name": "生菜沙拉",
+        "calories": 80,
+        "protein": 2,
+        "carbs": 6,
+        "fat": 5,
+        "sodium": 200
+      }
+    ],
+    "snack": [
+      {
+        "id": "cd89557e-0a09-47bf-bf09-d953ff15b942",
+        "name": "坚果",
+        "calories": 150,
+        "protein": 5,
+        "carbs": 6,
+        "fat": 13,
+        "sodium": 3
+      },
+      {
+        "id": "584bcc39-354a-465b-a6ea-d35378b55921",
+        "name": "苹果",
+        "calories": 95,
+        "protein": 0.5,
+        "carbs": 25,
+        "fat": 0.3,
+        "sodium": 2
+      },
+      {
+        "id": "567761bf-c212-41a0-9886-8eececef2ee3",
+        "name": "豆浆",
+        "calories": 80,
+        "protein": 7,
+        "carbs": 5,
+        "fat": 3,
+        "sodium": 30
+      }
+    ]
   },
   "exercises": [],
   "water": [
