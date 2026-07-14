@@ -30,6 +30,24 @@
         "carbs": 2,
         "fat": 5,
         "sodium": 310
+      },
+      {
+        "id": "0c8630f5-07c5-4ec8-b109-fd0cf4a736f1",
+        "name": "牛肉面（1 碗）",
+        "calories": 650,
+        "protein": 28,
+        "carbs": 82,
+        "fat": 22,
+        "sodium": 1380
+      },
+      {
+        "id": "31a36007-ddf9-4dc0-91d5-70271ed8a6fd",
+        "name": "卤蛋（1 个）",
+        "calories": 78,
+        "protein": 7,
+        "carbs": 2,
+        "fat": 5,
+        "sodium": 310
       }
     ],
     "dinner": [],
