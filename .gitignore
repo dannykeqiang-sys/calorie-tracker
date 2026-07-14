@@ -14,4 +14,7 @@ src/**/*.js.map
 .env
 .edgeone/*
 .tef_dist/*
-  
+  server/data/calorie.db-shm
+server/data/calorie.db-wal
+qr-preview.png
+时光机修复报告.md

@@ -75,7 +75,10 @@ export function getDailyImageUrl(type: CarouselCardType, dateStr: string): strin
   if (!pool.length) return '';
   let hash = 0;
   for (const ch of (dateStr + type)) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  return pool[hash % pool.length];
+  const rawUrl = pool[hash % pool.length];
+  // Route through wsrv.nl CDN proxy for faster delivery and edge caching
+  const noProtocol = rawUrl.replace(/^https?:\/\//, '');
+  return `https://wsrv.nl/?url=${encodeURIComponent(noProtocol)}`;
 }
 
 export const MEAL_CONFIGS_BASE: (Omit<MealSlotConfig, 'imageUrl'> & { type: MealType; pageBg: string })[] = [

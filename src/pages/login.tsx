@@ -318,7 +318,21 @@ export default function LoginPage() {
                       placeholder="输入你的昵称，比如：小梅"
                     />
 
-                    <p className="text-xs font-semibold text-muted-foreground mb-2 pl-1 mt-3">邀请码</p>
+                    <div className="flex items-center justify-between mb-2 pl-1 mt-3">
+                      <p className="text-xs font-semibold text-muted-foreground">邀请码</p>
+                      <button
+                        onClick={() => { setInviteCode('5583F66676AABD5A'); codeRef.current?.focus(); }}
+                        disabled={state === 'loading'}
+                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all active:scale-95 cursor-pointer disabled:opacity-40"
+                        style={{
+                          background: 'rgba(249,115,22,0.1)',
+                          color: '#F97316',
+                          border: '1px solid rgba(249,115,22,0.2)',
+                        }}
+                      >
+                        🔑 一键填写测试码
+                      </button>
+                    </div>
                     <CodeInput
                       ref={codeRef}
                       value={inviteCode}

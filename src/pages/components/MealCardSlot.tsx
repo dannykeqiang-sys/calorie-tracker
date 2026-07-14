@@ -538,12 +538,14 @@ export default function MealCardSlot({
 
   return (
     <div
-      className={`relative ${bareMode ? 'w-[260px]' : 'w-screen sm:w-[400px]'} rounded-[2rem] overflow-hidden flex flex-col select-none ${fullscreen ? 'h-full' : ''}`}
+      className={`relative ${bareMode ? (isActive ? 'w-[380px]' : 'w-[260px]') : 'w-screen sm:w-[400px]'} rounded-[2rem] overflow-hidden flex flex-col select-none ${fullscreen ? 'h-full' : ''}`}
       style={{
         maxHeight: fullscreen || bareMode ? undefined : noImage ? '280px' : (isActive ? '900px' : '216px'),
         opacity: isActive ? 1 : bareMode ? 0.75 : 0.62,
+        background: isActive ? '#ffffff' : undefined,
+        border: isActive && bareMode ? '2px solid rgba(255,255,255,0.95)' : undefined,
         boxShadow: bareMode
-          ? (isActive ? '0 8px 24px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.08)')
+          ? (isActive ? '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.15), 0 0 80px rgba(255,255,255,0.06)' : '0 2px 8px rgba(0,0,0,0.08)')
           : (isActive
               ? 'inset 0 15px 25px rgba(255,255,255,0.3), inset 0 1px 1px rgba(255,255,255,0.75), 0 24px 56px rgba(0,0,0,0.16), 0 8px 20px rgba(0,0,0,0.10)'
               : 'inset 0 1px 1px rgba(255,255,255,0.55), 0 8px 24px rgba(0,0,0,0.07)'),
@@ -557,7 +559,7 @@ export default function MealCardSlot({
       <div
         className="relative flex-shrink-0 overflow-hidden"
         style={{
-          height: noImage ? '0px' : (bareMode && isActive ? '0px' : fullscreen ? (isActive ? '200px' : '0px') : '8rem'),
+          height: noImage ? '0px' : (bareMode && isActive ? '0px' : fullscreen ? (isActive ? '160px' : '0px') : '8rem'),
           transition: 'height 0.6s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
@@ -596,11 +598,13 @@ export default function MealCardSlot({
       <div
         className={fullscreen ? 'flex-1 flex flex-col min-h-0' : 'flex flex-col'}
         style={{
-          background: noImage
-            ? `linear-gradient(135deg, ${config.gradientFrom}CC 0%, rgba(255,255,255,0.72) 80px, rgba(255,255,255,0.65) 100%)`
-            : `linear-gradient(135deg, ${config.accent}12 0%, rgba(255,255,255,0.68) 56px, rgba(255,255,255,0.60) 100%)`,
-          backdropFilter: 'url(#liquid-distort) blur(28px) saturate(190%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+          background: isActive
+            ? `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`
+            : (noImage
+              ? `linear-gradient(135deg, ${config.gradientFrom}CC 0%, rgba(255,255,255,0.72) 80px, rgba(255,255,255,0.65) 100%)`
+              : `linear-gradient(135deg, ${config.accent}12 0%, rgba(255,255,255,0.68) 56px, rgba(255,255,255,0.60) 100%)`),
+          backdropFilter: isActive ? 'none' : 'url(#liquid-distort) blur(28px) saturate(190%)',
+          WebkitBackdropFilter: isActive ? 'none' : 'blur(28px) saturate(190%)',
         }}
       >
         {noImage && (
@@ -613,25 +617,25 @@ export default function MealCardSlot({
             }}
           />
         )}
-        <div className="px-4 pt-3 pb-1">
+        <div className="px-4 pt-2 pb-0.5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
               <div
-                className="w-9 h-9 rounded-2xl flex items-center justify-center"
+                className="w-8 h-8 rounded-2xl flex items-center justify-center"
                 style={{ backgroundColor: `${config.accent}22` }}
               >
                 <Icon className="w-4 h-4" style={{ color: config.accent }} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-foreground leading-none tracking-tight">{config.label}</h2>
+                <h2 className="text-lg font-black text-foreground leading-none tracking-tight">{config.label}</h2>
                 {noImage && config.time && (
                   <p className="text-[9px] text-muted-foreground/40 tracking-wide mt-0.5">{config.time}</p>
                 )}
               </div>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-2xl font-black tabular-nums leading-none" style={{ color: config.accent }}>{total}</span>
-              <span className="text-[10px] text-muted-foreground/45 mt-0.5 font-medium">kcal</span>
+              <span className="text-xl font-black tabular-nums leading-none" style={{ color: config.accent }}>{total}</span>
+              <span className="text-[9px] text-muted-foreground/45 mt-0.5 font-medium">kcal</span>
             </div>
           </div>
 
@@ -789,7 +793,7 @@ export default function MealCardSlot({
         </div>
 
         <div
-          className="px-3 pt-2 pb-3 mx-1 mb-1 rounded-2xl space-y-1.5"
+          className="px-3 pt-1.5 pb-2 mx-1 mb-0.5 rounded-2xl space-y-1.5"
           style={{
             opacity: showDetails ? 1 : 0,
             transition: 'opacity 0.35s ease',

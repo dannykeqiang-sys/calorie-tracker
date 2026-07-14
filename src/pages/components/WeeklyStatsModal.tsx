@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Droplets, ChevronDown, ChevronUp, Utensils, Apple, Moon, Cookie } from 'lucide-react';
+import { X, Calendar, Flame, Dumbbell, TrendingUp, TrendingDown, Minus, Lightbulb, Gauge, Droplets, ChevronDown, ChevronUp, Utensils, Apple, Moon, Cookie, List } from 'lucide-react';
 import type { UserProfile } from '../../types';
 import AIHealingCard, { type DayStats, classifyDay, STATE_CONFIGS } from './AIHealingCard';
 import {
@@ -126,22 +126,29 @@ export default function WeeklyStatsModal({
   activeDaysCount, exerciseDays, daysOnTarget,
   targetCalories, tdee, dateRange, selectedDate,
 }: WeeklyStatsModalProps) {
-  // 时光机只展示近 7 天数据
-  const recentStats = useMemo(() => stats.slice(-7), [stats]);
+  // ─── 视图模式：byDay（单日查看）或 7day（近7天趋势）───
+  const [viewMode, setViewMode] = useState<'byDay' | '7day'>(
+    selectedDate ? 'byDay' : '7day'
+  );
 
-  const trendItems = getTrendItems(recentStats);
-  const suggestions = getSuggestions(recentStats, profile, targetCalories);
+  // 近 7 天数据（始终用于趋势图表）
+  const recent7Days = useMemo(() => stats.slice(-7), [stats]);
+  const recent7Active = recent7Days.filter(d => d.intake > 0);
 
-  // 近 7 天有效记录
-  const activeDays = recentStats.filter(d => d.intake > 0);
-  const avgIntake = activeDays.length > 0
-    ? Math.round(activeDays.reduce((s, d) => s + d.intake, 0) / activeDays.length)
+  const trendItems = getTrendItems(recent7Days);
+  const suggestions = getSuggestions(recent7Days, profile, targetCalories);
+
+  const avgIntake = recent7Active.length > 0
+    ? Math.round(recent7Active.reduce((s, d) => s + d.intake, 0) / recent7Active.length)
     : 0;
-  const waterDays = recentStats.filter(d => d.water >= 1500).length;
+  const waterDays = recent7Days.filter(d => d.water >= 1500).length;
 
   // ─── 日期导航状态 ───
+  // 所有有数据的天数（用于日期导航条，展示全部历史）
+  const allActiveDays = useMemo(() => stats.filter(d => d.intake > 0), [stats]);
+
   const [activeDate, setActiveDate] = useState<string>(
-    selectedDate || (activeDays.length > 0 ? activeDays[activeDays.length - 1].date : '')
+    selectedDate || (allActiveDays.length > 0 ? allActiveDays[allActiveDays.length - 1].date : '')
   );
   const [detailExpanded, setDetailExpanded] = useState(false);
   const dateNavRef = useRef<HTMLDivElement>(null);
@@ -150,20 +157,26 @@ export default function WeeklyStatsModal({
   useEffect(() => {
     if (selectedDate) {
       setActiveDate(selectedDate);
+      setViewMode('byDay');
+    } else {
+      setViewMode('7day');
     }
   }, [selectedDate]);
 
-  // 近 7 天统计指标
-  const recentActiveDaysCount = activeDays.length;
-  const recentExerciseDays = recentStats.filter(d => d.burn > 0).length;
-  const recentDaysOnTarget = recentStats.filter(d => d.intake > 0 && d.intake <= targetCalories).length;
+  // 全部历史统计指标（用于标题等）
+  const recentActiveDaysCount = allActiveDays.length;
+  const recentExerciseDays = stats.filter(d => d.burn > 0).length;
+  const recentDaysOnTarget = stats.filter(d => d.intake > 0 && d.intake <= targetCalories).length;
 
-  // 当前选中日期的数据（从近 7 天中查找）
+  // 当前选中日期的数据（从全部历史中查找）
   const activeDayData = useMemo(() => {
-    return recentStats.find(d => d.date === activeDate) || null;
-  }, [recentStats, activeDate]);
+    return stats.find(d => d.date === activeDate) || null;
+  }, [stats, activeDate]);
 
-  // 动态标题：基于选中日期的状态（使用近 7 天指标）
+  // 图表周期标签
+  const chartPeriodLabel = '近 7 天';
+
+  // 动态标题：基于选中日期的状态
   const dynamicHeadline = useMemo(() => {
     if (!activeDayData || activeDayData.intake === 0) {
       return getHeadline(profile?.name || '你', recentActiveDaysCount, recentDaysOnTarget, recentExerciseDays);
@@ -249,7 +262,9 @@ export default function WeeklyStatsModal({
               style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 65%)' }} />
 
             <div className="relative pr-10">
-              <p className="text-white/65 text-[11px] font-medium tracking-widest uppercase mb-2">近 7 天 · 时光机</p>
+              <p className="text-white/65 text-[11px] font-medium tracking-widest uppercase mb-2">
+                {viewMode === 'byDay' ? '单日详情 · 时光机' : '近 7 天 · 时光机'}
+              </p>
               <h2 className="text-white text-xl font-bold leading-snug mb-1"
                 style={{ fontFamily: '"Noto Serif SC", "Songti SC", serif' }}>{dynamicHeadline}</h2>
               <p className="text-white/75 text-sm">{dynamicSubline}</p>
@@ -276,15 +291,31 @@ export default function WeeklyStatsModal({
             </div>
           </div>
 
-          {/* ─── 日期导航条 ─── */}
-          {activeDays.length > 1 && (
+          {/* ─── 日期导航条（展示全部历史）─── */}
+          {allActiveDays.length > 1 && (
             <div className="flex-shrink-0 px-4 pt-3 pb-2 relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  全部 {allActiveDays.length} 天记录
+                </span>
+                <button
+                  onClick={() => setViewMode(viewMode === 'byDay' ? '7day' : 'byDay')}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all cursor-pointer"
+                  style={{
+                    background: viewMode === 'byDay' ? 'rgba(139,92,246,0.12)' : 'rgba(99,102,241,0.12)',
+                    color: viewMode === 'byDay' ? '#8B5CF6' : '#6366F1',
+                  }}
+                >
+                  <List className="w-3 h-3" />
+                  {viewMode === 'byDay' ? '切换到7天趋势' : '切换到单日查看'}
+                </button>
+              </div>
               <div
                 ref={dateNavRef}
                 className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {activeDays.map(d => {
+                {allActiveDays.map(d => {
                   const isActive = d.date === activeDate;
                   const dateObj = new Date(d.date + 'T00:00:00');
                   const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
@@ -292,7 +323,10 @@ export default function WeeklyStatsModal({
                     <button
                       key={d.date}
                       data-date={d.date}
-                      onClick={() => setActiveDate(d.date)}
+                      onClick={() => {
+                        setActiveDate(d.date);
+                        setViewMode('byDay');
+                      }}
                       className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         isActive
                           ? 'bg-primary text-primary-foreground shadow-sm'
@@ -307,11 +341,11 @@ export default function WeeklyStatsModal({
             </div>
           )}
 
-          {/* ─── 滚动内容：近 7 天可视化 ─── */}
+          {/* ─── 滚动内容：可视化 ─── */}
           <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6 space-y-3">
 
-            {/* ─── 当日详情（可折叠） ─── */}
-            {activeDayData && activeDayData.intake > 0 && (
+            {/* ─── 当日详情（可折叠，仅 byDay 模式显示）─── */}
+            {viewMode === 'byDay' && activeDayData && activeDayData.intake > 0 && (
               <div className="rounded-2xl border border-border overflow-hidden"
                 style={{ background: 'var(--ck-modal-card)', backdropFilter: 'blur(12px)' }}>
                 <button
@@ -459,31 +493,31 @@ export default function WeeklyStatsModal({
             )}
 
             <AIHealingCard
-              stats={recentStats} profile={profile}
+              stats={recent7Days} profile={profile}
               activeDaysCount={recentActiveDaysCount} waterDays={waterDays}
               exerciseDays={recentExerciseDays} daysOnTarget={recentDaysOnTarget}
               targetCalories={targetCalories} selectedDate={activeDate}
             />
 
-            {/* 三大宏量近 7 天趋势 */}
-            <MacroLineChart stats={recentStats} target={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
+            {/* 三大宏量趋势 */}
+            <MacroLineChart stats={recent7Days} target={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
 
-            {/* 热量近 7 天趋势 */}
-            <ChartCard icon={Flame} title="近 7 天热量趋势" iconColor="#F97316" kind="orange">
-              <CalorieTrendChart stats={recentStats} target={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
+            {/* 热量趋势 */}
+            <ChartCard icon={Flame} title={`${chartPeriodLabel}热量趋势`} iconColor="#F97316" kind="orange">
+              <CalorieTrendChart stats={recent7Days} target={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
             </ChartCard>
 
-            {/* 宏量流向 全宽 */}
-            <MacroSankey stats={recentStats} profile={profile} selectedDate={activeDate} onDateChange={setActiveDate} />
+            {/* 宏量流向 */}
+            <MacroSankey stats={recent7Days} profile={profile} selectedDate={activeDate} onDateChange={setActiveDate} />
 
-            {/* 近 7 天用餐热力图 */}
-            <MealHeatmap stats={recentStats} onDateClick={setActiveDate} activeDate={activeDate} />
+            {/* 用餐热力图 */}
+            <MealHeatmap stats={recent7Days} onDateClick={setActiveDate} activeDate={activeDate} />
 
             {/* K线图 */}
-            <DailyKLineChart stats={recentStats} targetCalories={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
+            <DailyKLineChart stats={recent7Days} targetCalories={targetCalories} onDateClick={setActiveDate} activeDate={activeDate} />
 
-            {/* 近 7 天趋势对比 */}
-            {trendItems.length > 0 && (
+            {/* 趋势对比（仅 7day 模式） */}
+            {viewMode === '7day' && trendItems.length > 0 && (
               <div className="rounded-2xl bg-card border border-border overflow-hidden">
                 <div className="px-4 pt-4 pb-2 flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center"

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import MealCardSlot from './MealCardSlot';
 import ExerciseCardSlot from './ExerciseCardSlot';
@@ -46,20 +46,23 @@ const CARD_META = [
   { label: WATER_CONFIG_BASE.label, en: WATER_CONFIG_BASE.en, num: WATER_CONFIG_BASE.num, time: WATER_CONFIG_BASE.time ?? '', accent: WATER_CONFIG_BASE.accent, type: 'water' as CarouselCardType },
 ];
 
-// Card stack positions: delta = cardIndex - activeIndex
-// x in px (within right panel, absolute from left: 0)
-const STACK = [
-  { x: 24, scale: 1.0, opacity: 1.00, z: 20 },
-  { x: 292, scale: 0.875, opacity: 0.68, z: 19 },
-  { x: 500, scale: 0.760, opacity: 0.42, z: 18 },
-  { x: 659, scale: 0.650, opacity: 0.16, z: 17 },
-];
+// Card positions: smooth horizontal flow with symmetric slide in/out
+// Active card is centered in the right panel, others queue on right or exit to left
+// x offsets are relative to the centered anchor (left: 50%)
+const getCardPosition = (delta: number) => {
+  if (delta === 0) return { x: 0, scale: 1.0, opacity: 1.0, z: 20, rotateY: 0 };
+  // Cards waiting on the right (slide in from right)
+  if (delta === 1) return { x: 240, scale: 0.85, opacity: 0.6, z: 19, rotateY: -6 };
+  if (delta === 2) return { x: 440, scale: 0.72, opacity: 0.35, z: 18, rotateY: -10 };
+  if (delta === 3) return { x: 600, scale: 0.6, opacity: 0.15, z: 17, rotateY: -14 };
+  if (delta > 3) return { x: 800, scale: 0.5, opacity: 0, z: 16, rotateY: -16 };
+  // Cards that have passed slide out to the left
+  if (delta === -1) return { x: -240, scale: 0.85, opacity: 0.5, z: 15, rotateY: 6 };
+  if (delta === -2) return { x: -440, scale: 0.72, opacity: 0.25, z: 14, rotateY: 10 };
+  return { x: -800, scale: 0.5, opacity: 0, z: 13, rotateY: 14 };
+};
 
 // Background clip-path expansion origins for forward navigation.
-// Key = how many steps forward we jumped (1, 2, 3+).
-// Values are clip-path inset() representing where the card's banner was before switching.
-// Calculations assume: right panel starts at 42%, card width 260px, banner height 8rem≈128px,
-// screen 1440×900, card vertically centered, card top at ~22% from screen top.
 const FWD_ORIGINS: Record<number, string> = {
   1: 'inset(22% 21% 64% 63% round 16px)',
   2: 'inset(22% 7% 64% 79% round 16px)',
@@ -67,6 +70,10 @@ const FWD_ORIGINS: Record<number, string> = {
 };
 const BWD_ORIGIN = 'inset(22% 98% 64% 0% round 16px)';
 const INIT_ORIGIN = 'inset(22% 38% 64% 44% round 16px)';
+
+// ── Single-switch wheel handler with lock ──
+const WHEEL_THRESHOLD = 50; // Threshold to trigger a single switch
+const SWITCH_LOCK_MS = 750; // Lock duration — animation must finish before next switch
 
 const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderProps>(
   ({ record, apiKey, isViewingToday = true, profile, journalDate, onChange, onWaterReplace, onOpenAIInput }, ref) => {
@@ -77,11 +84,21 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
     const prevActiveRef = useRef(0);
     const swipeStartX = useRef<number | null>(null);
     const swipeStartY = useRef<number | null>(null);
-    const wheelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [swipeTilt, setSwipeTilt] = useState(0); // -1 left, 0 none, 1 right
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
     const tiltTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Hover state for active card
+    const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+
+    // Spring-based tilt for smooth physics
+    const tiltX = useMotionValue(0);
+    const tiltSpring = useSpring(tiltX, { stiffness: 300, damping: 22, mass: 0.8 });
+
+    // Wheel accumulator + lock
+    const wheelAccumRef = useRef(0);
+    const wheelIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const switchLockedRef = useRef(false);
 
     const dateStr = journalDate ?? '';
 
@@ -111,7 +128,11 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
 
     const switchCard = useCallback((newIndex: number) => {
       if (newIndex === prevActiveRef.current) return;
+      if (switchLockedRef.current) return; // Block if animation still playing
       if (timerRef.current) clearTimeout(timerRef.current);
+
+      // Lock immediately
+      switchLockedRef.current = true;
 
       const direction = newIndex - prevActiveRef.current;
       const origin = direction > 0
@@ -122,7 +143,12 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       prevActiveRef.current = newIndex;
       setActiveIndex(newIndex);
       setIsTransitioning(true);
-      timerRef.current = setTimeout(() => setIsTransitioning(false), 820);
+
+      // Unlock after animation completes (800ms for slower, elegant transitions)
+      timerRef.current = setTimeout(() => {
+        setIsTransitioning(false);
+        switchLockedRef.current = false;
+      }, 800);
     }, []);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -141,10 +167,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       else if (dx > 0 && activeIndex > 0) switchCard(activeIndex - 1);
     }, [activeIndex, switchCard]);
 
-    const wheelAccumRef = useRef(0);
-    const wheelLockedRef = useRef(false);
-    const wheelIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+    // ── Single-switch wheel handler with strict lock ──
     const handleWheel = useCallback((e: WheelEvent) => {
       // Pinch-to-zoom: ctrlKey (Windows) or metaKey (macOS trackpad pinch)
       if (e.ctrlKey || e.metaKey) {
@@ -155,53 +178,51 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       // Only handle horizontal trackpad swipes (deltaX dominant)
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
 
-      // Prevent browser back/forward navigation from horizontal swipe
+      // Prevent browser back/forward navigation
       e.preventDefault();
 
-      // If locked (already switched this gesture), ignore
-      if (wheelLockedRef.current) {
-        // Reset idle timer — gesture still ongoing
-        if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
-        wheelIdleTimerRef.current = setTimeout(() => {
-          wheelLockedRef.current = false;
-          wheelAccumRef.current = 0;
-        }, 200);
-        return;
-      }
+      // If locked (animation playing), ignore all input
+      if (switchLockedRef.current) return;
 
       // Accumulate horizontal delta
       wheelAccumRef.current += e.deltaX;
 
-      // Reset idle timer on each event
+      // Reset idle timer — clear accumulator if user stops scrolling
       if (wheelIdleTimerRef.current) clearTimeout(wheelIdleTimerRef.current);
       wheelIdleTimerRef.current = setTimeout(() => {
-        wheelLockedRef.current = false;
         wheelAccumRef.current = 0;
-      }, 200);
+        tiltX.set(0);
+      }, 300);
 
-      // Visual feedback
+      // Gentle tilt feedback (reduced intensity)
+      const maxTilt = 4;
+      const tiltAmount = Math.max(-maxTilt, Math.min(maxTilt, wheelAccumRef.current * 0.025));
+      tiltX.set(tiltAmount);
+
+      // Direction indicator
       const direction = e.deltaX > 0 ? 'right' : 'left';
-      setSwipeTilt(direction === 'right' ? 1 : -1);
       setSwipeDirection(direction);
       if (tiltTimerRef.current) clearTimeout(tiltTimerRef.current);
       tiltTimerRef.current = setTimeout(() => {
-        setSwipeTilt(0);
         setSwipeDirection(null);
-      }, 300);
+        tiltX.set(0);
+      }, 500);
 
-      // Switch when accumulated displacement exceeds threshold (80px)
-      const THRESHOLD = 80;
-      if (Math.abs(wheelAccumRef.current) >= THRESHOLD) {
-        if (wheelAccumRef.current > 0 && activeIndex < CARD_ORDER.length - 1) {
+      // Switch ONE card when threshold exceeded, then lock
+      if (Math.abs(wheelAccumRef.current) >= WHEEL_THRESHOLD) {
+        const dir = wheelAccumRef.current > 0 ? 1 : -1;
+        // Reset accumulator completely — no momentum preservation
+        wheelAccumRef.current = 0;
+        tiltX.set(0);
+
+        if (dir > 0 && activeIndex < CARD_ORDER.length - 1) {
           switchCard(activeIndex + 1);
-        } else if (wheelAccumRef.current < 0 && activeIndex > 0) {
+        } else if (dir < 0 && activeIndex > 0) {
           switchCard(activeIndex - 1);
         }
-        // Lock until gesture ends (200ms of no horizontal movement)
-        wheelLockedRef.current = true;
-        wheelAccumRef.current = 0;
+        // switchCard sets switchLockedRef = true, blocking further switches for 800ms
       }
-    }, [activeIndex, switchCard]);
+    }, [activeIndex, switchCard, tiltX]);
 
     // Attach non-passive wheel listener to allow preventDefault()
     useEffect(() => {
@@ -210,6 +231,18 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       el.addEventListener('wheel', handleWheel, { passive: false });
       return () => el.removeEventListener('wheel', handleWheel);
     }, [handleWheel]);
+
+    // Preload first two background images for instant display
+    useEffect(() => {
+      bgImages.slice(0, 2).forEach((src) => {
+        if (!src) return;
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = src;
+        document.head.appendChild(link);
+      });
+    }, [bgImages]);
 
     useImperativeHandle(ref, () => ({
       scrollToMeal: (type: CarouselCardType) => {
@@ -327,7 +360,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
     };
 
     return (
-      <div className="relative w-full h-full overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden" style={{ isolation: 'isolate' }}>
 
         {/* ── LAYER 0: Immersive background ── */}
         <AnimatePresence initial={false}>
@@ -354,30 +387,21 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
               transition: { duration: 0.38, ease: 'easeIn' },
             }}
             transition={{
-              clipPath: { duration: 0.62, ease: [0.14, 1.12, 0.3, 1] },
-              scale: { type: 'spring', stiffness: 260, damping: 24, mass: 1.1 },
-              filter: { duration: 0.72, ease: 'easeOut' },
-              opacity: { duration: 0.22, ease: 'easeOut' },
+              clipPath: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
+              scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+              filter: { duration: 0.8, ease: 'easeOut' },
+              opacity: { duration: 0.3, ease: 'easeOut' },
             }}
           />
         </AnimatePresence>
 
-        {/* ── LAYER 1: Cinematic left-to-right gradient veil ── */}
+        {/* ── LAYER 1: Left text panel gradient — ultra-soft fade, no hard edge ── */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="absolute top-0 bottom-0 left-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(108deg, rgba(4,4,6,0.78) 0%, rgba(4,4,6,0.42) 40%, rgba(4,4,6,0.04) 100%)',
+            width: '55%',
+            background: 'linear-gradient(to right, rgba(4,4,6,0.9) 0%, rgba(4,4,6,0.85) 30%, rgba(4,4,6,0.65) 50%, rgba(4,4,6,0.4) 68%, rgba(4,4,6,0.18) 82%, rgba(4,4,6,0.05) 92%, transparent 100%)',
             zIndex: 10,
-          }}
-        />
-
-        {/* ── LAYER 2: Right-edge vignette (clips overflow cards) ── */}
-        <div
-          className="absolute inset-y-0 right-0 pointer-events-none"
-          style={{
-            width: '10%',
-            background: 'linear-gradient(to right, transparent, rgba(4,4,6,0.65))',
-            zIndex: 26,
           }}
         />
 
@@ -401,7 +425,7 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                 initial={{ opacity: 0, y: 32, filter: 'blur(4px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, y: -22, filter: 'blur(3px)' }}
-                transition={{ duration: 0.42, ease: [0.25, 1, 0.5, 1] }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               >
                 {/* Ghost sequence number */}
                 <div
@@ -494,15 +518,20 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
 
                   {/* Prev / Next arrow buttons */}
                   <div className="flex items-center gap-2 ml-4">
-                    <button
+                    <motion.button
                       onClick={() => activeIndex > 0 && switchCard(activeIndex - 1)}
                       disabled={activeIndex === 0}
+                      animate={{
+                        scale: swipeDirection === 'left' ? 1.15 : 1,
+                        borderColor: swipeDirection === 'left' ? accent : activeIndex === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)',
+                        backgroundColor: swipeDirection === 'left' ? `${accent}38` : 'rgba(255,255,255,0.08)',
+                      }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                       style={{
                         width: 34,
                         height: 34,
                         borderRadius: '50%',
-                        border: `1.5px solid ${swipeDirection === 'left' ? accent : activeIndex === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)'}`,
-                        background: swipeDirection === 'left' ? `${accent}38` : 'rgba(255,255,255,0.08)',
+                        border: '1.5px solid',
                         backdropFilter: 'blur(10px)',
                         WebkitBackdropFilter: 'blur(10px)',
                         display: 'flex',
@@ -510,22 +539,25 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         justifyContent: 'center',
                         cursor: activeIndex === 0 ? 'not-allowed' : 'pointer',
                         opacity: activeIndex === 0 ? 0.3 : 1,
-                        transition: 'all 0.24s ease',
                         color: '#fff',
-                        transform: swipeDirection === 'left' ? 'scale(1.15)' : 'scale(1)',
                       }}
                     >
                       <ChevronLeft style={{ width: 16, height: 16 }} />
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       onClick={() => activeIndex < CARD_ORDER.length - 1 && switchCard(activeIndex + 1)}
                       disabled={activeIndex === CARD_ORDER.length - 1}
+                      animate={{
+                        scale: swipeDirection === 'right' ? 1.15 : 1,
+                        borderColor: swipeDirection === 'right' ? accent : activeIndex === CARD_ORDER.length - 1 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)',
+                        backgroundColor: swipeDirection === 'right' ? `${accent}50` : activeIndex < CARD_ORDER.length - 1 ? `${accent}38` : 'rgba(255,255,255,0.08)',
+                      }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                       style={{
                         width: 34,
                         height: 34,
                         borderRadius: '50%',
-                        border: `1.5px solid ${swipeDirection === 'right' ? accent : activeIndex === CARD_ORDER.length - 1 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.38)'}`,
-                        background: swipeDirection === 'right' ? `${accent}50` : activeIndex < CARD_ORDER.length - 1 ? `${accent}38` : 'rgba(255,255,255,0.08)',
+                        border: '1.5px solid',
                         backdropFilter: 'blur(10px)',
                         WebkitBackdropFilter: 'blur(10px)',
                         display: 'flex',
@@ -533,13 +565,11 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         justifyContent: 'center',
                         cursor: activeIndex === CARD_ORDER.length - 1 ? 'not-allowed' : 'pointer',
                         opacity: activeIndex === CARD_ORDER.length - 1 ? 0.3 : 1,
-                        transition: 'all 0.24s ease',
                         color: '#fff',
-                        transform: swipeDirection === 'right' ? 'scale(1.15)' : 'scale(1)',
                       }}
                     >
                       <ChevronRight style={{ width: 16, height: 16 }} />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
 
@@ -550,55 +580,139 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
           {/* RIGHT: Immersive card stack (supports swipe left/right) */}
           <div
             ref={containerRef}
-            className="relative flex-1 overflow-visible"
+            className="relative flex-1 overflow-hidden"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 92%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 92%, transparent 100%)',
+            }}
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerCancel={() => { swipeStartX.current = null; swipeStartY.current = null; }}
           >
+            {/* No dark overlay — let background image breathe fully */}
+
             {CARD_ORDER.map((type, i) => {
               const delta = i - activeIndex;
-              const inStack = delta >= 0 && delta < STACK.length;
-              const cfg = inStack ? STACK[delta] : null;
+              const pos = getCardPosition(delta);
+              const clickable = delta > 0 && delta <= 4;
+              const isHovered = hoveredCard === i;
 
-              const targetX = delta < 0 ? -380 : cfg ? cfg.x : STACK[STACK.length - 1].x + 140;
-              const targetScale = delta < 0 ? 0.3 : cfg ? cfg.scale : 0.55;
-              const targetOpacity = delta < 0 ? 0 : cfg ? cfg.opacity : 0;
-              const zIndex = delta === 0 ? 20 : (cfg?.z ?? 15);
-              const clickable = delta > 0 && delta < STACK.length;
+              // Hover: gentle scale-up + brightness for non-active cards
+              const hoverScale = isHovered && clickable ? pos.scale * 1.06 : pos.scale;
+              const hoverOpacity = isHovered && clickable ? Math.min(1, pos.opacity + 0.15) : pos.opacity;
 
               return (
-                <motion.div
+                <div
                   key={type}
                   style={{
                     position: 'absolute',
                     top: '50%',
-                    left: 0,
-                    zIndex,
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: pos.z,
+                  }}
+                >
+                <motion.div
+                  style={{
                     cursor: clickable ? 'pointer' : 'default',
                     originX: 0.5,
                     originY: 0.5,
+                    rotateY: delta === 0 ? tiltSpring : pos.rotateY,
                   }}
                   animate={{
-                    x: targetX,
-                    y: '-50%',
-                    scale: targetScale,
-                    opacity: targetOpacity,
-                    rotateY: delta === 0 ? swipeTilt * -4 : 0,
+                    x: pos.x,
+                    scale: hoverScale,
+                    opacity: hoverOpacity,
+                    filter: isHovered && clickable
+                      ? `drop-shadow(0 12px 32px rgba(0,0,0,0.5)) brightness(1.15)`
+                      : delta === 0
+                        ? 'drop-shadow(0 12px 40px rgba(0,0,0,0.5)) drop-shadow(0 0 40px rgba(255,255,255,0.18))'
+                        : 'none',
                   }}
                   transition={{
-                    x: { type: 'spring', stiffness: 220, damping: 26, mass: 1 },
-                    y: { duration: 0 },
-                    scale: { type: 'spring', stiffness: 220, damping: 26, mass: 1 },
-                    opacity: { duration: 0.38, ease: 'easeInOut' },
-                    rotateY: { type: 'spring', stiffness: 300, damping: 20, mass: 0.8 },
+                    x: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                    scale: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+                    opacity: { duration: 0.5, ease: [0.25, 1, 0.5, 1] },
+                    rotateY: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                    filter: { duration: 0.4, ease: 'easeOut' },
                   }}
                   onClick={clickable ? () => switchCard(i) : undefined}
-                  whileHover={clickable ? { scale: (cfg?.scale ?? 0.6) * 1.03, opacity: Math.min(1, (cfg?.opacity ?? 0.2) + 0.15) } : undefined}
+                  onMouseEnter={() => setHoveredCard(i)}
+                  onMouseLeave={() => setHoveredCard(null)}
                 >
+                  {/* Hover label overlay for non-active cards */}
+                  {clickable && (
+                    <AnimatePresence>
+                      {isHovered && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          transition={{ duration: 0.25, ease: 'easeOut' }}
+                          style={{
+                            position: 'absolute',
+                            bottom: -28,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            whiteSpace: 'nowrap',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            color: 'rgba(255,255,255,0.85)',
+                            textShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                            pointerEvents: 'none',
+                            zIndex: 30,
+                          }}
+                        >
+                          {CARD_META[i]?.label}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  )}
                   {renderCard(type, delta === 0)}
                 </motion.div>
+                </div>
               );
             })}
+
+            {/* Swipe direction arrow indicators */}
+            <AnimatePresence>
+              {swipeDirection && (
+                <motion.div
+                  key={`swipe-${swipeDirection}`}
+                  initial={{ opacity: 0, x: swipeDirection === 'left' ? 20 : -20 }}
+                  animate={{ opacity: 0.6, x: 0 }}
+                  exit={{ opacity: 0, x: swipeDirection === 'left' ? -10 : 10 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    [swipeDirection === 'left' ? 'left' : 'right']: 12,
+                    transform: 'translateY(-50%)',
+                    zIndex: 25,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: `${accent}40`,
+                      backdropFilter: 'blur(8px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {swipeDirection === 'left'
+                      ? <ChevronLeft style={{ width: 20, height: 20, color: '#fff' }} />
+                      : <ChevronRight style={{ width: 20, height: 20, color: '#fff' }} />
+                    }
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
         </div>

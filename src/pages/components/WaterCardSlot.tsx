@@ -263,11 +263,15 @@ export default function WaterCardSlot({
       <div
         className={fullscreen ? 'flex-1 flex flex-col min-h-0' : 'flex flex-col'}
         style={{
-          background: noImage
-            ? `linear-gradient(135deg, ${config.accent}18 0%, rgba(255,255,255,0.68) 72px, rgba(255,255,255,0.60) 100%)`
-            : `linear-gradient(135deg, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.42) 100%)`,
-          backdropFilter: 'url(#liquid-distort) blur(28px) saturate(190%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+          background: isActive
+            ? (noImage
+              ? `linear-gradient(135deg, ${config.accent}18 0%, #ffffff 72px, #fafafa 100%)`
+              : `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`)
+            : (noImage
+              ? `linear-gradient(135deg, ${config.accent}18 0%, rgba(255,255,255,0.68) 72px, rgba(255,255,255,0.60) 100%)`
+              : `linear-gradient(135deg, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.42) 100%)`),
+          backdropFilter: isActive ? 'none' : 'url(#liquid-distort) blur(28px) saturate(190%)',
+          WebkitBackdropFilter: isActive ? 'none' : 'blur(28px) saturate(190%)',
         }}
       >
         {noImage && (
