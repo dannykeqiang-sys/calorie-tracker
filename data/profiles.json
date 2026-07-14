@@ -39,5 +39,19 @@
       "activityLevel": "moderate"
     },
     "updatedAt": 1782617670527
+  },
+  {
+    "workid": "local_1784003459248_gi7ch3",
+    "name": "测试",
+    "profile": {
+      "name": "测试",
+      "gender": "male",
+      "age": 22,
+      "height": 176,
+      "weight": 65,
+      "goal": "maintain",
+      "activityLevel": "light"
+    },
+    "updatedAt": 1784003459249
   }
 ]
