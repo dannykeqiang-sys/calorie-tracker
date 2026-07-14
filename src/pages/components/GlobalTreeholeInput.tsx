@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/shadcn/button';
 import { Sparkles, CheckCircle, AlertCircle, X, Plus, RefreshCw } from 'lucide-react';
 import { parseMixedMeals } from '../../utils/deepseek';
+import type { MixedMealResult } from '../../utils/deepseek';
+import { parseMixedMealsLocally } from '../../utils/demoFallback';
 import { safeNormalizeString } from '../../utils/stringUtils';
 import type { FoodItem, MealType, DailyRecord, ExerciseItem, WaterItem } from '../../types';
 
@@ -44,7 +46,7 @@ interface PendingResult {
   summary: string;
 }
 
-const INPUT_EXAMPLE = '中午吃了一碗牛肉面，加了一个卤蛋';
+const INPUT_EXAMPLE = '早上喝了一碗燕麦粥配蓝莓和一杯牛奶，中午吃了糙米饭配香煎鸡胸肉和清炒西兰花，晚上吃了清蒸鲈鱼配生菜沙拉，下午加餐吃了一个苹果和一小把坚果，今天跑步了30分钟，喝了三杯水一杯豆浆';
 
 export default function GlobalTreeholeInput({
   apiKey,
@@ -64,155 +66,116 @@ export default function GlobalTreeholeInput({
   const [summaryItems, setSummaryItems] = useState<SummaryItem[]>([]);
   const [pending, setPending] = useState<PendingResult | null>(null);
 
-  const canUseDemoFallback = /牛肉面/.test(text) && /卤蛋|鸡蛋/.test(text);
+  const buildPending = (result: MixedMealResult): PendingResult | null => {
+    const mealUpdates: { mealType: MealType; item: FoodItem }[] = [];
+    const items: SummaryItem[] = [];
+    const mealKeys: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
-  const useDemoFallback = () => {
-    const mealUpdates: { mealType: MealType; item: FoodItem }[] = [
-      {
-        mealType: 'lunch',
-        item: {
-          id: crypto.randomUUID(),
-          name: '牛肉面（1 碗）',
-          calories: 650,
-          protein: 28,
-          carbs: 82,
-          fat: 22,
-          sodium: 1380,
-        },
-      },
-      {
-        mealType: 'lunch',
-        item: {
-          id: crypto.randomUUID(),
-          name: '卤蛋（1 个）',
-          calories: 78,
-          protein: 7,
-          carbs: 2,
-          fat: 5,
-          sodium: 310,
-        },
-      },
-    ];
-    const items: SummaryItem[] = mealUpdates.map(({ item }) => ({
-      label: '午餐',
-      name: item.name,
-      calories: item.calories,
-    }));
-    setPending({
-      mealUpdates,
-      exerciseItems: [],
-      waterItems: [],
-      summaryItems: items,
-      summary: '已用本地演示规则估算这份午餐。牛肉面钠含量可能偏高，晚餐可以优先选择清淡蔬菜和优质蛋白。',
-    });
+    for (const key of mealKeys) {
+      const foods = result.data[key];
+      if (!Array.isArray(foods)) continue;
+      for (const food of foods) {
+        const safeName = safeNormalizeString(food.name);
+        if (!safeName || food.calories <= 0) continue;
+        mealUpdates.push({
+          mealType: key,
+          item: {
+            id: crypto.randomUUID(),
+            name: safeName,
+            calories: food.calories,
+            protein: food.protein,
+            carbs: food.carbs,
+            fat: food.fat,
+            sodium: food.sodium,
+          },
+        });
+        items.push({ label: MEAL_LABELS[key], name: safeName, calories: food.calories });
+      }
+    }
+
+    const exerciseItems: ExerciseItem[] = [];
+    if (Array.isArray(result.data.exercises)) {
+      for (const ex of result.data.exercises) {
+        const safeName = safeNormalizeString(ex.name);
+        if (!safeName || ex.calories <= 0) continue;
+        exerciseItems.push({ id: crypto.randomUUID(), name: safeName, duration: 0, calories: ex.calories });
+        items.push({ label: '运动', name: safeName, calories: ex.calories, isExercise: true });
+      }
+    }
+
+    const waterItems: WaterItem[] = [];
+    if (Array.isArray(result.data.water_logs)) {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      for (const w of result.data.water_logs) {
+        if (!w.raw_text || w.amount <= 0) continue;
+        const safeName = safeNormalizeString(w.raw_text);
+        if (!safeName) continue;
+        waterItems.push({ id: crypto.randomUUID(), amount: w.amount, note: safeName, time: timeStr });
+        items.push({ label: '喝水', name: safeName, calories: 0, isWater: true, waterAmount: w.amount });
+      }
+    }
+
+    if (mealUpdates.length === 0 && exerciseItems.length === 0 && waterItems.length === 0) return null;
+
+    return { mealUpdates, exerciseItems, waterItems, summaryItems: items, summary: result.analysis_summary };
+  };
+
+  const runLocalFallback = (): boolean => {
+    const result = parseMixedMealsLocally(text.trim());
+    const pendingResult = buildPending(result);
+    if (!pendingResult) return false;
+    setPending(pendingResult);
     setErrorMsg('');
     setStatus('confirm');
+    return true;
   };
 
   const handleSubmit = async () => {
     if (!text.trim()) return;
-    if (!apiKey) {
-      if (canUseDemoFallback) {
-        useDemoFallback();
-        return;
-      }
-      setErrorMsg('请先在设置中填写 DeepSeek API Key');
-      setStatus('error');
-      return;
-    }
 
-    setStatus('parsing');
     setSummary('');
     setErrorMsg('');
     setSummaryItems([]);
     setPending(null);
 
+    // 无 API Key：直接使用本地降级解析器
+    if (!apiKey) {
+      if (!runLocalFallback()) {
+        setErrorMsg('没有识别到有效的饮食或运动信息，请换个说法再试试');
+        setStatus('error');
+      }
+      return;
+    }
+
+    setStatus('parsing');
+
     try {
       const result = await parseMixedMeals(apiKey, text.trim());
 
       if (!result.has_data) {
-        setErrorMsg('没有识别到有效的饮食信息，请重新描述');
-        setStatus('error');
+        if (!runLocalFallback()) {
+          setErrorMsg('没有识别到有效的饮食信息，请重新描述');
+          setStatus('error');
+        }
         return;
       }
 
-      const mealUpdates: { mealType: MealType; item: FoodItem }[] = [];
-      const items: SummaryItem[] = [];
-      const mealKeys: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
-
-      for (const key of mealKeys) {
-        const foods = result.data[key];
-        if (!Array.isArray(foods)) continue;
-        for (const food of foods) {
-          const safeName = safeNormalizeString(food.name);
-          if (!safeName || food.calories <= 0) continue;
-          mealUpdates.push({
-            mealType: key,
-            item: {
-              id: crypto.randomUUID(),
-              name: safeName,
-              calories: food.calories,
-              protein: food.protein,
-              carbs: food.carbs,
-              fat: food.fat,
-            },
-          });
-          items.push({ label: MEAL_LABELS[key], name: safeName, calories: food.calories });
+      const pendingResult = buildPending(result);
+      if (!pendingResult) {
+        if (!runLocalFallback()) {
+          setErrorMsg('没有识别到有效的饮食或运动信息，请重新描述');
+          setStatus('error');
         }
-      }
-
-      const exerciseItems: ExerciseItem[] = [];
-      if (Array.isArray(result.data.exercises)) {
-        for (const ex of result.data.exercises) {
-          const safeName = safeNormalizeString(ex.name);
-          if (!safeName || ex.calories <= 0) continue;
-          exerciseItems.push({
-            id: crypto.randomUUID(),
-            name: safeName,
-            duration: 0,
-            calories: ex.calories,
-          });
-          items.push({ label: '运动', name: safeName, calories: ex.calories, isExercise: true });
-        }
-      }
-
-      const waterItems: WaterItem[] = [];
-      if (Array.isArray(result.data.water_logs)) {
-        const now = new Date();
-        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        for (const w of result.data.water_logs) {
-          if (!w.raw_text || w.amount <= 0) continue;
-          const safeName = safeNormalizeString(w.raw_text);
-          if (!safeName) continue;
-          waterItems.push({ id: crypto.randomUUID(), amount: w.amount, note: safeName, time: timeStr });
-          items.push({ label: '喝水', name: safeName, calories: 0, isWater: true, waterAmount: w.amount });
-        }
-      }
-
-      if (mealUpdates.length === 0 && exerciseItems.length === 0 && waterItems.length === 0) {
-        setErrorMsg('没有识别到有效的饮食或运动信息，请重新描述');
-        setStatus('error');
         return;
       }
 
-      setPending({ mealUpdates, exerciseItems, waterItems, summaryItems: items, summary: result.analysis_summary });
+      setPending(pendingResult);
       setStatus('confirm');
-    } catch (err) {
-      const rawMsg = err instanceof Error ? err.message : String(err);
-      let friendlyMsg = 'AI 解析失败，请检查网络连接';
-      if (/401|unauthorized/i.test(rawMsg)) {
-        friendlyMsg = 'API Key 无效，请在设置中配置您自己的 DeepSeek API Key';
-      } else if (/402|insufficient/i.test(rawMsg)) {
-        friendlyMsg = 'API 额度不足，请在设置中更换有效的 API Key';
-      } else if (/429|rate.?limit/i.test(rawMsg)) {
-        friendlyMsg = '请求过于频繁，请稍后再试';
-      } else if (/5\d\d/.test(rawMsg)) {
-        friendlyMsg = 'DeepSeek 服务暂时不可用，请稍后重试';
-      }
-      if (canUseDemoFallback) {
-        useDemoFallback();
-      } else {
-        setErrorMsg(friendlyMsg);
+    } catch {
+      // API 调用失败：自动降级到本地解析器
+      if (!runLocalFallback()) {
+        setErrorMsg('AI 解析失败，且本地未能识别到有效信息，请检查网络或换个说法');
         setStatus('error');
       }
     }
