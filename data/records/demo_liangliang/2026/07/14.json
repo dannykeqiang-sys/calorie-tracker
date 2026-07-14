@@ -14,15 +14,6 @@
     ],
     "lunch": [
       {
-        "id": "d3517baf-9246-41d9-9aa0-da34c6a7f509",
-        "name": "牛肉面（1 碗）",
-        "calories": 650,
-        "protein": 28,
-        "carbs": 82,
-        "fat": 22,
-        "sodium": 1380
-      },
-      {
         "id": "31a36007-ddf9-4dc0-91d5-70271ed8a6fd",
         "name": "卤蛋（1 个）",
         "calories": 78,
