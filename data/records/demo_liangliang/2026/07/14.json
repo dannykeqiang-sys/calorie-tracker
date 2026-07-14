@@ -1,0 +1,53 @@
+{
+  "date": "2026-07-14",
+  "meals": {
+    "breakfast": [
+      {
+        "id": "demo-2026-07-14-b-0",
+        "name": "希腊酸奶坚果碗",
+        "calories": 343,
+        "protein": 19,
+        "carbs": 31,
+        "fat": 15,
+        "sodium": 112
+      }
+    ],
+    "lunch": [
+      {
+        "id": "d3517baf-9246-41d9-9aa0-da34c6a7f509",
+        "name": "牛肉面（1 碗）",
+        "calories": 650,
+        "protein": 28,
+        "carbs": 82,
+        "fat": 22,
+        "sodium": 1380
+      },
+      {
+        "id": "a3033613-26d7-4bdd-ba10-a9e348c5fa62",
+        "name": "卤蛋（1 个）",
+        "calories": 78,
+        "protein": 7,
+        "carbs": 2,
+        "fat": 5,
+        "sodium": 310
+      }
+    ],
+    "dinner": [],
+    "snack": []
+  },
+  "exercises": [],
+  "water": [
+    {
+      "id": "demo-2026-07-14-water-1",
+      "amount": 500,
+      "note": "晨间温水",
+      "time": "08:10"
+    },
+    {
+      "id": "demo-2026-07-14-water-2",
+      "amount": 850,
+      "note": "日常饮水",
+      "time": "14:30"
+    }
+  ]
+}
