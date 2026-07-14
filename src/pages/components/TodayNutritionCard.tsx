@@ -189,8 +189,8 @@ export default function TodayNutritionCard({ record, profile }: TodayNutritionCa
           )}
         </div>
 
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(180px,240px)_1fr] gap-3 items-start">
+          <div className="min-w-0 w-full">
             <MacroRingChart
               intake={intake}
               targetCalories={targetCalories}
@@ -205,7 +205,7 @@ export default function TodayNutritionCard({ record, profile }: TodayNutritionCa
             />
           </div>
 
-          <div className="flex-1 min-w-0 pt-3 space-y-2.5">
+          <div className="min-w-0 pt-1 sm:pt-3 space-y-2.5">
             <MacroRow
               label="蛋白质"
               actual={protein}

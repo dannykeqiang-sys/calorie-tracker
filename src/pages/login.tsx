@@ -1,11 +1,13 @@
 import { useState, useRef, forwardRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Flame, ArrowRight, Loader2, UserX, RefreshCw, KeyRound, Activity, ChevronRight, Check, X, FileText } from 'lucide-react';
+import { ArrowRight, Loader2, UserX, RefreshCw, KeyRound, Activity, ChevronRight, Check, X, FileText, Sparkles } from 'lucide-react';
 import { loginViaApi, findProfileViaGithub, syncProfileToCloud } from '../utils/apiDB';
 import { setSession, setApiToken } from '../utils/auth';
 import { saveProfile } from '../utils/storage';
 import VideoIntro, { VIDEO_URL } from './components/VideoIntro';
+import { installDemoData, leaveDemoMode } from '../utils/demoData';
 import type { UserProfile, Gender, GoalType, ActivityLevel } from '../types';
+import { AppMark } from '@/components/AppIcon';
 
 // ─── 常量 ────────────────────────────────────────────────
 
@@ -68,6 +70,7 @@ export default function LoginPage() {
   const codeRef = useRef<HTMLInputElement>(null);
   const [showOutro, setShowOutro] = useState(false);
   const [outroLeaving, setOutroLeaving] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   // 注册相关 state
   const [mode, setMode] = useState<PageMode>('login');
@@ -110,6 +113,7 @@ export default function LoginPage() {
       // 通道 1：后端 API 登录（昵称 + 邀请码）
       const apiResult = await loginViaApi(trimmed, trimmedCode);
       if (apiResult) {
+        leaveDemoMode();
         setApiToken(apiResult.token);
         // 保留已有的 workid（兼容 GitHub 通道数据），没有才用 api_ 前缀
         const existingWorkid = localStorage.getItem('calorie_workid');
@@ -123,6 +127,7 @@ export default function LoginPage() {
       // 通道 2：API 失败，尝试 GitHub 降级（仅用昵称查找已有用户）
       const ghResult = await findProfileViaGithub(trimmed);
       if (ghResult) {
+        leaveDemoMode();
         setSession(ghResult.workid, trimmed);
         localStorage.setItem('calorie_workid', ghResult.workid);
         saveProfile(ghResult.profile);
@@ -144,6 +149,21 @@ export default function LoginPage() {
       navigate('/');
     }, 800);
   }, [navigate]);
+
+  const handleDemoEntry = async () => {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      await installDemoData({ replayTutorial: true });
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        setShowOutro(true);
+      } else {
+        navigate('/');
+      }
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleLogin();
@@ -180,11 +200,13 @@ export default function LoginPage() {
       // 调用 login API 创建用户（服务端自动创建）
       const apiResult = await loginViaApi(trimmed, trimmedCode);
       if (apiResult) {
+        leaveDemoMode();
         setApiToken(apiResult.token);
         const workid = `api_${apiResult.user.id}`;
         localStorage.setItem('calorie_workid', workid);
         setSession(workid, trimmed);
       } else {
+        leaveDemoMode();
         // API 失败，降级到本地存储
         const workid = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         localStorage.setItem('calorie_workid', workid);
@@ -243,12 +265,7 @@ export default function LoginPage() {
             className="text-center mb-8"
             style={{ animation: 'loginPopIn 0.6s cubic-bezier(0.34,1.56,0.64,1)' }}
           >
-            <div
-              className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #F97316, #EC4899)' }}
-            >
-              <Flame className="w-10 h-10 text-white" />
-            </div>
+            <AppMark size={80} className="mx-auto mb-5" />
             <h1
               className="text-2xl font-black text-foreground mb-1"
               style={{ fontFamily: '"Noto Serif SC", "Songti SC", serif' }}
@@ -365,6 +382,29 @@ export default function LoginPage() {
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
+                    </button>
+
+                    <div className="flex items-center gap-3 my-4">
+                      <div className="h-px flex-1 bg-border/60" />
+                      <span className="text-[11px] text-muted-foreground/50">或者</span>
+                      <div className="h-px flex-1 bg-border/60" />
+                    </div>
+
+                    <button
+                      onClick={handleDemoEntry}
+                      disabled={demoLoading || state === 'loading'}
+                      className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl transition-all active:scale-[0.97] disabled:opacity-50 cursor-pointer"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(249,115,22,0.13))',
+                        border: '1.5px solid rgba(139,92,246,0.22)',
+                        boxShadow: '0 8px 28px rgba(139,92,246,0.10)',
+                      }}
+                    >
+                      {demoLoading ? <Loader2 className="w-5 h-5 animate-spin text-violet-500" /> : <Sparkles className="w-5 h-5 text-violet-500" />}
+                      <span className="text-left leading-tight">
+                        <span className="block text-sm font-bold text-foreground">体验演示</span>
+                        <span className="block text-[11px] text-muted-foreground mt-0.5">无需注册</span>
+                      </span>
                     </button>
 
                     <p className="mt-4 text-center text-xs text-muted-foreground">

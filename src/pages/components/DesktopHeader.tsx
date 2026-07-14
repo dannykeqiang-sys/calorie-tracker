@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Flame, User, Settings, BookOpen, TrendingUp, ActivitySquare, Upload } from 'lucide-react';
 import type { UserProfile } from '../../types';
+import AppIcon, { AppMark, type AppIconName } from '@/components/AppIcon';
 
 const TABS = [
   {
     value: 'today',
     label: '今日手帐',
-    icon: BookOpen,
+    icon: 'journal' as AppIconName,
     color: '#5A9E6F',
     gradient: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)',
     shadowColor: 'rgba(163,184,153,0.45)',
@@ -15,7 +15,7 @@ const TABS = [
   {
     value: 'analytics',
     label: '时光机',
-    icon: TrendingUp,
+    icon: 'trend' as AppIconName,
     color: '#3B82F6',
     gradient: 'linear-gradient(135deg, #60A5FA 0%, #818CF8 100%)',
     shadowColor: 'rgba(96,165,250,0.4)',
@@ -24,7 +24,7 @@ const TABS = [
   {
     value: 'ai',
     label: 'AI 分析',
-    icon: ActivitySquare,
+    icon: 'ai' as AppIconName,
     color: '#A855F7',
     gradient: 'linear-gradient(135deg, #C084FC 0%, #E879F9 100%)',
     shadowColor: 'rgba(192,132,252,0.4)',
@@ -68,12 +68,7 @@ export default function DesktopHeader({
         style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
       >
         <div className="flex items-center gap-2.5 select-none flex-shrink-0">
-          <div
-            className="w-7 h-7 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #A3B899 0%, #7CB9A8 100%)' }}
-          >
-            <Flame className="w-3.5 h-3.5 text-white" />
-          </div>
+          <AppMark size={28} />
           <span className="text-sm font-bold tracking-tight text-foreground whitespace-nowrap">
             燃烧我的卡路里
           </span>
@@ -98,7 +93,7 @@ export default function DesktopHeader({
             (e.currentTarget as HTMLElement).style.backgroundColor = '#fff';
           }}
         >
-          <Upload className="w-3 h-3" />
+          <AppIcon name="upload" size={13} />
           批量导入
         </button>
 
@@ -116,7 +111,7 @@ export default function DesktopHeader({
             (e.currentTarget as HTMLElement).style.color = 'var(--muted-foreground)';
           }}
         >
-          <Settings className="w-3.5 h-3.5" />
+          <AppIcon name="settings" size={15} />
         </button>
 
         <button
@@ -137,7 +132,7 @@ export default function DesktopHeader({
             className="w-4.5 h-4.5 rounded-full flex items-center justify-center flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #A3B899, #7CB9A8)', width: '18px', height: '18px' }}
           >
-            <User className="w-2.5 h-2.5 text-white" />
+            <AppIcon name="user" size={11} className="text-white" />
           </div>
           <span className="max-w-[80px] truncate">{profile?.name || '设置信息'}</span>
         </button>
@@ -145,7 +140,6 @@ export default function DesktopHeader({
 
       <div className="h-[72px] px-6 flex items-center gap-3">
         {TABS.map(tab => {
-          const Icon = tab.icon;
           const isActive = activeTab === tab.value;
           return (
             <button
@@ -197,7 +191,7 @@ export default function DesktopHeader({
                   transition: 'all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               >
-                <Icon className="w-4.5 h-4.5" style={{ color: isActive ? '#fff' : tab.color, width: '18px', height: '18px' }} />
+                <AppIcon name={tab.icon} size={19} style={{ color: isActive ? '#fff' : tab.color }} />
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-base font-bold leading-none">{tab.label}</span>

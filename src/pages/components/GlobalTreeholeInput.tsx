@@ -44,6 +44,8 @@ interface PendingResult {
   summary: string;
 }
 
+const INPUT_EXAMPLE = '中午吃了一碗牛肉面，加了一个卤蛋';
+
 export default function GlobalTreeholeInput({
   apiKey,
   isViewingToday = true,
@@ -62,9 +64,58 @@ export default function GlobalTreeholeInput({
   const [summaryItems, setSummaryItems] = useState<SummaryItem[]>([]);
   const [pending, setPending] = useState<PendingResult | null>(null);
 
+  const canUseDemoFallback = /牛肉面/.test(text) && /卤蛋|鸡蛋/.test(text);
+
+  const useDemoFallback = () => {
+    const mealUpdates: { mealType: MealType; item: FoodItem }[] = [
+      {
+        mealType: 'lunch',
+        item: {
+          id: crypto.randomUUID(),
+          name: '牛肉面（1 碗）',
+          calories: 650,
+          protein: 28,
+          carbs: 82,
+          fat: 22,
+          sodium: 1380,
+        },
+      },
+      {
+        mealType: 'lunch',
+        item: {
+          id: crypto.randomUUID(),
+          name: '卤蛋（1 个）',
+          calories: 78,
+          protein: 7,
+          carbs: 2,
+          fat: 5,
+          sodium: 310,
+        },
+      },
+    ];
+    const items: SummaryItem[] = mealUpdates.map(({ item }) => ({
+      label: '午餐',
+      name: item.name,
+      calories: item.calories,
+    }));
+    setPending({
+      mealUpdates,
+      exerciseItems: [],
+      waterItems: [],
+      summaryItems: items,
+      summary: '已用本地演示规则估算这份午餐。牛肉面钠含量可能偏高，晚餐可以优先选择清淡蔬菜和优质蛋白。',
+    });
+    setErrorMsg('');
+    setStatus('confirm');
+  };
+
   const handleSubmit = async () => {
     if (!text.trim()) return;
     if (!apiKey) {
+      if (canUseDemoFallback) {
+        useDemoFallback();
+        return;
+      }
       setErrorMsg('请先在设置中填写 DeepSeek API Key');
       setStatus('error');
       return;
@@ -158,8 +209,12 @@ export default function GlobalTreeholeInput({
       } else if (/5\d\d/.test(rawMsg)) {
         friendlyMsg = 'DeepSeek 服务暂时不可用，请稍后重试';
       }
-      setErrorMsg(friendlyMsg);
-      setStatus('error');
+      if (canUseDemoFallback) {
+        useDemoFallback();
+      } else {
+        setErrorMsg(friendlyMsg);
+        setStatus('error');
+      }
     }
   };
 
@@ -313,6 +368,23 @@ export default function GlobalTreeholeInput({
         </div>
       ) : (
         <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setText(INPUT_EXAMPLE)}
+            className="group w-full text-left rounded-xl px-3 py-2.5 cursor-pointer transition-all active:scale-[0.99]"
+            style={{
+              background: 'linear-gradient(135deg, rgba(139,92,246,0.09), rgba(249,115,22,0.09))',
+              border: '1px solid rgba(139,92,246,0.18)',
+            }}
+          >
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-600 mb-1">
+              <Sparkles className="w-3 h-3" />
+              不知道怎么写？点一下填入示例
+            </span>
+            <span className="block text-xs text-foreground/75 leading-relaxed group-hover:text-foreground transition-colors">
+              “{INPUT_EXAMPLE}”
+            </span>
+          </button>
           <div className="relative">
             <textarea
               value={text}

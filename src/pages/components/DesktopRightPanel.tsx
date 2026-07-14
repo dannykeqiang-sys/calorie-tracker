@@ -189,6 +189,7 @@ export default function DesktopRightPanel({
 
   return (
     <aside
+      data-tutorial="ai-input-btn"
       className="w-[300px] xl:w-[340px] flex flex-col flex-shrink-0 overflow-hidden"
       style={{ borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#fafafa' }}
     >

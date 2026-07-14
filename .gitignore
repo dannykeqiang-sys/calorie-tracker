@@ -18,3 +18,9 @@ src/**/*.js.map
 server/data/calorie.db-wal
 qr-preview.png
 时光机修复报告.md
+
+# Local archives and user data are not part of the deployable application.
+*.tar.gz
+data/records/
+data/backups/
+data/profiles.json

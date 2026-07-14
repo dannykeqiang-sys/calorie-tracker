@@ -29,6 +29,7 @@ import { useHistoryRecord } from '../hooks/useHistoryRecord';
 import { useRecordHandlers } from '../hooks/useRecordHandlers';
 import { useBatchImport } from '../hooks/useBatchImport';
 import { calcTargetCalories } from '../utils/calculations';
+import { DEMO_TUTORIAL_KEY, installDemoData, isDemoMode, leaveDemoMode } from '../utils/demoData';
 import type { UserProfile, FoodItem, MealType } from '../types';
 
 function formatDateLabel(dateStr: string): string {
@@ -56,6 +57,7 @@ export default function Home() {
   const [showExport, setShowExport] = useState(false);
   const [showBatchImport, setShowBatchImport] = useState(false);
   const [mobileCarouselActiveIndex, setMobileCarouselActiveIndex] = useState(0);
+  const [demoMode] = useState(isDemoMode);
 
   // ── 业务 Hooks ────────────────────────────────────────
   const { record, setRecord, handleRecordChange } = useRecordSync();
@@ -110,6 +112,14 @@ export default function Home() {
     document.title = '燃烧我的卡路里 - 科学管理你的热量';
 
     const localProfile = loadProfile();
+    if (isDemoMode()) {
+      setProfile(localProfile);
+      if (localStorage.getItem(DEMO_TUTORIAL_KEY) === '1') {
+        localStorage.removeItem(DEMO_TUTORIAL_KEY);
+        setShowTutorial(true);
+      }
+      return;
+    }
     const localUpdatedAt = getProfileUpdatedAt();
 
     // 无论本地是否有 profile，都异步检查云端（处理多设备场景）
@@ -190,6 +200,7 @@ export default function Home() {
     // 保留 workid，避免数据关联断裂；仅清除会话和本地缓存
     const workid = localStorage.getItem('calorie_workid');
     clearSession();
+    leaveDemoMode();
     // 清除 AI 缓存、记录缓存等临时数据（不清除 workid）
     for (const key of Object.keys(localStorage)) {
       if (key.startsWith('calorie_ai_cache_') ||
@@ -313,7 +324,7 @@ export default function Home() {
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {desktopDateBar}
             <div className="flex-1 min-h-0 flex overflow-hidden">
-              <div className="flex-1 min-h-0 relative overflow-hidden">
+              <div data-tutorial="cards" className="flex-1 min-h-0 relative overflow-hidden">
                 {!isViewingToday && historyRecord && (
                   <div className="absolute top-3 left-6 z-50">
                     <button
@@ -523,8 +534,19 @@ export default function Home() {
         onBatchImport={() => setShowBatchImport(true)}
         apiKey={apiKey}
         onApiKeyChange={(newKey) => {
-          localStorage.setItem('calorie_deepseek_api_key', newKey);
+          if (newKey) localStorage.setItem('calorie_deepseek_api_key', newKey);
+          else localStorage.removeItem('calorie_deepseek_api_key');
           setApiKey(newKey);
+        }}
+        demoMode={demoMode}
+        onReplayTutorial={() => {
+          setShowSettings(false);
+          setActiveTab('today');
+          setTimeout(() => setShowTutorial(true), 200);
+        }}
+        onResetDemo={async () => {
+          await installDemoData({ replayTutorial: false });
+          window.location.reload();
         }}
       />
 

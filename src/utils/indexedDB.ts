@@ -76,3 +76,13 @@ export async function idbGetAllRecords(): Promise<DailyRecord[]> {
     };
   });
 }
+
+export async function idbClearRecords(): Promise<void> {
+  const db = await openDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}

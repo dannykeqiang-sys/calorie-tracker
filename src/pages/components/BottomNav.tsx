@@ -1,4 +1,4 @@
-import { BookOpen, TrendingUp, MessageSquare } from 'lucide-react';
+import AppIcon, { type AppIconName } from '@/components/AppIcon';
 
 interface BottomNavProps {
   activeTab: string;
@@ -7,11 +7,11 @@ interface BottomNavProps {
 }
 
 const LEFT_TABS = [
-  { value: 'today', label: '今日手帐', icon: BookOpen },
+  { value: 'today', label: '今日手帐', icon: 'journal' as AppIconName },
 ];
 
 const RIGHT_TABS = [
-  { value: 'analytics', label: '时光机', icon: TrendingUp },
+  { value: 'analytics', label: '时光机', icon: 'trend' as AppIconName },
 ];
 
 export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomNavProps) {
@@ -21,7 +21,6 @@ export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomN
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border sm:hidden" style={{ boxShadow: '0 -2px 16px rgba(139,130,120,0.06)' }}>
       <div className="relative flex items-stretch h-14 safe-area-inset-bottom">
         {LEFT_TABS.map(item => {
-          const Icon = item.icon;
           const isActive = activeTab === item.value;
           return (
             <button
@@ -36,7 +35,7 @@ export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomN
                   style={{ backgroundColor: 'var(--primary)' }}
                 />
               )}
-              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} />
+              <AppIcon name={item.icon} size={21} tone={isActive ? 'plain' : 'duotone'} />
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
             </button>
           );
@@ -45,7 +44,6 @@ export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomN
         <div className="w-20 flex-shrink-0" />
 
         {RIGHT_TABS.map(item => {
-          const Icon = item.icon;
           const isActive = activeTab === item.value;
           return (
             <button
@@ -60,7 +58,7 @@ export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomN
                   style={{ backgroundColor: 'var(--primary)' }}
                 />
               )}
-              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} />
+              <AppIcon name={item.icon} size={21} tone={isActive ? 'plain' : 'duotone'} />
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
             </button>
           );
@@ -80,7 +78,7 @@ export default function BottomNav({ activeTab, onTabChange, onAIInput }: BottomN
               animation: 'ai-pulse 2.5s ease-in-out infinite',
             }}
           >
-            <MessageSquare className="w-6 h-6" />
+            <AppIcon name="ai" size={25} />
           </button>
         </div>
       </div>

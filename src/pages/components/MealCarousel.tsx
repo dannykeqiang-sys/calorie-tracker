@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import type { CSSProperties } from 'react';
-import { Sunrise, Sun, Moon, Cookie, Dumbbell, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { CSSProperties, SVGProps } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import AppIcon from '@/components/AppIcon';
 import MealCardSlot from './MealCardSlot';
 import ExerciseCardSlot from './ExerciseCardSlot';
 import WaterCardSlot from './WaterCardSlot';
@@ -16,6 +17,13 @@ const MEAL_RATIOS: Record<MealType, number> = {
   dinner: 0.30,
   snack: 0.10,
 };
+
+const BreakfastIcon = (props: SVGProps<SVGSVGElement>) => <AppIcon {...props} name="breakfast" />;
+const LunchIcon = (props: SVGProps<SVGSVGElement>) => <AppIcon {...props} name="lunch" />;
+const DinnerIcon = (props: SVGProps<SVGSVGElement>) => <AppIcon {...props} name="dinner" />;
+const SnackIcon = (props: SVGProps<SVGSVGElement>) => <AppIcon {...props} name="snack" />;
+const ExerciseIcon = (props: SVGProps<SVGSVGElement>) => <AppIcon {...props} name="activity" />;
+const WaterIcon = (props: SVGProps<SVGSVGElement>) => <AppIcon {...props} name="water" />;
 
 export type CarouselCardType = MealType | 'exercise' | 'water';
 
@@ -87,7 +95,7 @@ export const MEAL_CONFIGS_BASE: (Omit<MealSlotConfig, 'imageUrl'> & { type: Meal
     label: '早餐',
     en: 'BREAKFAST',
     num: '01',
-    icon: Sunrise,
+    icon: BreakfastIcon,
     gradientFrom: '#FFF7ED',
     gradientVia: '#FEF3E2',
     gradientTo: '#FFFBF5',
@@ -101,7 +109,7 @@ export const MEAL_CONFIGS_BASE: (Omit<MealSlotConfig, 'imageUrl'> & { type: Meal
     label: '午餐',
     en: 'LUNCH',
     num: '02',
-    icon: Sun,
+    icon: LunchIcon,
     gradientFrom: '#F0FDF4',
     gradientVia: '#DCFCE7',
     gradientTo: '#F7FEF9',
@@ -115,7 +123,7 @@ export const MEAL_CONFIGS_BASE: (Omit<MealSlotConfig, 'imageUrl'> & { type: Meal
     label: '晚餐',
     en: 'DINNER',
     num: '03',
-    icon: Moon,
+    icon: DinnerIcon,
     gradientFrom: '#EFF6FF',
     gradientVia: '#DBEAFE',
     gradientTo: '#F5F9FF',
@@ -129,7 +137,7 @@ export const MEAL_CONFIGS_BASE: (Omit<MealSlotConfig, 'imageUrl'> & { type: Meal
     label: '加餐',
     en: 'SNACK',
     num: '04',
-    icon: Cookie,
+    icon: SnackIcon,
     gradientFrom: '#FFF0F6',
     gradientVia: '#FCE7F3',
     gradientTo: '#FFF5FA',
@@ -144,7 +152,7 @@ export const EXERCISE_CONFIG_BASE: ExerciseSlotConfig & { pageBg: string } = {
   label: '运动',
   en: 'EXERCISE',
   num: '05',
-  icon: Dumbbell,
+  icon: ExerciseIcon,
   accent: '#60A5FA',
   pageBg: 'linear-gradient(145deg, #EDF6FF, #D8EEFF, #E8F4FF)',
   time: '',
@@ -154,7 +162,7 @@ export const WATER_CONFIG_BASE: WaterSlotConfig & { pageBg: string } = {
   label: '喝水',
   en: 'HYDRATION',
   num: '06',
-  icon: Droplets,
+  icon: WaterIcon,
   accent: '#0EA5E9',
   pageBg: 'linear-gradient(145deg, #EFF9FF, #E0F4FD, #F0F9FF)',
   time: '全天',

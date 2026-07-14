@@ -302,7 +302,7 @@ export default function SmartAdvicePanel({ profile, record, apiKey, isViewingTod
   const staticAdvices = profile ? genStaticAdvices(profile, record) : [];
 
   return (
-    <div className="w-full h-auto flex flex-col space-y-4">
+    <div data-tutorial="action-advice" className="w-full h-auto flex flex-col space-y-4">
       {isViewingToday && (
         <div className="rounded-2xl border border-border bg-card/60 p-4 space-y-2.5">
           <div className="flex items-center gap-2">
