@@ -63,9 +63,9 @@
       "weight": 62,
       "age": 26,
       "gender": "male",
-      "goal": "lose",
-      "activityLevel": "light"
+      "goal": "gain",
+      "activityLevel": "active"
     },
-    "updatedAt": 1784012971722
+    "updatedAt": 1784021838734
   }
 ]
