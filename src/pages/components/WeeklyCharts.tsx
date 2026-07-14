@@ -241,12 +241,17 @@ export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { st
                 <stop offset="100%" stopColor={n.col === 2 || n.col === 3 ? (n.col === 3 ? n.color : '#475569') : n.color} stopOpacity="0.75" />
               </linearGradient>
             ))}
-            {links.map((l, i) => (
-              <linearGradient key={`link${i}`} id={`skLink${i}`} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor={l.color} stopOpacity="0.8" />
-                <stop offset="100%" stopColor={l.color} stopOpacity="0.3" />
-              </linearGradient>
-            ))}
+            {links.map((l, i) => {
+              const sg = nodeLayout[l.source], tg = nodeLayout[l.target];
+              const gx1 = sg ? sg.x + 10 : 0;
+              const gx2 = tg ? tg.x : SVG_W;
+              return (
+                <linearGradient key={`link${i}`} id={`skLink${i}`} gradientUnits="userSpaceOnUse" x1={gx1} y1="0" x2={gx2} y2="0">
+                  <stop offset="0%" stopColor={l.color} stopOpacity="0.8" />
+                  <stop offset="100%" stopColor={l.color} stopOpacity="0.3" />
+                </linearGradient>
+              );
+            })}
             <filter id="sankeyGlow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>

@@ -76,10 +76,12 @@ const CONFETTI_COLORS = ['#F97316', '#A3B899', '#7CB9E8', '#C084FC', '#F43F5E', 
 
 function pickElement(selectors: string[]): HTMLElement | null {
   for (const sel of selectors) {
-    const el = document.querySelector(sel) as HTMLElement | null;
-    if (!el) continue;
-    const r = el.getBoundingClientRect();
-    if (r.width > 0 && r.height > 0) return el;
+    const els = document.querySelectorAll(sel);
+    for (const node of Array.from(els)) {
+      const el = node as HTMLElement;
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return el;
+    }
   }
   return null;
 }
@@ -97,7 +99,7 @@ function computeLayout(el: HTMLElement, padding: number, shape: 'circle' | 'rect
   const top = Math.max(2, rawTop);
   const left = Math.max(2, rawLeft);
   const right = Math.min(vw - 2, rawRight);
-  const maxBottom = vh - (shape === 'circle' ? 2 : 70);
+  const maxBottom = vh - 8;
   const bottom = Math.min(rawBottom, maxBottom);
   const height = Math.max(30, bottom - top);
 

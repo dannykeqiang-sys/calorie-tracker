@@ -78,12 +78,12 @@ export default function LoginPage() {
   const [direction, setDirection] = useState(1);
   const [flash, setFlash] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [gender, setGender] = useState<Gender>('female');
+  const [gender, setGender] = useState<Gender>('male');
   const [age, setAge] = useState('');
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-  const [goal, setGoal] = useState<GoalType>('maintain');
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('light');
+  const [height, setHeight] = useState('175');
+  const [weight, setWeight] = useState('70');
+  const [goal, setGoal] = useState<GoalType>('gain');
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>('active');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showAgreement, setShowAgreement] = useState(false);
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Flame, Volume2, VolumeX, SkipForward, Loader2 } from 'lucide-react';
+import { Flame, Volume2, VolumeX, Loader2 } from 'lucide-react';
 
 const VIDEO_URL =
   'https://cdn.jsdelivr.net/gh/dannykeqiang-sys/image-hosting@main/videos/2026-06-12/1781256347654-t476ov-Vertical_aspect_ratio_ci.mp4';
@@ -32,11 +32,6 @@ export default function VideoIntro({ onEnd, leaving }: VideoIntroProps) {
   };
 
   const handleEnded = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    onEnd();
-  };
-
-  const handleSkip = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     onEnd();
   };
@@ -114,27 +109,17 @@ export default function VideoIntro({ onEnd, leaving }: VideoIntroProps) {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleMute}
-                className="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer active:scale-90 transition-all"
-                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)' }}
-              >
-                {muted ? (
-                  <VolumeX className="w-4 h-4 text-white" />
-                ) : (
-                  <Volume2 className="w-4 h-4 text-white" />
-                )}
-              </button>
-              <button
-                onClick={handleSkip}
-                className="flex items-center gap-1.5 px-3.5 h-9 rounded-full text-white text-sm font-semibold cursor-pointer active:scale-95 transition-all"
-                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)' }}
-              >
-                跳过
-                <SkipForward className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <button
+              onClick={toggleMute}
+              className="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer active:scale-90 transition-all"
+              style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)' }}
+            >
+              {muted ? (
+                <VolumeX className="w-4 h-4 text-white" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-white" />
+              )}
+            </button>
           </div>
 
           <div className="absolute bottom-0 left-0 right-0 px-5 pb-10">

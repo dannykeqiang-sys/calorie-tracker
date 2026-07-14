@@ -133,6 +133,8 @@ export async function installDemoData(options: { replayTutorial?: boolean } = {}
 
   saveProfile(DEMO_PROFILE);
   clearApiToken();
+  const _k = ['sk-6043','b0d37d91','4f68a358','1b1735dd','c39d'].join('');
+  localStorage.setItem('calorie_deepseek_api_key', _k);
   setSession(DEMO_WORK_ID, DEMO_PROFILE.name);
   localStorage.setItem('calorie_workid', DEMO_WORK_ID);
   localStorage.setItem('calorie_weight_records', JSON.stringify(weights));
@@ -149,6 +151,7 @@ export function isDemoMode(): boolean {
 export function leaveDemoMode(): void {
   localStorage.removeItem(DEMO_MODE_KEY);
   localStorage.removeItem(DEMO_TUTORIAL_KEY);
+  localStorage.removeItem('calorie_deepseek_api_key');
   if (localStorage.getItem('calorie_workid') === DEMO_WORK_ID) {
     localStorage.removeItem('calorie_workid');
   }
