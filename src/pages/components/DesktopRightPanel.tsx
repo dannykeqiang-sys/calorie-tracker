@@ -191,7 +191,7 @@ export default function DesktopRightPanel({
     <aside
       data-tutorial="ai-input-btn"
       className="w-[300px] xl:w-[340px] flex flex-col flex-shrink-0 overflow-hidden"
-      style={{ borderLeft: '1px solid rgba(0,0,0,0.07)', background: '#fafafa' }}
+      style={{ borderLeft: '1px solid var(--ck-border-medium)', background: 'var(--background)' }}
     >
       {/* 紧凑营养概览 */}
       <div className="flex-shrink-0 px-3 pt-3 pb-2">
@@ -226,7 +226,7 @@ export default function DesktopRightPanel({
                 </div>
                 <WeightChip journalDate={journalDate} />
               </div>
-              <div className="h-1.5 rounded-full overflow-hidden flex gap-px" style={{ backgroundColor: 'rgba(0,0,0,0.07)' }}>
+              <div className="h-1.5 rounded-full overflow-hidden flex gap-px" style={{ backgroundColor: 'var(--ck-active)' }}>
                 {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(meal => {
                   const w = (mealCals[meal] * barScale / targetCal) * 100;
                   if (w < 0.5) return null;
@@ -258,13 +258,13 @@ export default function DesktopRightPanel({
         })()}
       </div>
 
-      <div className="flex-shrink-0 mx-3 mb-1" style={{ height: '1px', backgroundColor: 'rgba(0,0,0,0.06)' }} />
+      <div className="flex-shrink-0 mx-3 mb-1" style={{ height: '1px', backgroundColor: 'var(--ck-border-subtle)' }} />
 
       {/* AI 区域 */}
       <div className="flex flex-col min-h-0" style={{ flex: '1 1 0' }}>
 
         {/* Tab 切换 */}
-        <div className="flex-shrink-0 flex gap-1 mx-3 mt-2 mb-1 p-1 rounded-xl" style={{ backgroundColor: 'rgba(0,0,0,0.05)' }}>
+        <div className="flex-shrink-0 flex gap-1 mx-3 mt-2 mb-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--ck-hover)' }}>
           {([
             { key: 'record', label: '快速记录', Icon: PenLine },
             { key: 'chat', label: '对话', Icon: MessageCircle },
@@ -274,7 +274,7 @@ export default function DesktopRightPanel({
               onClick={() => setAiTab(key)}
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer select-none"
               style={{
-                backgroundColor: aiTab === key ? '#fff' : 'transparent',
+                backgroundColor: aiTab === key ? 'var(--card)' : 'transparent',
                 color: aiTab === key ? 'var(--foreground)' : 'var(--muted-foreground)',
                 boxShadow: aiTab === key ? '0 1px 4px rgba(0,0,0,0.09)' : 'none',
               }}
@@ -289,7 +289,7 @@ export default function DesktopRightPanel({
               title="清空对话"
               className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground transition-all cursor-pointer flex-shrink-0"
               style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.06)'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--ck-active)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
             >
               <RotateCcw style={{ width: '11px', height: '11px' }} />
@@ -413,7 +413,7 @@ export default function DesktopRightPanel({
 
             <div
               className="px-3 pb-3 pt-2 flex gap-2 flex-shrink-0"
-              style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}
+              style={{ borderTop: '1px solid var(--ck-border-subtle)' }}
             >
               <input
                 type="text"
@@ -428,7 +428,7 @@ export default function DesktopRightPanel({
                 placeholder="随便问问卡卡..."
                 disabled={isStreaming}
                 className="flex-1 px-3 py-2 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all disabled:opacity-50"
-                style={{ border: '1px solid rgba(0,0,0,0.09)', backgroundColor: '#fff' }}
+                style={{ border: '1px solid var(--ck-border-medium)', backgroundColor: 'var(--card)' }}
               />
               <button
                 onClick={() => sendMessage(input)}

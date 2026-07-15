@@ -478,8 +478,8 @@ export default function ExportDataModal({ open, onClose }: ExportDataModalProps)
                 key={cfg.key}
                 className="flex items-center gap-3 p-3.5 rounded-2xl border transition-all"
                 style={{
-                  borderColor: isDone ? cfg.color + '40' : 'rgba(0,0,0,0.08)',
-                  background: isDone ? cfg.color + '08' : 'rgba(255,255,255,0.6)',
+                  borderColor: isDone ? cfg.color + '40' : 'var(--ck-border-medium)',
+                  background: isDone ? cfg.color + '08' : 'var(--ck-surface-subtle)',
                 }}
               >
                 <div

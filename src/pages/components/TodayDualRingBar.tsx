@@ -285,8 +285,8 @@ function ThreeRings({ intake, target, protein, proteinTarget, carbs, carbsTarget
               key={i}
               className="flex-1 px-3 py-2 rounded-xl transition-all duration-300 cursor-pointer"
               style={{
-                background: isH ? `${ring.color}15` : 'rgba(0,0,0,0.02)',
-                border: `1.5px solid ${isH ? ring.color : 'rgba(0,0,0,0.08)'}`,
+                background: isH ? `${ring.color}15` : 'var(--ck-hover)',
+                border: `1.5px solid ${isH ? ring.color : 'var(--ck-border-medium)'}`,
                 transform: isH ? 'translateY(-2px)' : 'translateY(0)',
                 boxShadow: isH ? `0 4px 12px ${ring.color}30` : 'none',
               }}

@@ -75,7 +75,7 @@ export default function ActivityBurnCard({ stats }: ActivityBurnCardProps) {
                       height: `${barH}px`,
                       minHeight: day.burn > 0 ? '6px' : '0px',
                       background: day.burn === 0
-                        ? 'rgba(0,0,0,0.06)'
+                        ? 'var(--ck-active)'
                         : isSelected
                           ? 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)'
                           : 'linear-gradient(180deg, rgba(34,197,94,0.5) 0%, rgba(22,163,74,0.4) 100%)',

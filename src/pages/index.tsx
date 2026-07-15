@@ -403,7 +403,7 @@ export default function Home() {
           ))}
           <div
             className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.48) 45%, rgba(255,255,255,0.68) 100%)' }}
+            style={{ background: 'linear-gradient(to bottom, var(--ck-surface-subtle) 0%, var(--ck-surface-subtle) 45%, var(--ck-surface-medium) 100%)' }}
           />
         </div>
 

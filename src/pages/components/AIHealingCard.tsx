@@ -295,8 +295,8 @@ export default function AIHealingCard({
           <div
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-full flex-shrink-0"
             style={{
-              background: 'rgba(255,255,255,0.65)',
-              border: '1px solid rgba(255,255,255,0.8)',
+              background: 'var(--ck-surface-medium)',
+              border: '1px solid var(--ck-border-subtle)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
@@ -310,8 +310,8 @@ export default function AIHealingCard({
 
       {/* 主消息框 */}
       <div
-        className="relative rounded-2xl px-4 py-3.5 mb-3.5 border border-white/60"
-        style={{ background: 'rgba(255,255,255,0.62)' }}
+        className="relative rounded-2xl px-4 py-3.5 mb-3.5 border border-card/60"
+        style={{ background: 'var(--ck-surface-medium)' }}
       >
         <span
           className="absolute top-1.5 left-3 text-foreground/20 text-3xl font-serif leading-none select-none"
@@ -343,8 +343,8 @@ export default function AIHealingCard({
                 key={i}
                 className="rounded-xl px-2 py-2 flex flex-col items-center gap-0.5 text-center"
                 style={{
-                  background: 'rgba(255,255,255,0.58)',
-                  border: '1px solid rgba(255,255,255,0.75)',
+                  background: 'var(--ck-surface-medium)',
+                  border: '1px solid var(--ck-border-subtle)',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
                 }}
               >
@@ -362,8 +362,8 @@ export default function AIHealingCard({
         <div
           className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
           style={{
-            background: 'rgba(255,255,255,0.48)',
-            border: '1px solid rgba(255,255,255,0.65)',
+            background: 'var(--ck-surface-subtle)',
+            border: '1px solid var(--ck-border-subtle)',
           }}
         >
           <TrendingUp
@@ -384,7 +384,7 @@ export default function AIHealingCard({
         <div
           className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl"
           style={{
-            background: 'rgba(255,255,255,0.55)',
+            background: 'var(--ck-surface-medium)',
             border: '1px dashed rgba(109,40,217,0.35)',
           }}
         >

@@ -27,7 +27,7 @@ function CalorieBar({ intake, target, isOver }: { intake: number; target: number
         </span>
         <span className="text-[10px] text-muted-foreground tabular-nums">/ {target}</span>
       </div>
-      <div className="relative h-1.5 rounded-full" style={{ background: 'rgba(0,0,0,0.06)' }}>
+      <div className="relative h-1.5 rounded-full" style={{ background: 'var(--ck-active)' }}>
         <div
           className="h-full rounded-full"
           style={{
@@ -40,7 +40,7 @@ function CalorieBar({ intake, target, isOver }: { intake: number; target: number
         />
         <div
           className="absolute top-0 bottom-0 w-px"
-          style={{ left: '76.9%', background: 'rgba(0,0,0,0.14)' }}
+          style={{ left: '76.9%', background: 'var(--ck-border-strong)' }}
         />
       </div>
     </div>
@@ -63,7 +63,7 @@ function MacroBar({ label, value, maxVal, color, unit = 'g' }: MacroBarProps) {
         {value}
         <span className="text-[10px] font-normal ml-0.5">{unit}</span>
       </p>
-      <div className="h-1 rounded-full mt-1.5" style={{ background: 'rgba(0,0,0,0.06)' }}>
+      <div className="h-1 rounded-full mt-1.5" style={{ background: 'var(--ck-active)' }}>
         <div
           className="h-full rounded-full"
           style={{ width: `${Math.min((value / maxVal) * 100, 100)}%`, background: color }}
@@ -84,7 +84,7 @@ export default function HistoryDataTable({ stats, targetCalories }: HistoryDataT
   const target = targetCalories || 2000;
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-border/50" style={{ background: '#fff' }}>
+    <div className="rounded-2xl overflow-hidden border border-border/50" style={{ background: 'var(--card)' }}>
       <div
         className="px-5 py-4 border-b border-border/40 flex items-center gap-3"
         style={{ background: 'linear-gradient(to right, rgba(163,184,153,0.08), rgba(124,185,168,0.04))' }}
@@ -108,7 +108,7 @@ export default function HistoryDataTable({ stats, targetCalories }: HistoryDataT
 
       <div
         className="hidden sm:grid border-b border-border/30 px-5 py-2"
-        style={{ gridTemplateColumns: '72px 1fr 72px 80px 68px 28px', gap: '12px', background: 'rgba(0,0,0,0.015)' }}
+        style={{ gridTemplateColumns: '72px 1fr 72px 80px 68px 28px', gap: '12px', background: 'var(--ck-hover)' }}
       >
         {['日期', '热量摄入 / 目标', '饮水', '运动消耗', '体重', ''].map(h => (
           <span key={h} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</span>
@@ -130,7 +130,7 @@ export default function HistoryDataTable({ stats, targetCalories }: HistoryDataT
                 backgroundColor: isExpanded
                   ? 'rgba(163,184,153,0.05)'
                   : isHovered
-                  ? 'rgba(0,0,0,0.012)'
+                  ? 'var(--ck-hover)'
                   : 'transparent',
               }}
               onMouseEnter={() => setHoveredDate(day.date)}
@@ -147,7 +147,7 @@ export default function HistoryDataTable({ stats, targetCalories }: HistoryDataT
                     style={{
                       background: isExpanded
                         ? 'linear-gradient(135deg, #A3B899, #7CB9A8)'
-                        : 'rgba(0,0,0,0.04)',
+                        : 'var(--ck-hover)',
                     }}
                   >
                     <span
@@ -243,7 +243,7 @@ export default function HistoryDataTable({ stats, targetCalories }: HistoryDataT
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div
                       className="rounded-xl px-3 py-2 flex items-center justify-between"
-                      style={{ background: 'rgba(0,0,0,0.03)' }}
+                      style={{ background: 'var(--ck-hover)' }}
                     >
                       <span className="text-[10px] text-muted-foreground">净摄入</span>
                       <span
@@ -256,7 +256,7 @@ export default function HistoryDataTable({ stats, targetCalories }: HistoryDataT
                     {day.sodium > 0 && (
                       <div
                         className="rounded-xl px-3 py-2 flex items-center justify-between"
-                        style={{ background: 'rgba(0,0,0,0.03)' }}
+                        style={{ background: 'var(--ck-hover)' }}
                       >
                         <span className="text-[10px] text-muted-foreground">钠摄入</span>
                         <span

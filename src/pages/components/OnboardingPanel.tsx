@@ -74,7 +74,7 @@ function GlowInput({
         placeholder={placeholder}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className="w-full px-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm transition-all outline-none"
+        className="w-full px-4 py-3.5 rounded-2xl border bg-card/80 text-foreground text-sm transition-all outline-none"
         style={{
           borderColor: focused ? accent : '#E5E7EB',
           boxShadow: focused ? `0 0 0 3px ${accent}22, 0 2px 8px ${accent}18` : '0 1px 3px rgba(0,0,0,0.06)',
@@ -217,8 +217,8 @@ export default function OnboardingPanel({ onComplete }: OnboardingPanelProps) {
           </div>
 
           <div
-            className="rounded-3xl shadow-sm border border-white/60 relative overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(20px)' }}
+            className="rounded-3xl shadow-sm border border-card/60 relative overflow-hidden"
+            style={{ background: 'var(--ck-surface-strong)', backdropFilter: 'blur(20px)' }}
           >
             {flash && (
               <div

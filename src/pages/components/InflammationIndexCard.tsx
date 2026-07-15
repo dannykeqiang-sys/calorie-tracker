@@ -113,7 +113,7 @@ function GaugeArc({ score, color }: { score: number; color: string }) {
     <svg width="200" height="106" viewBox="0 0 200 106" fill="none">
       <path
         d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
-        stroke="rgba(0,0,0,0.07)"
+        stroke="var(--ck-chart-grid)"
         strokeWidth="14"
         strokeLinecap="round"
         fill="none"
@@ -150,13 +150,13 @@ export default function InflammationIndexCard({ profile, record, waterAmount }: 
   };
 
   return (
-    <div className="rounded-2xl bg-white border border-border shadow-sm overflow-hidden">
+    <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
       <div className="px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm font-bold text-foreground">炎症指数</p>
           <button
             className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors"
-            style={{ background: knowledgeOpen ? 'rgba(139,92,246,0.12)' : 'rgba(0,0,0,0.04)', color: knowledgeOpen ? '#7C3AED' : '#9CA3AF' }}
+            style={{ background: knowledgeOpen ? 'rgba(139,92,246,0.12)' : 'var(--ck-hover)', color: knowledgeOpen ? '#7C3AED' : '#9CA3AF' }}
             onClick={() => setKnowledgeOpen(v => !v)}
           >
             <BookOpen className="w-3 h-3" />

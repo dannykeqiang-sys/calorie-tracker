@@ -188,7 +188,7 @@ export default function AIChatPanel({ profile, record, apiKey }: AIChatPanelProp
         <MessageCircle className="w-5 h-5" />
         <span className="text-sm font-semibold">和卡卡聊聊</span>
         {unreadCount > 0 && (
-          <span className="w-5 h-5 rounded-full bg-white text-primary text-[10px] font-bold flex items-center justify-center">
+          <span className="w-5 h-5 rounded-full bg-card text-primary text-[10px] font-bold flex items-center justify-center">
             {Math.min(unreadCount, 9)}
           </span>
         )}
@@ -201,7 +201,7 @@ export default function AIChatPanel({ profile, record, apiKey }: AIChatPanelProp
           onClick={() => setOpen(false)}
         >
           <div
-            className="absolute bottom-0 left-0 right-0 flex flex-col rounded-t-3xl bg-white overflow-hidden"
+            className="absolute bottom-0 left-0 right-0 flex flex-col rounded-t-3xl bg-card overflow-hidden"
             style={{
               maxHeight: '90vh',
               animation: 'chat-slide-up 0.3s cubic-bezier(0.4,0,0.2,1) both',

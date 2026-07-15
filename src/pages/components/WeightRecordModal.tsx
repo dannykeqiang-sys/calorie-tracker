@@ -89,7 +89,7 @@ export default function WeightRecordModal({ open, onClose, onSave, journalDate }
         className="w-full max-w-lg overflow-hidden"
         style={{
           borderRadius: '26px 26px 0 0',
-          background: 'rgba(255,255,255,0.90)',
+          background: 'var(--card)',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',

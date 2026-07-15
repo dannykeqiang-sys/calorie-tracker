@@ -51,7 +51,7 @@ export default function SodiumAnalysisCard({ record }: SodiumAnalysisCardProps) 
   const StatusIcon = totalSodium < IDEAL_LIMIT ? TrendingDown : totalSodium < WHO_LIMIT ? Minus : TrendingUp;
 
   return (
-    <div className="rounded-2xl border border-border bg-white/60 p-4 space-y-3">
+    <div className="rounded-2xl border border-border bg-card/60 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>

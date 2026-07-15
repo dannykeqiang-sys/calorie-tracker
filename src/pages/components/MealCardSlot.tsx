@@ -222,7 +222,7 @@ function MacroOverlay({ macroKey, items, macroTarget, onClose }: MacroOverlayPro
           <button
             onClick={onClose}
             className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer active:scale-90"
-            style={{ background: 'rgba(0,0,0,0.07)' }}
+            style={{ background: 'var(--ck-active)' }}
           >
             <X className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
@@ -328,7 +328,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
           <button
             onClick={onClose}
             className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer active:scale-90"
-            style={{ background: 'rgba(0,0,0,0.07)' }}
+            style={{ background: 'var(--ck-active)' }}
           >
             <X className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
@@ -407,7 +407,7 @@ function EditFoodSheet({ group, accent, onSave, onClose }: EditFoodSheetProps) {
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-2xl text-sm text-muted-foreground cursor-pointer active:scale-95 transition-transform border"
-            style={{ borderColor: 'rgba(0,0,0,0.1)' }}
+            style={{ borderColor: 'var(--ck-border-medium)' }}
           >
             取消
           </button>
@@ -542,7 +542,7 @@ export default function MealCardSlot({
       style={{
         maxHeight: fullscreen || bareMode ? undefined : noImage ? '280px' : (isActive ? '900px' : '216px'),
         opacity: isActive ? 1 : bareMode ? 0.75 : 0.62,
-        background: isActive ? '#ffffff' : undefined,
+        background: isActive ? 'var(--card)' : undefined,
         border: isActive && bareMode ? '2px solid rgba(255,255,255,0.95)' : undefined,
         boxShadow: bareMode
           ? (isActive ? '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.15), 0 0 80px rgba(255,255,255,0.06)' : '0 2px 8px rgba(0,0,0,0.08)')
@@ -599,10 +599,10 @@ export default function MealCardSlot({
         className={fullscreen ? 'flex-1 flex flex-col min-h-0' : 'flex flex-col'}
         style={{
           background: isActive
-            ? `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`
+            ? 'var(--card)'
             : (noImage
-              ? `linear-gradient(135deg, ${config.gradientFrom}CC 0%, rgba(255,255,255,0.72) 80px, rgba(255,255,255,0.65) 100%)`
-              : `linear-gradient(135deg, ${config.accent}12 0%, rgba(255,255,255,0.68) 56px, rgba(255,255,255,0.60) 100%)`),
+              ? `linear-gradient(135deg, ${config.gradientFrom}CC 0%, var(--ck-surface-medium) 80px, var(--ck-surface-subtle) 100%)`
+              : `linear-gradient(135deg, ${config.accent}12 0%, var(--ck-surface-medium) 56px, var(--ck-surface-subtle) 100%)`),
           backdropFilter: isActive ? 'none' : 'url(#liquid-distort) blur(28px) saturate(190%)',
           WebkitBackdropFilter: isActive ? 'none' : 'blur(28px) saturate(190%)',
         }}
@@ -664,8 +664,8 @@ export default function MealCardSlot({
                   onClick={onOpenAIInput}
                   className="w-full text-left rounded-2xl p-3.5 transition-all active:scale-[0.98] cursor-pointer hover:bg-card/25"
                   style={{
-                    background: 'rgba(255,255,255,0.18)',
-                    border: '1px solid rgba(255,255,255,0.3)',
+                    background: 'var(--ck-surface-subtle)',
+                    border: '1px solid var(--ck-border-subtle)',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 12px rgba(0,0,0,0.05)',
@@ -808,8 +808,8 @@ export default function MealCardSlot({
               style={{
                 background: toast.type === 'success'
                   ? `linear-gradient(135deg, ${config.accent}18, ${config.accent}0a)`
-                  : 'rgba(0,0,0,0.07)',
-                border: toast.type === 'success' ? `1px solid ${config.accent}30` : '1px solid rgba(0,0,0,0.08)',
+                  : 'var(--ck-active)',
+                border: toast.type === 'success' ? `1px solid ${config.accent}30` : '1px solid var(--ck-border-medium)',
                 color: toast.type === 'success' ? config.accent : 'var(--muted-foreground)',
                 animation: 'toastSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
               }}

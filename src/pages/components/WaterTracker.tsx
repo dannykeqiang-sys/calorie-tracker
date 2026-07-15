@@ -154,7 +154,7 @@ export default function WaterTracker({ items, onAdd, onRemove, onUpdate }: Water
           onChange={e => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="输入量（如：一大杯、300ml）回车记录"
-          className="flex-1 h-8 rounded-lg border border-sky-200 bg-white px-3 text-xs text-foreground placeholder:text-sky-300 focus:outline-none focus:ring-1 focus:ring-sky-300"
+          className="flex-1 h-8 rounded-lg border border-sky-200 bg-card px-3 text-xs text-foreground placeholder:text-sky-300 focus:outline-none focus:ring-1 focus:ring-sky-300"
         />
         <button
           onClick={handleTextAdd}

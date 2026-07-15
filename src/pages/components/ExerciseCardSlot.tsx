@@ -133,11 +133,11 @@ export default function ExerciseCardSlot({
         style={{
           background: isActive
             ? (noImage
-              ? `linear-gradient(135deg, ${config.accent}18 0%, #ffffff 72px, #fafafa 100%)`
-              : `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`)
+              ? `linear-gradient(135deg, ${config.accent}18 0%, var(--card) 72px, var(--card) 100%)`
+              : 'var(--card)')
             : (noImage
-              ? `linear-gradient(135deg, ${config.accent}18 0%, rgba(255,255,255,0.68) 72px, rgba(255,255,255,0.60) 100%)`
-              : `linear-gradient(135deg, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.42) 100%)`),
+              ? `linear-gradient(135deg, ${config.accent}18 0%, var(--ck-surface-medium) 72px, var(--ck-surface-subtle) 100%)`
+              : `linear-gradient(135deg, var(--ck-surface-subtle) 0%, var(--ck-surface-subtle) 100%)`),
           backdropFilter: isActive ? 'none' : 'url(#liquid-distort) blur(28px) saturate(190%)',
           WebkitBackdropFilter: isActive ? 'none' : 'blur(28px) saturate(190%)',
         }}

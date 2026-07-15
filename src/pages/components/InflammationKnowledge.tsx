@@ -294,11 +294,11 @@ export default function InflammationKnowledge({ defaultOpen }: InflammationKnowl
           <div
             key={topic.id}
             className="rounded-2xl overflow-hidden transition-all"
-            style={{ border: `1.5px solid ${isOpen ? topic.color + '40' : 'rgba(0,0,0,0.06)'}` }}
+            style={{ border: `1.5px solid ${isOpen ? topic.color + '40' : 'var(--ck-border-subtle)'}` }}
           >
             <button
               className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer transition-colors"
-              style={{ background: isOpen ? `${topic.color}08` : 'white' }}
+              style={{ background: isOpen ? `${topic.color}08` : 'var(--card)' }}
               onClick={() => setOpenId(isOpen ? null : topic.id)}
             >
               <div
@@ -318,7 +318,7 @@ export default function InflammationKnowledge({ defaultOpen }: InflammationKnowl
             </button>
 
             {isOpen && (
-              <div className="px-4 pb-4 pt-1" style={{ background: 'white' }}>
+              <div className="px-4 pb-4 pt-1" style={{ background: 'var(--card)' }}>
                 {topic.content}
               </div>
             )}

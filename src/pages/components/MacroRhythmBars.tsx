@@ -122,9 +122,9 @@ export default function MacroRhythmBars({ stats, targetCalories }: MacroRhythmBa
 
   return (
     <div
-      className="rounded-3xl p-4 border border-white/50"
+      className="rounded-3xl p-4 border border-card/50"
       style={{
-        background: 'rgba(255,255,255,0.42)',
+        background: 'var(--ck-surface-subtle)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}
@@ -134,7 +134,7 @@ export default function MacroRhythmBars({ stats, targetCalories }: MacroRhythmBa
           <p className="text-sm font-bold text-foreground">营养节律条</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">日均 P / C / F / 钠 摄入 vs 目标</p>
         </div>
-        <span className="text-[10px] text-muted-foreground bg-white/60 border border-white/60 rounded-full px-2 py-0.5">
+        <span className="text-[10px] text-muted-foreground bg-card/60 border border-card/60 rounded-full px-2 py-0.5">
           近 7 天均值
         </span>
       </div>
@@ -225,8 +225,8 @@ export default function MacroRhythmBars({ stats, targetCalories }: MacroRhythmBa
           </div>
 
           <div
-            className="rounded-2xl px-3.5 py-2.5 border border-white/60 mt-1"
-            style={{ background: 'rgba(255,255,255,0.55)' }}
+            className="rounded-2xl px-3.5 py-2.5 border border-card/60 mt-1"
+            style={{ background: 'var(--ck-surface-medium)' }}
           >
             <p className="text-[10px] text-muted-foreground leading-relaxed">
               <span className="font-semibold text-foreground/80">AI 补位建议 · </span>

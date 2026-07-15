@@ -252,7 +252,7 @@ export default function PredictiveAdviceCard({ profile, record, apiKey, isComple
 
   return (
     <div
-      className="w-full h-auto flex flex-col space-y-4 bg-white rounded-2xl border border-primary/20 p-5"
+      className="w-full h-auto flex flex-col space-y-4 bg-card rounded-2xl border border-primary/20 p-5"
       style={{ animation: 'fade-slide-in 0.4s ease both' }}
     >
       <div className="flex items-center gap-2 pb-2 border-b border-border">

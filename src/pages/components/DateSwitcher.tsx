@@ -58,7 +58,7 @@ export default function DateSwitcher({ selectedDate, onDateChange }: DateSwitche
         onClick={() => setShowOlder(v => !v)}
         className="flex-shrink-0 flex flex-col items-center justify-center w-8 h-9 rounded-xl transition-all cursor-pointer active:scale-90 border border-border/60"
         style={{
-          backgroundColor: selectedIsOlder ? 'var(--primary)' : 'rgba(255,255,255,0.7)',
+          backgroundColor: selectedIsOlder ? 'var(--primary)' : 'var(--ck-surface-medium)',
           color: selectedIsOlder ? 'white' : 'var(--muted-foreground)',
         }}
         title={showOlder ? '收起' : '查看更早日期'}
@@ -88,7 +88,7 @@ export default function DateSwitcher({ selectedDate, onDateChange }: DateSwitche
                   ? 'var(--primary)'
                   : isToday
                   ? 'rgba(163,184,153,0.18)'
-                  : 'rgba(255,255,255,0.6)',
+                  : 'var(--ck-surface-subtle)',
                 color: isSelected
                   ? 'white'
                   : isToday

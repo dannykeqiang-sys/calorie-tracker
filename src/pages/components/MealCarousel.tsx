@@ -649,10 +649,10 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
               <div
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
                 style={{
-                  background: 'rgba(255,255,255,0.72)',
+                  background: 'var(--ck-surface-medium)',
                   backdropFilter: 'blur(14px)',
                   WebkitBackdropFilter: 'blur(14px)',
-                  border: '1px solid rgba(255,255,255,0.55)',
+                  border: '1px solid var(--ck-border-subtle)',
                   boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
                 }}
               >
@@ -701,10 +701,10 @@ const MealCarousel = forwardRef<MealCarouselRef, MealCarouselProps>(
                 style={{
                   color: accent,
                   transition: 'color 0.5s ease',
-                  background: 'rgba(255,255,255,0.65)',
+                  background: 'var(--ck-surface-medium)',
                   backdropFilter: 'blur(10px)',
                   WebkitBackdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255,255,255,0.5)',
+                  border: '1px solid var(--ck-border-subtle)',
                 }}
               >
                 {String(activeIndex + 1).padStart(2, '0')} / {String(CARD_ORDER.length).padStart(2, '0')}

@@ -115,7 +115,7 @@ export default function WeightRecordCelebration({ weight, previousWeight, onDism
       <div
         className="relative z-10 rounded-3xl p-8 flex flex-col items-center text-center mx-6 pointer-events-auto"
         style={{
-          background: 'rgba(255,255,255,0.86)',
+          background: 'var(--ck-surface-strong)',
           boxShadow: '0 32px 80px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.10)',
           backdropFilter: 'blur(32px) saturate(200%)',
           WebkitBackdropFilter: 'blur(32px) saturate(200%)',

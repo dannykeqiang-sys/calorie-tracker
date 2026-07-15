@@ -149,7 +149,7 @@ function CaloriePool({ stats, tdee }: { stats: DayStats[]; tdee: number }) {
         热量余额池
       </p>
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.07)' }}>
+        <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--ck-active)' }}>
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{

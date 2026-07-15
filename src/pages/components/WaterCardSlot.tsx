@@ -265,11 +265,11 @@ export default function WaterCardSlot({
         style={{
           background: isActive
             ? (noImage
-              ? `linear-gradient(135deg, ${config.accent}18 0%, #ffffff 72px, #fafafa 100%)`
-              : `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`)
+              ? `linear-gradient(135deg, ${config.accent}18 0%, var(--card) 72px, var(--card) 100%)`
+              : 'var(--card)')
             : (noImage
-              ? `linear-gradient(135deg, ${config.accent}18 0%, rgba(255,255,255,0.68) 72px, rgba(255,255,255,0.60) 100%)`
-              : `linear-gradient(135deg, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.42) 100%)`),
+              ? `linear-gradient(135deg, ${config.accent}18 0%, var(--ck-surface-medium) 72px, var(--ck-surface-subtle) 100%)`
+              : `linear-gradient(135deg, var(--ck-surface-subtle) 0%, var(--ck-surface-subtle) 100%)`),
           backdropFilter: isActive ? 'none' : 'url(#liquid-distort) blur(28px) saturate(190%)',
           WebkitBackdropFilter: isActive ? 'none' : 'blur(28px) saturate(190%)',
         }}
@@ -359,7 +359,7 @@ export default function WaterCardSlot({
             <div className="flex gap-2">
               <button
                 onClick={handleRetry}
-                className="py-1.5 px-3 rounded-xl border text-xs text-muted-foreground cursor-pointer hover:bg-white/60 transition-colors flex-shrink-0"
+                className="py-1.5 px-3 rounded-xl border text-xs text-muted-foreground cursor-pointer hover:bg-card/60 transition-colors flex-shrink-0"
                 style={{ borderColor: `${config.accent}30` }}
               >
                 重新输入
@@ -434,7 +434,7 @@ export default function WaterCardSlot({
             ) : (
               <div
                 key={item.id}
-                className="group flex items-center justify-between py-2.5 px-3 rounded-full bg-white/52 border border-white/58 hover:bg-white/68 transition-colors"
+                className="group flex items-center justify-between py-2.5 px-3 rounded-full bg-card/52 border border-card/58 hover:bg-card/68 transition-colors"
                 style={{ animation: 'mealItemIn 0.38s cubic-bezier(0.4,0,0.2,1) both' }}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -480,7 +480,7 @@ export default function WaterCardSlot({
               onFocus={e => { setTimeout(() => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }}
               disabled={inputStatus === 'parsing' || inputStatus === 'confirm'}
               placeholder={apiKey ? '输入任意食物/饮料，智能识别含水量' : '输入量，如：一大杯、300ml'}
-              className="flex-1 h-10 rounded-full border border-white/80 bg-white/72 px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="flex-1 h-10 rounded-full border border-card/80 bg-card/72 px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{ '--tw-ring-color': `${config.accent}40` } as React.CSSProperties}
             />
             <button

@@ -45,7 +45,7 @@ export default function WeightChip({ journalDate }: WeightChipProps) {
           background: 'linear-gradient(135deg, #A3B899, #7CB9E8)',
           boxShadow: '0 2px 8px rgba(163,184,153,0.45)',
         } : {
-          background: 'rgba(255,255,255,0.75)',
+          background: 'var(--ck-surface-medium)',
           border: '1.5px dashed var(--border)',
         }}
       >

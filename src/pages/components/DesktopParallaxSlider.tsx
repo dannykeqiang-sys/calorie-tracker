@@ -73,7 +73,12 @@ const INIT_ORIGIN = 'inset(22% 38% 64% 44% round 16px)';
 
 // ── Single-switch wheel handler with lock ──
 const WHEEL_THRESHOLD = 50; // Threshold to trigger a single switch
-const SWITCH_LOCK_MS = 750; // Lock duration — animation must finish before next switch
+const SWITCH_LOCK_MS = 500; // Shorter lock enables fluid, continuous swiping while springs settle
+
+// Spring config for card motion — natural inertia with slight overshoot (underdamped)
+const CARD_SPRING = { type: 'spring' as const, stiffness: 170, damping: 18 };
+// Cards farther from the active card start later, dealing out like a deck of cards
+const cascadeDelay = (delta: number) => Math.min(0.08, Math.abs(delta) * 0.03);
 
 const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderProps>(
   ({ record, apiKey, isViewingToday = true, profile, journalDate, onChange, onWaterReplace, onOpenAIInput }, ref) => {
@@ -144,11 +149,11 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
       setActiveIndex(newIndex);
       setIsTransitioning(true);
 
-      // Unlock after animation completes (800ms for slower, elegant transitions)
+      // Unlock after the lock window; springs may still be settling, enabling fluid continuous swipes
       timerRef.current = setTimeout(() => {
         setIsTransitioning(false);
         switchLockedRef.current = false;
-      }, 800);
+      }, SWITCH_LOCK_MS);
     }, []);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -387,10 +392,10 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
               transition: { duration: 0.38, ease: 'easeIn' },
             }}
             transition={{
-              clipPath: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
-              scale: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-              filter: { duration: 0.8, ease: 'easeOut' },
-              opacity: { duration: 0.3, ease: 'easeOut' },
+              clipPath: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+              scale: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+              filter: { duration: 0.6, ease: 'easeOut' },
+              opacity: { duration: 0.28, ease: 'easeOut' },
             }}
           />
         </AnimatePresence>
@@ -630,10 +635,11 @@ const DesktopParallaxSlider = forwardRef<MealCarouselRef, DesktopParallaxSliderP
                         : 'none',
                   }}
                   transition={{
-                    x: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-                    scale: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-                    opacity: { duration: 0.5, ease: [0.25, 1, 0.5, 1] },
-                    rotateY: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                    x: { ...CARD_SPRING, delay: cascadeDelay(delta) },
+                    scale: { ...CARD_SPRING, delay: cascadeDelay(delta) },
+                    // Hold opacity until the card is mid-flight, then settle quickly — no lingering "ghost" cards
+                    opacity: { duration: 0.28, ease: 'easeOut', delay: 0.16 },
+                    rotateY: { ...CARD_SPRING, delay: cascadeDelay(delta) },
                     filter: { duration: 0.4, ease: 'easeOut' },
                   }}
                   onClick={clickable ? () => switchCard(i) : undefined}

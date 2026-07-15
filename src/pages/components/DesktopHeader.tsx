@@ -56,16 +56,16 @@ export default function DesktopHeader({
     <header
       className="flex-shrink-0"
       style={{
-        background: 'rgba(255,255,255,0.55)',
+        background: 'var(--ck-surface-medium)',
         backdropFilter: 'url(#liquid-distort) blur(28px) saturate(180%)',
         WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-        borderBottom: '1px solid rgba(255,255,255,0.55)',
+        borderBottom: '1px solid var(--ck-border-subtle)',
         boxShadow: 'inset 0 10px 20px rgba(255,255,255,0.4), 0 2px 12px rgba(0,0,0,0.06)',
       }}
     >
       <div
         className="h-12 px-6 flex items-center gap-4"
-        style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+        style={{ borderBottom: '1px solid var(--ck-border-subtle)' }}
       >
         <div className="flex items-center gap-2.5 select-none flex-shrink-0">
           <AppMark size={28} />
@@ -81,16 +81,16 @@ export default function DesktopHeader({
           className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-medium cursor-pointer transition-all select-none border"
           style={{
             color: 'var(--muted-foreground)',
-            borderColor: 'rgba(0,0,0,0.09)',
-            backgroundColor: '#fff',
+            borderColor: 'var(--ck-border-medium)',
+            backgroundColor: 'var(--card)',
           }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.color = 'var(--foreground)';
-            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.025)';
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--ck-hover)';
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLElement).style.color = 'var(--muted-foreground)';
-            (e.currentTarget as HTMLElement).style.backgroundColor = '#fff';
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--card)';
           }}
         >
           <AppIcon name="upload" size={13} />
@@ -103,7 +103,7 @@ export default function DesktopHeader({
           className="w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer"
           style={{ color: 'var(--muted-foreground)' }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.06)';
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--ck-active)';
             (e.currentTarget as HTMLElement).style.color = 'var(--foreground)';
           }}
           onMouseLeave={e => {
@@ -118,14 +118,14 @@ export default function DesktopHeader({
           onClick={onEditProfile}
           className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border cursor-pointer transition-all text-xs font-medium text-foreground"
           style={{
-            backgroundColor: '#fff',
-            borderColor: 'rgba(0,0,0,0.09)',
+            backgroundColor: 'var(--card)',
+            borderColor: 'var(--ck-border-medium)',
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.025)';
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--ck-hover)';
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = '#fff';
+            (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--card)';
           }}
         >
           <div
@@ -158,7 +158,7 @@ export default function DesktopHeader({
               onMouseEnter={e => {
                 if (!isActive) {
                   const el = e.currentTarget as HTMLElement;
-                  el.style.backgroundColor = 'rgba(0,0,0,0.055)';
+                  el.style.backgroundColor = 'var(--ck-active)';
                   el.style.color = 'var(--foreground)';
                   el.style.transform = 'translateY(-3px) scale(1.05)';
                   el.style.boxShadow = '0 6px 20px rgba(0,0,0,0.09)';

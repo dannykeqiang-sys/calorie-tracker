@@ -322,7 +322,7 @@ export default function SmartAdvicePanel({ profile, record, apiKey, isViewingTod
                   className="px-3.5 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer border"
                   style={{
                     backgroundColor: active ? `${part.color}18` : 'transparent',
-                    borderColor: active ? `${part.color}60` : 'rgba(0,0,0,0.1)',
+                    borderColor: active ? `${part.color}60` : 'var(--ck-border-medium)',
                     color: active ? part.color : 'var(--muted-foreground)',
                     boxShadow: active ? `0 0 0 2px ${part.color}30` : 'none',
                   }}

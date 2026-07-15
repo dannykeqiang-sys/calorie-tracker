@@ -75,7 +75,7 @@ export default function MacroRingChart(props: MacroRingChartProps) {
             </filter>
           </defs>
 
-          <circle cx={CENTER} cy={CENTER} r="105" fill="rgba(255,255,255,0.45)" filter={`url(#${uid}-soft-shadow)`} />
+          <circle cx={CENTER} cy={CENTER} r="105" fill="var(--ck-surface-subtle)" filter={`url(#${uid}-soft-shadow)`} />
 
           {rings.map(ring => {
             const circumference = Math.PI * 2 * ring.radius;

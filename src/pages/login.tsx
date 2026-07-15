@@ -295,9 +295,9 @@ export default function LoginPage() {
           <div
             className="rounded-3xl p-6 shadow-sm relative overflow-hidden"
             style={{
-              background: 'rgba(255,255,255,0.85)',
+              background: 'var(--ck-surface-strong)',
               backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.7)',
+              border: '1px solid var(--ck-border-subtle)',
               animation: 'loginSlideUp 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s both',
             }}
           >
@@ -305,7 +305,7 @@ export default function LoginPage() {
             {mode === 'register' && (
               <div
                 className="mb-4 pb-4 flex items-center justify-between"
-                style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                style={{ borderBottom: '1px solid var(--ck-border-subtle)' }}
               >
                 <div>
                   <p className="text-xs text-muted-foreground">昵称</p>
@@ -712,7 +712,7 @@ function UserAgreementModal({ onClose }: { onClose: () => void }) {
       <div
         className="relative w-full max-w-md max-h-[85vh] rounded-3xl overflow-hidden flex flex-col"
         style={{
-          background: 'rgba(255,255,255,0.98)',
+          background: 'var(--card)',
           backdropFilter: 'blur(20px)',
           animation: 'loginSlideUp 0.3s cubic-bezier(0.4,0,0.2,1)',
         }}
@@ -835,7 +835,7 @@ const NameInput = forwardRef<HTMLInputElement, NameInputProps>(
         placeholder={placeholder}
         disabled={disabled}
         maxLength={20}
-        className="w-full px-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
+        className="w-full px-4 py-3.5 rounded-2xl border bg-card/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
         style={{
           borderColor: focused ? '#F97316' : '#E5E7EB',
           boxShadow: focused ? '0 0 0 3px rgba(249,115,22,0.15), 0 2px 8px rgba(249,115,22,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
@@ -872,7 +872,7 @@ const CodeInput = forwardRef<HTMLInputElement, CodeInputProps>(
           placeholder="输入邀请码"
           disabled={disabled}
           maxLength={32}
-          className="w-full pl-9 pr-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
+          className="w-full pl-9 pr-4 py-3.5 rounded-2xl border bg-card/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
           style={{
             borderColor: focused ? '#F97316' : '#E5E7EB',
             boxShadow: focused ? '0 0 0 3px rgba(249,115,22,0.15), 0 2px 8px rgba(249,115,22,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
@@ -934,7 +934,7 @@ function GlowInput({ type = 'text', value, onChange, placeholder, unit, accent, 
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         disabled={disabled}
-        className="w-full px-4 py-3.5 rounded-2xl border bg-white/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
+        className="w-full px-4 py-3.5 rounded-2xl border bg-card/80 text-foreground text-sm outline-none transition-all disabled:opacity-50"
         style={{
           borderColor: focused ? accent : '#E5E7EB',
           boxShadow: focused ? `0 0 0 3px ${accent}22, 0 2px 8px ${accent}18` : '0 1px 3px rgba(0,0,0,0.06)',

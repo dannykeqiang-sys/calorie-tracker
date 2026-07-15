@@ -273,7 +273,7 @@ export default function TodayNutritionCard({ record, profile }: TodayNutritionCa
               style={{
                 backgroundColor: hasData
                   ? netCalories > targetCalories ? 'rgba(239,68,68,0.08)' : 'rgba(99,102,241,0.08)'
-                  : 'rgba(0,0,0,0.04)',
+                  : 'var(--ck-hover)',
               }}
             >
               <p

@@ -159,9 +159,9 @@ export default function CelebrationCanvas({ name, onDone }: CelebrationCanvasPro
         <div
           className="w-full rounded-3xl p-6 text-center shadow-xl"
           style={{
-            background: 'rgba(255,255,255,0.88)',
+            background: 'var(--ck-surface-strong)',
             backdropFilter: 'blur(20px)',
-            border: '1.5px solid rgba(255,255,255,0.9)',
+            border: '1.5px solid var(--ck-border-subtle)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
           }}
         >

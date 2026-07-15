@@ -364,8 +364,8 @@ export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { st
                 return (
                   <g>
                     <rect x={SVG_W / 2 - 100} y={HH - PAD_BOT + 8} width={200} height={isExpandedView ? 50 : 26} rx={8}
-                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                    <text x={SVG_W / 2} y={HH - PAD_BOT + 22} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">
+                      fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
+                    <text x={SVG_W / 2} y={HH - PAD_BOT + 22} textAnchor="middle" fontSize={11} fill="var(--ck-chart-tooltip-fg)" fontWeight="800">
                       {node.label}: {node.value}{unit}
                     </text>
                     {isExpandedView && (
@@ -389,8 +389,8 @@ export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { st
                 return (
                   <g>
                     <rect x={tooltipPos.x - 50} y={tooltipPos.y - 28} width={100} height={26} rx={8}
-                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                    <text x={tooltipPos.x} y={tooltipPos.y - 14} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">
+                      fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
+                    <text x={tooltipPos.x} y={tooltipPos.y - 14} textAnchor="middle" fontSize={10} fill="var(--ck-chart-tooltip-fg)" fontWeight="800">
                       {node.label}: {node.value}{unit}
                     </text>
                   </g>
@@ -407,8 +407,8 @@ export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { st
                 return (
                   <g>
                     <rect x={SVG_W / 2 - 80} y={HH - PAD_BOT + 8} width={160} height={38} rx={8}
-                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                    <text x={SVG_W / 2} y={HH - PAD_BOT + 22} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
+                      fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
+                    <text x={SVG_W / 2} y={HH - PAD_BOT + 22} textAnchor="middle" fontSize={9} fill="var(--ck-chart-tooltip-fg)" fontWeight="700">
                       {sourceNode.label} → {targetNode.label}
                     </text>
                     <text x={SVG_W / 2} y={HH - PAD_BOT + 36} textAnchor="middle" fontSize={10} fill={link.color} fontWeight="800">
@@ -420,8 +420,8 @@ export function MacroSankey({ stats, selectedDate, profile, onDateChange }: { st
                 return (
                   <g>
                     <rect x={tooltipPos.x - 60} y={tooltipPos.y - 34} width={120} height={38} rx={8}
-                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                    <text x={tooltipPos.x} y={tooltipPos.y - 20} textAnchor="middle" fontSize={9} fill="white" fontWeight="700">
+                      fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
+                    <text x={tooltipPos.x} y={tooltipPos.y - 20} textAnchor="middle" fontSize={9} fill="var(--ck-chart-tooltip-fg)" fontWeight="700">
                       {sourceNode.label} → {targetNode.label}
                     </text>
                     <text x={tooltipPos.x} y={tooltipPos.y - 6} textAnchor="middle" fontSize={10} fill={link.color} fontWeight="800">
@@ -563,9 +563,9 @@ export function MacroLineChart({ stats, target, onDateClick, activeDate }: { sta
                 {isH && (
                   <>
                     <rect x={px(i) - 50} y={barH + 2} width={100} height={42} rx={8}
-                      fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                      fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
                     <text x={px(i)} y={barH + 14} textAnchor="middle" fontSize={9}
-                      fill="white" fontWeight="800">{_d.label}</text>
+                      fill="var(--ck-chart-tooltip-fg)" fontWeight="800">{_d.label}</text>
                     {macros.map((m, mi) => {
                       const v = (_d[m.key] as number) || 0;
                       const pct = Math.round(v / Math.max(m.target, 1) * 100);
@@ -790,11 +790,11 @@ export function CalorieTrendChart({ stats, target, onDateClick, activeDate }: { 
               )}
               {isH && d.intake > 0 && (
                 <>
-                  <rect x={px(i) - 55} y={dotY - 42} width={110} height={36} rx={8} fill="rgba(0,0,0,0.92)" opacity={0.95} />
-                  <text x={px(i)} y={dotY - 28} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">
+                  <rect x={px(i) - 55} y={dotY - 42} width={110} height={36} rx={8} fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
+                  <text x={px(i)} y={dotY - 28} textAnchor="middle" fontSize={9} fill="var(--ck-chart-tooltip-fg)" fontWeight="800">
                     {d.label}
                   </text>
-                  <text x={px(i)} y={dotY - 16} textAnchor="middle" fontSize={8} fill="white" fontWeight="700">
+                  <text x={px(i)} y={dotY - 16} textAnchor="middle" fontSize={8} fill="var(--ck-chart-tooltip-fg)" fontWeight="700">
                     摄入 {d.intake} · 消耗 {tdeeV} kcal
                   </text>
                   <text x={px(i)} y={dotY - 4} textAnchor="middle" fontSize={8}
@@ -805,7 +805,7 @@ export function CalorieTrendChart({ stats, target, onDateClick, activeDate }: { 
               )}
               {isH && d.intake === 0 && (
                 <>
-                  <rect x={px(i) - 18} y={CHART_H - 20} width={36} height={14} rx={5} fill="rgba(0,0,0,0.8)" opacity={0.8} />
+                  <rect x={px(i) - 18} y={CHART_H - 20} width={36} height={14} rx={5} fill="var(--ck-chart-tooltip-bg)" opacity={0.8} />
                   <text x={px(i)} y={CHART_H - 9} textAnchor="middle" fontSize={7} fill="var(--ck-chart-dim)">无记录</text>
                 </>
               )}
@@ -945,20 +945,20 @@ export function NutritionStackedArea({ stats }: { stats: DayStats[] }) {
                   return (
                     <g>
                       <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={9}
-                        fill="rgba(0,0,0,0.92)" opacity={0.95} />
+                        fill="var(--ck-chart-tooltip-bg)" opacity={0.95} />
                       <text x={ttX + ttW / 2} y={ttY + 13} textAnchor="middle" fontSize={9}
-                        fill="white" fontWeight="800">{d.label}</text>
+                        fill="var(--ck-chart-tooltip-fg)" fontWeight="800">{d.label}</text>
                       {MEAL_LABELS.map((l, mi) => (
                         <text key={mi} x={ttX + 10} y={ttY + 26 + mi * 12} fontSize={8}
                           fill={MEAL_COLORS[mi]} fontWeight="600">
                           {l} {meals[mi]}
-                          <tspan fill="rgba(255,255,255,0.5)" fontSize={7}> kcal</tspan>
+                          <tspan fill="var(--ck-chart-tooltip-fg)" fontSize={7}> kcal</tspan>
                         </text>
                       ))}
                       <line x1={ttX + 8} y1={ttY + 63} x2={ttX + ttW - 8} y2={ttY + 63}
                         stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} />
                       <text x={ttX + ttW / 2} y={ttY + 74} textAnchor="middle" fontSize={8.5}
-                        fill="white" fontWeight="700">总计 {d.intake} kcal</text>
+                        fill="var(--ck-chart-tooltip-fg)" fontWeight="700">总计 {d.intake} kcal</text>
                     </g>
                   );
                 })()}
@@ -1115,7 +1115,7 @@ export function NutritionFunnel({ stats, targetCalories }: { stats: DayStats[]; 
                     width={60}
                     height={10}
                     rx={5}
-                    fill="rgba(0,0,0,0.1)"
+                    fill="var(--ck-active)"
                   />
                   <rect
                     x={cx + halfW + 15}
@@ -1377,16 +1377,16 @@ export function DailyKLineChart({ stats, targetCalories, onDateClick, activeDate
                   return (
                     <g>
                       <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={10}
-                        fill="rgba(0,0,0,0.93)" opacity={0.96} />
+                        fill="var(--ck-chart-tooltip-bg)" opacity={0.96} />
                       {/* Date + total */}
                       <text x={ttX + ttW / 2} y={ttY + 14} textAnchor="middle" fontSize={9.5}
-                        fill="white" fontWeight="800">{p.date.slice(5)} · {p.intake} kcal</text>
+                        fill="var(--ck-chart-tooltip-fg)" fontWeight="800">{p.date.slice(5)} · {p.intake} kcal</text>
                       {/* Meals breakdown */}
                       {p.meals.map((cal, mi) => cal > 0 ? (
                         <text key={mi} x={ttX + 10} y={ttY + 28 + mi * 12} fontSize={7.5}
                           fill={mealColors[mi]} fontWeight="600">
                           {mealNames[mi]} {cal}
-                          <tspan fill="rgba(255,255,255,0.45)" fontSize={6.5}> kcal</tspan>
+                          <tspan fill="var(--ck-chart-tooltip-fg)" fontSize={6.5}> kcal</tspan>
                         </text>
                       ) : null)}
                       {/* Separator */}
